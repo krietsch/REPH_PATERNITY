@@ -30,28 +30,36 @@ ds = dc[is.na(lon)] # seperate data without position
 dc = dc[!is.na(lon)]
 st_transform_DT(dc)
 
-point_over_poly_DT(dc, poly = study_site, buffer = 10)
+point_over_poly_DT(dc, poly = study_site, buffer = 60) # buffer including birds followed flying off plot
 setnames(dc, 'poly_overlap', 'study_site')
 
 # merge with data without position
-ds[, study_site := NA]
+ds[, study_site := FALSE]
 dc = rbind(dc, ds)
 
 # check data
-bm = create_bm(dc[study_site == TRUE], buffer = 100)
+bm = create_bm(dc[study_site == TRUE], buffer = 500)
 
 bm +
-  geom_sf(data = study_site, fill = 'grey95') +
   geom_point(data = dc, aes(lon, lat, color = study_site))
 
+# any without metal band?
+dc[is.na(ID)]
 
+# assign first capture
+dc[, caught_time := as.POSIXct(caught_time)]
+setorder(dc, year_, caught_time)
+dc[, capture_id := seq_len(.N), by = ID]
+dc[, .N, capture_id]
 
+# banded each year on and off plot by us
+ds = dc[external == 0 & capture_id == 1 & year_ > 2016]
 
+ds[, .N, .(year_, study_site)]
 
-
-
-
-
+#------------------------------------------------------------------------------------------------------------------------
+# 2. 
+#------------------------------------------------------------------------------------------------------------------------
 
 
 
