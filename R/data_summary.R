@@ -4,7 +4,7 @@
 
 # Summary
 # 1. Captures on and off plot
-# 2.
+# 2. Incubation length & initiation date method
 
 # Packages
 sapply( c('data.table', 'magrittr', 'sdb', 'ggplot2', 'sf', 'auksRuak'),
@@ -16,7 +16,7 @@ PROJ = '+proj=laea +lat_0=90 +lon_0=-156.653428 +x_0=0 +y_0=0 +datum=WGS84 +unit
 # Data
 con = dbcon('jkrietsch', db = 'REPHatBARROW')  
 dc = dbq(con, 'select * FROM CAPTURES')
-# d = dbq(con, 'select * FROM NESTS')
+d = dbq(con, 'select * FROM NESTS')
 # dp = dbq(con, 'select * FROM PATERNITY')
 # dw = dbq(con, 'select * FROM SNOW_SURVEY')
 DBI::dbDisconnect(con)
@@ -58,8 +58,39 @@ ds = dc[external == 0 & capture_id == 1 & year_ > 2016]
 ds[, .N, .(year_, study_site)]
 
 #------------------------------------------------------------------------------------------------------------------------
-# 2. 
+# 2. Incubation length & initiation date method
 #------------------------------------------------------------------------------------------------------------------------
+
+# assign datetime format
+d[, found_datetime := as.POSIXct(found_datetime)]
+d[, collected_datetime := as.POSIXct(collected_datetime)]
+d[, initiation := as.POSIXct(initiation)]
+d[, initiation_y := as.POSIXct(format(initiation, format = '%m-%d %H:%M:%S'), format = '%m-%d %H:%M:%S')]
+d[, est_hatching_datetime := as.POSIXct(est_hatching_datetime)]
+d[, hatching_datetime := as.POSIXct(hatching_datetime)]
+
+# incubation period in incubator
+d[, found_incomplete := initial_clutch_size < clutch_size]
+d[, inc_period := difftime(hatching_datetime, c(initiation + clutch_size * 86400 - 86400), units = 'days') %>% as.numeric]
+
+ds = d[!is.na(inc_period) & found_incomplete == TRUE]
+mean(ds[external == 0]$inc_period, na.rm = TRUE)
+nrow(ds[external == 0])
+
+# not in incubator
+mean(ds[external == 1]$inc_period, na.rm = TRUE)
+nrow(ds[external == 1])
+
+ggplot(data = ds[external == 0]) +
+  geom_point(aes(y = inc_period, x = initiation_y, color = as.character(year_))) +
+  geom_smooth(aes(y = inc_period, x = initiation_y), method = 'lm')
+
+ggplot(data = ds[external == 1]) +
+  geom_point(aes(y = inc_period, x = initiation_y, color = as.character(year_))) +
+  geom_smooth(aes(y = inc_period, x = initiation_y), method = 'lm')
+
+
+
 
 
 
