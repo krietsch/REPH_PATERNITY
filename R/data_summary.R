@@ -94,34 +94,20 @@ ggplot(data = ds[inc_period < 25]) +
   geom_point(aes(y = inc_period, x = initiation_y, color = as.character(year_))) +
   geom_smooth(aes(y = inc_period, x = initiation_y), method = 'lm')
 
+# comparision natural vs. incubator
 ggplot(data = ds) +
   geom_boxplot(aes(y = inc_period, x = as.character(external))) 
 
 ggplot(data = ds[year_ > 2016]) +
   geom_boxplot(aes(y = inc_period, x = as.character(external))) 
 
-
-ds = d[external == 1 & inc_period < 25 & !is.na(inc_period) & found_incomplete == TRUE]
-ds = ds[, .(nests = .N, mean_initiation_y = mean(initiation_y), q25_initiation_y = quantile(initiation_y, 0.25), 
-            mean_inc_period = mean(inc_period)), by = year_]
-
-ggplot(data = ds) +
-  geom_point(aes(y = mean_inc_period, x = q25_initiation_y, color = as.character(year_))) +
-  geom_smooth(aes(y = mean_inc_period, x = q25_initiation_y), method = 'lm')
-
-ggplot(data = ds[nests > 4]) +
-  geom_point(aes(y = mean_inc_period, x = q25_initiation_y, color = as.character(year_))) +
-  geom_smooth(aes(y = mean_inc_period, x = q25_initiation_y), method = 'lm')
-
 # initiation date methods
 d[found_incomplete == TRUE, initiation_method := 'found_incomplete']
 d[is.na(initiation_method) & !is.na(hatching_datetime), initiation_method := 'hatching_datetime']
 d[is.na(initiation_method) & !is.na(est_hatching_datetime), initiation_method := 'est_hatching_datetime']
+d[is.na(initiation_method) & !is.na(initiation), initiation_method := 'found_incomplete']
 
-d[external == 0, .N, initiation_method]
-
-
-d[external == 0 & is.na(initiation_method), .(year_, nest, initiation)]
-
-
-
+ds = d[external == 0, .N, initiation_method]
+ds[, N_nests := nrow(d[external == 0])]
+ds[, initiation_method_percent := N / N_nests * 100]
+ds
