@@ -71,29 +71,57 @@ d[, hatching_datetime := as.POSIXct(hatching_datetime)]
 
 # incubation period in incubator
 d[, found_incomplete := initial_clutch_size < clutch_size]
-d[, inc_period := difftime(hatching_datetime, c(initiation + clutch_size * 86400 - 86400), units = 'days') %>% as.numeric]
+d[, inc_period := difftime(hatching_datetime, c(initiation + clutch_size * 3600*24 - 3600*24), units = 'days') %>% as.numeric]
 
 ds = d[!is.na(inc_period) & found_incomplete == TRUE]
-mean(ds[external == 0]$inc_period, na.rm = TRUE)
-nrow(ds[external == 0])
+mean(ds[external == 0]$inc_period, na.rm = TRUE) # 17.2 days is based on eggs
+nrow(ds[external == 0]) 
 
 # not in incubator
 mean(ds[external == 1]$inc_period, na.rm = TRUE)
 nrow(ds[external == 1])
+mean(ds[external == 1 & inc_period < 25]$inc_period, na.rm = TRUE) # excluding outliers
 
 ggplot(data = ds[external == 0]) +
   geom_point(aes(y = inc_period, x = initiation_y, color = as.character(year_))) +
   geom_smooth(aes(y = inc_period, x = initiation_y), method = 'lm')
 
-ggplot(data = ds[external == 1]) +
+ggplot(data = ds[external == 1 & inc_period < 25]) +
   geom_point(aes(y = inc_period, x = initiation_y, color = as.character(year_))) +
   geom_smooth(aes(y = inc_period, x = initiation_y), method = 'lm')
 
+ggplot(data = ds[inc_period < 25]) +
+  geom_point(aes(y = inc_period, x = initiation_y, color = as.character(year_))) +
+  geom_smooth(aes(y = inc_period, x = initiation_y), method = 'lm')
+
+ggplot(data = ds) +
+  geom_boxplot(aes(y = inc_period, x = as.character(external))) 
+
+ggplot(data = ds[year_ > 2016]) +
+  geom_boxplot(aes(y = inc_period, x = as.character(external))) 
 
 
+ds = d[external == 1 & inc_period < 25 & !is.na(inc_period) & found_incomplete == TRUE]
+ds = ds[, .(nests = .N, mean_initiation_y = mean(initiation_y), q25_initiation_y = quantile(initiation_y, 0.25), 
+            mean_inc_period = mean(inc_period)), by = year_]
+
+ggplot(data = ds) +
+  geom_point(aes(y = mean_inc_period, x = q25_initiation_y, color = as.character(year_))) +
+  geom_smooth(aes(y = mean_inc_period, x = q25_initiation_y), method = 'lm')
+
+ggplot(data = ds[nests > 4]) +
+  geom_point(aes(y = mean_inc_period, x = q25_initiation_y, color = as.character(year_))) +
+  geom_smooth(aes(y = mean_inc_period, x = q25_initiation_y), method = 'lm')
+
+# initiation date methods
+d[found_incomplete == TRUE, initiation_method := 'found_incomplete']
+d[is.na(initiation_method) & !is.na(hatching_datetime), initiation_method := 'hatching_datetime']
+d[is.na(initiation_method) & !is.na(est_hatching_datetime), initiation_method := 'est_hatching_datetime']
+
+d[external == 0, .N, initiation_method]
 
 
-
+d[external == 0 & is.na(initiation_method), .(year_, nest, initiation)]
 
 
 
