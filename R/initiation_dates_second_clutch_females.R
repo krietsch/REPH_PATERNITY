@@ -2,10 +2,6 @@
 # Females second clutch initiation date adjusted 
 #========================================================================================================================
 
-# Summary
-# 1. 
-
-
 # Packages
 sapply( c('data.table', 'magrittr', 'sdb', 'ggplot2', 'sf', 'auksRuak'),
         require, character.only = TRUE)
@@ -23,11 +19,21 @@ d[, nestID := paste0(nest, '_', substr(year_, 3,4 ))]
 d[, initiation := as.POSIXct(initiation)]
 d[, initiation_y := as.POSIXct(format(initiation, format = '%m-%d %H:%M:%S'), format = '%m-%d %H:%M:%S')]
 d[, initiation_doy := yday(initiation)]
+d[, found_datetime := as.POSIXct(found_datetime)]
+d[, collected_datetime := as.POSIXct(collected_datetime)]
+d[, last_checked_datetime := as.POSIXct(last_checked_datetime)]
+d[, hatching_datetime := as.POSIXct(hatching_datetime)]
+d[, nest_state_date := as.POSIXct(nest_state_date)]
 d[, YEAR_ := factor(year_)]
 d[, complete := initiation + clutch_size * 86400 - 86400]
 d[, complete_y := initiation_y + clutch_size * 86400 - 86400]
 
 setorder(d, year_, initiation)
+
+# general check for datetimes mistakes
+d[, diff_initiation_nest_state := difftime(nest_state_date, initiation, units = 'days') %>% as.numeric]
+hist(d$diff_initiation_nest_state)
+d[diff_initiation_nest_state < 0, .(nestID, initiation, nest_state, diff_initiation_nest_state)]
 
 # first and second clutches by females
 d[, N_female_clutch := .N, by = female_id]
@@ -38,11 +44,6 @@ d[is.na(female_id), N_female_clutch := 1]
 d[, .N, by = .(year_, female_clutch)]
 d[, .N, by = .(female_clutch, external)]
 
-
-
-
-
-# Higher EPY frequency in known second clutches?
 # females
 ID2c = d[female_clutch == 2]$female_id
 dx = d[female_id %in% ID2c & female_clutch < 3]
