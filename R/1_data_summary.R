@@ -173,6 +173,7 @@ ds
 setorder(d, year_, initiation)
 
 # first and second clutches by females
+d[, female_id_year := paste0(female_id, '_', substr(year_, 3,4 ))]
 d[, N_female_clutch := .N, by = female_id]
 d[, female_clutch := seq_len(.N), by = .(female_id, year_)]
 d[is.na(female_id), female_clutch := 1]
@@ -188,9 +189,9 @@ dx[, .N, by = .(female_clutch, anyEPY)]
 dx[, female_clutch := as.factor(female_clutch)]
 
 dr = merge(dx[female_clutch == 1, .(year1 = year_, nestID1 = nestID, female_id_year, m1 = male_id, anyEPY1 = anyEPY, 
-                                    mc1 = male_clutch, ss1 = study_site)], 
+                                    ss1 = study_site)], 
            dx[female_clutch == 2, .(year2 = year_, nestID2 = nestID, female_id_year, m2 = male_id, anyEPY2 = anyEPY, 
-                                    mc2 = male_clutch, ss2 = study_site)], 
+                                    ss2 = study_site)], 
            by = 'female_id_year', all = TRUE)
 
 dr[, same_male := m1 == m2]
@@ -231,21 +232,67 @@ dr[, both_study_site := ss1 == ss2]
 setorder(dr, male_id_year)
 dr
 
-# polyandrous females
+# renesting males
 dr = dr[, .(male_id_year, renesting_male = TRUE, same_female, renesting_study_site = both_study_site)]
 d = merge(d, dr, by = 'male_id_year', all.x = TRUE)
 
+### unique ID's
+d[is.na(male_id), male_id_year := NA]
+d[, male_id_year_NA := male_id_year]
+d[is.na(male_id), male_id_year_NA := paste0(seq_len(.N), '_', substr(year_, 3,4)), by = male_id_year_NA]
 
-# number of males assigned and females assigned with ID on plot
+d[is.na(female_id), female_id_year := NA]
+d[, female_id_year_NA := female_id_year]
+d[is.na(female_id), female_id_year_NA := paste0(seq_len(.N), '_', substr(year_, 3,4)), by = female_id_year_NA]
+
+# subset study site
 ds = d[external == 0 & study_site == TRUE]
-ds = d[external == 0]
+dss = ds[, .(N_nests = .N), by = year_]
+setorder(dss, year_)
 
-ds[is.na(male_id) & parentage == TRUE]
-
+# unassigned males and females
+ds[is.na(male_id)]
 ds[is.na(female_id)]
 
-ds[male_assigned == 3]
-ds[female_assigned == 3]
+# males
+dsm = unique(ds, by = 'male_id_year_NA')
+dsm[, .N, by = male_assigned]
+dssm = dsm[, .(unique_males = .N), by = year_]
+
+# renesting males
+dsmr = dsm[renesting_male == TRUE, .(renesting_males = .N), by = year_]
+dsmr_NARL = dsm[renesting_study_site == TRUE, .(renesting_males_NARL = .N), by = year_]
+
+
+# females
+dsf = unique(ds, by = 'female_id_year_NA')
+dsf[, .N, by = female_assigned]
+dssf = dsf[, .(unique_females = .N), by = year_]
+
+# polyandrous females
+dsfp = dsf[polyandrous == TRUE, .(polyandrous_females = .N), by = year_]
+dsfp_NARL = dsf[polyandry_study_site == TRUE, .(polyandrous_females_NARL = .N), by = year_]
+
+# combine data
+dss = merge(dss, dssm, by = 'year_', all.x = TRUE)
+dss = merge(dss, dsmr, by = 'year_', all.x = TRUE)
+dss = merge(dss, dsmr_NARL, by = 'year_', all.x = TRUE)
+dss = merge(dss, dssf, by = 'year_', all.x = TRUE)
+dss = merge(dss, dsfp, by = 'year_', all.x = TRUE)
+dss = merge(dss, dsfp_NARL, by = 'year_', all.x = TRUE)
+dss[is.na(dss)] = 0
+
+# percent renesting / polyandrous
+dss[, per_renesting_males          := round(renesting_males / unique_males * 100, 2)]
+dss[, per_renesting_males_NARL     := round(renesting_males_NARL / unique_males * 100, 2)]
+dss[, per_polyandrous_females      := round(polyandrous_females / unique_females * 100, 2)]
+dss[, per_polyandrous_females_NARL := round(polyandrous_females_NARL / unique_females * 100, 2)]
+
+dss
+
+
+
+
 
 
 
