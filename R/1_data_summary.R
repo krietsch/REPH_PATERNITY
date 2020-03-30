@@ -300,21 +300,42 @@ dss
 #------------------------------------------------------------------------------------------------------------------------
 
 # split in NARL study site and everything else
+ds = d[, .(N_nests = .N), by =  study_site]
+ds2 = d[parentage == TRUE, .(N_parentage = .N), by =  study_site]
+ds3 = d[anyEPY == TRUE, .(N_EPY = .N), by =  study_site]
+ds4 = d[, .(N_eggs = sum(N_parentage, na.rm = TRUE), N_eggs_EPY = sum(N_EPY, na.rm = TRUE)), by =  study_site]
+ds = merge(ds, ds2, by = c('study_site'), all.x = TRUE)
+ds = merge(ds, ds3, by = c('study_site'), all.x = TRUE)
+ds = merge(ds, ds4, by = c('study_site'), all.x = TRUE)
+ds[is.na(ds)] = 0
+ds = ds[N_parentage != 0]
+ds[, EPY_nests := paste0(round(N_EPY / N_parentage * 100, 0), '% (', N_EPY, '/', N_parentage, ')')]
+ds[, EPY_eggs  := paste0(round(N_eggs_EPY / N_eggs * 100, 0), '% (', N_eggs_EPY, '/', N_eggs, ')')]
+ds[, c('N_parentage', 'N_EPY', 'N_eggs', 'N_eggs_EPY') := NULL]
+setorder(ds, -study_site)
+ds
+
+# split in NARL study site and everything else by year
 ds = d[, .(N_nests = .N), by = .(year_, study_site)]
 ds2 = d[parentage == TRUE, .(N_parentage = .N), by = .(year_, study_site)]
 ds3 = d[anyEPY == TRUE, .(N_EPY = .N), by = .(year_, study_site)]
+ds4 = d[, .(N_eggs = sum(N_parentage, na.rm = TRUE), N_eggs_EPY = sum(N_EPY, na.rm = TRUE)), by = .(year_, study_site)]
 ds = merge(ds, ds2, by = c('year_', 'study_site'), all.x = TRUE)
 ds = merge(ds, ds3, by = c('year_', 'study_site'), all.x = TRUE)
+ds = merge(ds, ds4, by = c('year_', 'study_site'), all.x = TRUE)
 ds[is.na(ds)] = 0
 ds = ds[N_parentage != 0]
 ds[, EPY := paste0(round(N_EPY / N_parentage * 100, 0), '% (', N_EPY, '/', N_parentage, ')')]
-ds[, c('N_parentage', 'N_EPY') := NULL]
+ds[, EPY_eggs  := paste0(round(N_eggs_EPY / N_eggs * 100, 0), '% (', N_eggs_EPY, '/', N_eggs, ')')]
+# mean
+ds[study_site == TRUE, N_EPY / N_parentage * 100]  %>% mean %>% round(., 0)
+ds[study_site == FALSE, N_EPY / N_parentage * 100] %>% mean %>% round(., 0)
+ds[study_site == TRUE, N_eggs_EPY / N_eggs * 100]  %>% mean %>% round(., 0)
+ds[study_site == FALSE, N_eggs_EPY / N_eggs * 100] %>% mean %>% round(., 0)
+
+ds[, c('N_parentage', 'N_EPY', 'N_eggs', 'N_eggs_EPY') := NULL]
 setorder(ds, -study_site, -year_)
 ds
-
-# total number of nests with parentage data and number with full clutch
-ds = d[parentage == TRUE]
-ds %>% nrow
 
 # N nests full clutch sampled
 ds[, full_clutch_sampled := clutch_size == N_parentage]
@@ -326,5 +347,15 @@ sd(ds$clutch_size, na.rm = TRUE)
 min(ds$clutch_size, na.rm = TRUE)
 max(ds$clutch_size, na.rm = TRUE)
 
+# repeatability of EPY by male_id?
+ds = d[N_male_clutch > 1 & !is.na(anyEPY)]
+ds[, N_nests_anyEPY := sum(anyEPY), by = male_id]
+ds[, .N, by = N_nests_anyEPY] # no male with multiple nests with EPY
+unique(ds$male_id) %>% length
 
+# repeatability of EPY by male_id?
+ds = d[N_female_clutch > 1 & !is.na(anyEPY)]
+ds[, N_nests_anyEPY := sum(anyEPY), by = female_id]
+ds[, .N, by = N_nests_anyEPY] # no female with multiple nests with EPY
+unique(ds$female_id) %>% length
 
