@@ -45,7 +45,8 @@ d[, initiation := as.POSIXct(initiation)]
 d[, initiation_y := as.POSIXct(format(initiation, format = '%m-%d %H:%M:%S'), format = '%m-%d %H:%M:%S')]
 d[, initiation_doy := yday(initiation)]
 d[, YEAR_ := factor(year_)]
-d[, complete := initiation_y + clutch_size * 86400]
+d[, complete := initiation + clutch_size * 86400 - 86400]
+d[, complete_y := initiation_y + clutch_size * 86400 - 86400]
 
 setorder(d, year_, initiation)
 d[, female_id := factor(female_id, levels = unique(female_id[order(initiation)]))]
