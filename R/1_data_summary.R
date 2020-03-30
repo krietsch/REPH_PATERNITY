@@ -3,9 +3,10 @@
 #========================================================================================================================
 
 # Summary
+# 0. Prepare data for analysis
 # 1. Captures on and off plot
 # 2. Incubation length & initiation date method
-# 3. Rate of polyandry & renesting
+# 3. Rate of polyandry & renesting on plot
 
 # Packages
 sapply( c('data.table', 'magrittr', 'sdb', 'ggplot2', 'sf', 'auksRuak'),
@@ -35,8 +36,14 @@ point_over_poly_DT(d, poly = study_site, buffer = 10)
 setnames(d, 'poly_overlap', 'study_site')
 
 # merge with data without position
-ds[, study_site := NA]
+ds[, study_site := FALSE]
+d[male_id == 175189876, study_site := FALSE] # exclude one male from 2006
 d = rbind(d, ds)
+
+# check data
+# bm = create_bm(d[study_site == TRUE], buffer = 500)
+# bm +
+#   geom_point(data = d, aes(lon, lat, color = study_site))
 
 # nestID
 d[, nestID := paste0(nest, '_', substr(year_, 3,4 ))]
@@ -49,8 +56,10 @@ d[, initiation := as.POSIXct(initiation)]
 d[, initiation_y := as.POSIXct(format(initiation, format = '%m-%d %H:%M:%S'), format = '%m-%d %H:%M:%S')]
 d[, est_hatching_datetime := as.POSIXct(est_hatching_datetime)]
 d[, hatching_datetime := as.POSIXct(hatching_datetime)]
+d[, YEAR_ := factor(year_)]
 
 # nests with paternity data
+dp = dp[!is.na(EPY)]
 # EPY father 
 dp[EPY == 1, .N, by = nestID] # more than 1 EPY father? No
 dp[EPY == 1, EPY_father := IDfather]
@@ -65,18 +74,6 @@ d = merge(d, dps[, .(nestID, N_parentage = N, N_EPY = EPY, anyEPY, EPY_father)],
 # assign all nests with parentage data
 d[, parentage := ifelse(!is.na(N_parentage), TRUE, FALSE)]
 d[, any_parentage_year := any(parentage == TRUE), by = year_]
-
-# assign nests on plot (Rick's plot)
-d[external == 1, study_site := ifelse(plot %like% 'brw', TRUE, FALSE)]
-d[plot == 'brwfwl', study_site := FALSE]
-
-#------------------------------------------------------------------------------------------------------------------------
-# 1. Nests data avaiable
-#------------------------------------------------------------------------------------------------------------------------
-
-# exclude off-plot nests without parentage data
-d0 = d[external == 0 & !(study_site == FALSE & parentage == FALSE)]
-d1 = d[external == 1 & parentage == TRUE]
 
 #------------------------------------------------------------------------------------------------------------------------
 # 1. Captures on and off plot
@@ -95,10 +92,9 @@ ds[, study_site := FALSE]
 dc = rbind(dc, ds)
 
 # check data
-bm = create_bm(dc[study_site == TRUE], buffer = 500)
-
-bm +
-  geom_point(data = dc, aes(lon, lat, color = study_site))
+# bm = create_bm(dc[study_site == TRUE], buffer = 500)
+# bm +
+#   geom_point(data = dc, aes(lon, lat, color = study_site))
 
 # any without metal band?
 dc[is.na(ID)]
@@ -131,24 +127,25 @@ mean(ds[external == 1]$inc_period, na.rm = TRUE)
 nrow(ds[external == 1])
 mean(ds[external == 1 & inc_period < 25]$inc_period, na.rm = TRUE) # excluding outliers
 
-ggplot(data = ds[external == 0]) +
-  geom_point(aes(y = inc_period, x = initiation_y, color = as.character(year_))) +
-  geom_smooth(aes(y = inc_period, x = initiation_y), method = 'lm')
-
-ggplot(data = ds[external == 1 & inc_period < 25]) +
-  geom_point(aes(y = inc_period, x = initiation_y, color = as.character(year_))) +
-  geom_smooth(aes(y = inc_period, x = initiation_y), method = 'lm')
-
-ggplot(data = ds[inc_period < 25]) +
-  geom_point(aes(y = inc_period, x = initiation_y, color = as.character(year_))) +
-  geom_smooth(aes(y = inc_period, x = initiation_y), method = 'lm')
-
-# comparision natural vs. incubator
-ggplot(data = ds) +
-  geom_boxplot(aes(y = inc_period, x = as.character(external))) 
-
-ggplot(data = ds[year_ > 2016]) +
-  geom_boxplot(aes(y = inc_period, x = as.character(external))) 
+# plot
+# ggplot(data = ds[external == 0]) +
+#   geom_point(aes(y = inc_period, x = initiation_y, color = as.character(year_))) +
+#   geom_smooth(aes(y = inc_period, x = initiation_y), method = 'lm')
+# 
+# ggplot(data = ds[external == 1 & inc_period < 25]) +
+#   geom_point(aes(y = inc_period, x = initiation_y, color = as.character(year_))) +
+#   geom_smooth(aes(y = inc_period, x = initiation_y), method = 'lm')
+# 
+# ggplot(data = ds[inc_period < 25]) +
+#   geom_point(aes(y = inc_period, x = initiation_y, color = as.character(year_))) +
+#   geom_smooth(aes(y = inc_period, x = initiation_y), method = 'lm')
+# 
+# # comparision natural vs. incubator
+# ggplot(data = ds) +
+#   geom_boxplot(aes(y = inc_period, x = as.character(external))) 
+# 
+# ggplot(data = ds[year_ > 2016]) +
+#   geom_boxplot(aes(y = inc_period, x = as.character(external))) 
 
 # initiation date methods
 d[found_incomplete == TRUE, initiation_method := 'found_incomplete']
@@ -263,7 +260,6 @@ dssm = dsm[, .(unique_males = .N), by = year_]
 dsmr = dsm[renesting_male == TRUE, .(renesting_males = .N), by = year_]
 dsmr_NARL = dsm[renesting_study_site == TRUE, .(renesting_males_NARL = .N), by = year_]
 
-
 # females
 dsf = unique(ds, by = 'female_id_year_NA')
 dsf[, .N, by = female_assigned]
@@ -283,22 +279,52 @@ dss = merge(dss, dsfp_NARL, by = 'year_', all.x = TRUE)
 dss[is.na(dss)] = 0
 
 # percent renesting / polyandrous
-dss[, per_renesting_males          := round(renesting_males / unique_males * 100, 2)]
-dss[, per_renesting_males_NARL     := round(renesting_males_NARL / unique_males * 100, 2)]
-dss[, per_polyandrous_females      := round(polyandrous_females / unique_females * 100, 2)]
-dss[, per_polyandrous_females_NARL := round(polyandrous_females_NARL / unique_females * 100, 2)]
+dss[, renesting_males          := paste0(round(renesting_males / unique_males * 100, 0), '% (', renesting_males, '/', unique_males, ')')]
+dss[, renesting_males_NARL     := paste0(round(renesting_males_NARL / unique_males * 100, 0), '% (', renesting_males_NARL, '/', unique_males, ')')]
+dss[, polyandrous_females      := paste0(round(polyandrous_females / unique_females * 100, 0), '% (', polyandrous_females, '/', unique_males, ')')]
+dss[, polyandrous_females_NARL := paste0(round(polyandrous_females_NARL / unique_females * 100, 0), '% (', polyandrous_females_NARL, '/', unique_males, ')')]
+dss[, c('unique_males', 'unique_females') := NULL]
 
+# add EPY on plot
+dsp = ds[!is.na(N_parentage), .(N_parentage = .N), by = year_]
+dspn = ds[!is.na(N_parentage) & anyEPY == TRUE, .(N_anyEPY = .N), by = year_]
+dsp = merge(dsp, dspn, by = 'year_')
+dsp[, EPY := paste0(round(N_anyEPY / N_parentage * 100, 0), '% (', N_anyEPY, '/', N_parentage, ')')]
+dsp[, c('N_parentage', 'N_anyEPY') := NULL]
+
+dss = merge(dss, dsp, by = 'year_')
 dss
 
+#------------------------------------------------------------------------------------------------------------------------
+# 4. Paternity data
+#------------------------------------------------------------------------------------------------------------------------
 
+# split in NARL study site and everything else
+ds = d[, .(N_nests = .N), by = .(year_, study_site)]
+ds2 = d[parentage == TRUE, .(N_parentage = .N), by = .(year_, study_site)]
+ds3 = d[anyEPY == TRUE, .(N_EPY = .N), by = .(year_, study_site)]
+ds = merge(ds, ds2, by = c('year_', 'study_site'), all.x = TRUE)
+ds = merge(ds, ds3, by = c('year_', 'study_site'), all.x = TRUE)
+ds[is.na(ds)] = 0
+ds = ds[N_parentage != 0]
+ds[, EPY := paste0(round(N_EPY / N_parentage * 100, 0), '% (', N_EPY, '/', N_parentage, ')')]
+ds[, c('N_parentage', 'N_EPY') := NULL]
+setorder(ds, -study_site, -year_)
+ds
 
+# total number of nests with parentage data and number with full clutch
+ds = d[parentage == TRUE]
+ds %>% nrow
 
-
-
-
-
-
-
+# N nests full clutch sampled
+ds[, full_clutch_sampled := clutch_size == N_parentage]
+ds[, .N, full_clutch_sampled]
+ds[full_clutch_sampled == TRUE]  %>% nrow
+ds[full_clutch_sampled == TRUE]  %>% nrow / ds %>% nrow * 100 # percent of all
+mean(ds$clutch_size, na.rm = TRUE)
+sd(ds$clutch_size, na.rm = TRUE)
+min(ds$clutch_size, na.rm = TRUE)
+max(ds$clutch_size, na.rm = TRUE)
 
 
 
