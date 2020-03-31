@@ -10,7 +10,8 @@
 # 4. Paternity data
 # 5. Paternity between study site and external
 # 6. Paternity between years 
-# 7. Paternity first and second clutch
+# 7. Paternity polyandrous clutches & renesting 
+# 8. Paternity frequency within the season 
 
 # Packages
 sapply( c('data.table', 'magrittr', 'sdb', 'ggplot2', 'sf', 'auksRuak', 'arm'),
@@ -188,8 +189,6 @@ d[, .N, by = .(female_clutch, external)]
 # polyandrous clutches (second clutch with different partner)
 ID2c = d[female_clutch == 2]$female_id_year
 dx = d[female_id_year %in% ID2c]
-dx[, .N, by = .(female_clutch, anyEPY)]
-dx[, female_clutch := as.factor(female_clutch)]
 
 dr = merge(dx[female_clutch == 1, .(year1 = year_, nestID1 = nestID, female_id_year, m1 = male_id, anyEPY1 = anyEPY, 
                                     ss1 = study_site)], 
@@ -220,8 +219,6 @@ d[, .N, by = .(male_clutch, external)]
 # males renesting with same or different partner
 ID2c = d[male_clutch == 2]$male_id_year
 dx = d[male_id_year %in% ID2c]
-dx[, .N, by = .(male_clutch, anyEPY)]
-dx[, male_clutch := as.factor(male_clutch)]
 
 dr = merge(dx[male_clutch == 1, .(year1 = year_, nestID1 = nestID, male_id_year, f1 = female_id, anyEPY1 = anyEPY, 
                                   mfc1 = male_clutch, ss1 = study_site)], 
@@ -304,6 +301,12 @@ dss
 #------------------------------------------------------------------------------------------------------------------------
 # 4. Paternity data
 #------------------------------------------------------------------------------------------------------------------------
+
+# position of nests with parentage data
+# bm = create_bm(d)
+# bm + geom_point(data = d[parentage == TRUE], aes(lon, lat, color = study_site))
+# bm + geom_point(data = d[parentage == TRUE], aes(lon, lat, color = YEAR_))
+# bm + geom_point(data = d[parentage == TRUE], aes(lon, lat, color = as.character(anyEPY)))
 
 # split in NARL study site and everything else
 ds = d[, .(N_nests = .N), by =  study_site]
@@ -551,14 +554,57 @@ ggplot(data = nd) +
   theme_classic(base_size = 24) + labs(x = 'Year', y = 'Percent nests with EPY')
 
 #------------------------------------------------------------------------------------------------------------------------
-# 7. Paternity first and second clutch
+# 7. Paternity polyandrous clutches & renesting 
 #------------------------------------------------------------------------------------------------------------------------
 
+# polyandrous clutches (second clutch with different partner)
+ID2c = d[female_clutch == 2]$female_id_year
+dx = d[female_id_year %in% ID2c]
 
+dr = merge(dx[female_clutch == 1, .(year1 = year_, nestID1 = nestID, female_id_year, m1 = male_id, anyEPY1 = anyEPY, 
+                                    ss1 = study_site)], 
+           dx[female_clutch == 2, .(year2 = year_, nestID2 = nestID, female_id_year, m2 = male_id, anyEPY2 = anyEPY, 
+                                    ss2 = study_site)], 
+           by = 'female_id_year', all = TRUE)
 
+dr[, same_male := m1 == m2]
+dr[is.na(same_male), same_male := FALSE]
+dr[, both_study_site := ss1 == ss2]
+setorder(dr, female_id_year)
+dr = dr[same_male == FALSE]
 
+dsp = dr[, .(type = 'polyandrous', N_nests = nrow(dr), EPY_1nest = sum(anyEPY1), EPY_2nest = sum(anyEPY2))]
 
+# males renesting with same or different partner
+ID2c = d[male_clutch == 2]$male_id_year
+dx = d[male_id_year %in% ID2c]
 
+dr = merge(dx[male_clutch == 1, .(year1 = year_, nestID1 = nestID, male_id_year, f1 = female_id, anyEPY1 = anyEPY, 
+                                  mfc1 = male_clutch, ss1 = study_site)], 
+           dx[male_clutch == 2, .(year2 = year_, nestID2 = nestID, male_id_year, f2 = female_id, anyEPY2 = anyEPY, 
+                                  fc2 = male_clutch, ss2 = study_site)], 
+           by = 'male_id_year', all = TRUE)
+
+dr[, same_female := f1 == f2]
+dr[is.na(same_female), same_female := FALSE]
+dr[, both_study_site := ss1 == ss2]
+setorder(dr, male_id_year)
+dr = dr[!is.na(anyEPY1)]
+
+dsr = dr[, .(type = 'renesting', N_nests = nrow(dr), EPY_1nest = sum(anyEPY1), EPY_2nest = sum(anyEPY2))]
+
+dsr1 = dr[same_female == TRUE, .(type = 'renesting_same_partner', N_nests = nrow(dr[same_female == TRUE]), 
+                                 EPY_1nest = sum(anyEPY1), EPY_2nest = sum(anyEPY2))]
+dsr2 = dr[same_female == FALSE, .(type = 'renesting_different_partner', N_nests = nrow(dr[same_female == FALSE]), 
+                                  EPY_1nest = sum(anyEPY1), EPY_2nest = sum(anyEPY2))]
+
+ds = rbindlist(list(dsp, dsr, dsr1, dsr2))
+
+ds[, EPY_first_nest := paste0(round(EPY_1nest / N_nests * 100, 0), '% (', EPY_1nest, '/', N_nests, ')')]
+ds[, EPY_second_nest := paste0(round(EPY_2nest / N_nests * 100, 0), '% (', EPY_2nest, '/', N_nests, ')')]
+ds[, c('N_nests', 'EPY_1nest', 'EPY_2nest') := NULL]
+
+ds
 
 #------------------------------------------------------------------------------------------------------------------------
 # 8. Paternity frequency within the season 
@@ -649,6 +695,45 @@ ggplot() +
   geom_line(data = nd1, aes(x = initiation_doy, y = fit*100, group = YEAR_, color = YEAR_)) +
   geom_ribbon(data = nd1, aes(x = initiation_doy, ymin = lower*100, ymax = upper*100, fill = YEAR_, color = NULL), alpha = .15) +
   theme_classic(base_size = 24) + labs(x = 'Day of the year', y = 'Percent nests with EPY')
+
+#------------------------------------------------------------------------------------------------------------------------
+### Sample timing and EPY frequency
+ds = d[!is.na(initiation_y)]
+ds[, anyEPY_year := any(parentage == TRUE), by = year_]
+
+dsAll = ds[anyEPY_year == TRUE]
+dsAll[, type := 'all nests']
+
+dsEPY = ds[parentage == TRUE]
+dsEPY[, type := ifelse(anyEPY == 1, 'with EPY', 'without EPY')]
+
+ds = rbind(dsAll, dsEPY)
+ds[, type := factor(type, levels = c('with EPY','without EPY', 'all nests'))]
+
+ggplot(ds[year_ > 2016]) +
+  geom_boxplot(aes(type, initiation_y, color = type)) +
+  labs(x = '', y = 'Initiation date') +
+  coord_flip() + facet_grid(year_ ~ .) +
+  theme_classic(base_size = 24)
+
+ggplot(ds) +
+  geom_boxplot(aes(type, initiation_y, color = type)) +
+  labs(x = '', y = 'Initiation date') +
+  coord_flip() + facet_grid(year_ ~ .) +
+  theme_classic(base_size = 24)
+
+
+ggplot(dsAll) +
+  geom_boxplot(aes(parentage, initiation_y, color = parentage)) +
+  labs(x = '', y = 'Initiation date') +
+  coord_flip() + facet_grid(year_ ~ .) +
+  theme_classic(base_size = 24)
+
+
+
+
+
+
 
 
 
