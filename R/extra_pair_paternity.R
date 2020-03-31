@@ -179,7 +179,7 @@ bm +
 
 # nest for which we have parentage data
 bm +
-  geom_point(data = d[parentage == TRUE], aes(lon, lat, color = plot))
+  geom_point(data = d[parentage == TRUE], aes(lon, lat, color = as.character(year_)))
 
 setorder(d, year_, initiation)
 

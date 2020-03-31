@@ -965,135 +965,6 @@ ggplot(data = nd) +
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-# old and wrong
-fm = glm(anyEPY ~ initiation_doy + YEAR_, data = ds, family = binomial)
-summary(fm)
-
-rs = seq(min(ds$initiation_doy, na.rm = TRUE), 
-         max(ds$initiation_doy, na.rm = TRUE), 1)
-years = unique(ds$YEAR_)
-
-nd = data.table(YEAR_ = rep(years, each = length(rs)),
-                initiation_doy = rep(rs, length(years)))
-
-dx = ds[, .(min_year_ = min(initiation_doy, na.rm = TRUE), max_year = max(initiation_doy, na.rm = TRUE)), by = YEAR_]
-
-nd = merge(nd, dx, all.x = TRUE, by = 'YEAR_')
-nd[, initiation_in_year := initiation_doy > min_year_ & initiation_doy < max_year]
-nd = nd[initiation_in_year == TRUE]
-
-
-pr = predict(fm, newdata = nd, type = 'response', se.fit = TRUE)
-pr = as.data.table(pr)
-pr = cbind(nd, pr)
-pr[, lwr := fit - se.fit]
-pr[, upr := fit + se.fit]
-
-
-ggplot(data = pr) +
-  geom_line(aes(x = initiation_doy, y = fit, group = YEAR_, 
-                color = YEAR_)) +
-  geom_ribbon(aes(x = initiation_doy, ymin = lwr, ymax = upr, fill = YEAR_, color = NULL), alpha = .15) 
-
-
-### only our data
-dx = ds[external == 0]
-
-fm = glm(anyEPY ~ initiation_doy + YEAR_, data = dx, family = binomial)
-summary(fm)
-
-rs = seq(min(dx$initiation_doy, na.rm = TRUE), 
-         max(dx$initiation_doy, na.rm = TRUE), 1)
-years = unique(dx$YEAR_)
-
-nd = data.table(YEAR_ = rep(years, each = length(rs)),
-                initiation_doy = rep(rs, length(years)))
-
-dx = ds[, .(min_year_ = min(initiation_doy, na.rm = TRUE), max_year = max(initiation_doy, na.rm = TRUE)), by = YEAR_]
-
-nd = merge(nd, dx, all.x = TRUE, by = 'YEAR_')
-nd[, initiation_in_year := initiation_doy > min_year_ & initiation_doy < max_year]
-nd = nd[initiation_in_year == TRUE]
-
-
-pr = predict(fm, newdata = nd, type = 'response', se.fit = TRUE)
-pr = as.data.table(pr)
-pr = cbind(nd, pr)
-pr[, lwr := fit - se.fit]
-pr[, upr := fit + se.fit]
-
-
-ggplot(data = pr) +
-  geom_line(aes(x = initiation_doy, y = fit, group = YEAR_, 
-                color = YEAR_)) +
-  geom_ribbon(aes(x = initiation_doy, ymin = lwr, ymax = upr, fill = YEAR_, color = NULL), alpha = .15) 
-
-
-dx = ds[YEAR_ == '2017'| YEAR_ == '2018'|YEAR_ == '2019']
-
-fm = glm(anyEPY ~ initiation_doy + YEAR_, data = dx, family = binomial)
-summary(fm)
-
-rs = seq(min(dx$initiation_doy, na.rm = TRUE), 
-         max(dx$initiation_doy, na.rm = TRUE), 1)
-years = unique(dx$YEAR_)
-
-nd = data.table(YEAR_ = rep(years, each = length(rs)),
-                initiation_doy = rep(rs, length(years)))
-
-dx = ds[, .(min_year_ = min(initiation_doy, na.rm = TRUE), max_year = max(initiation_doy, na.rm = TRUE)), by = YEAR_]
-
-nd = merge(nd, dx, all.x = TRUE, by = 'YEAR_')
-nd[, initiation_in_year := initiation_doy > min_year_ & initiation_doy < max_year]
-nd = nd[initiation_in_year == TRUE]
-
-
-pr = predict(fm, newdata = nd, type = 'response', se.fit = TRUE)
-pr = as.data.table(pr)
-pr = cbind(nd, pr)
-pr[, lwr := fit - se.fit]
-pr[, upr := fit + se.fit]
-
-
-ggplot(data = pr) +
-  geom_line(aes(x = initiation_doy, y = fit, group = YEAR_, 
-                color = YEAR_)) +
-  geom_ribbon(aes(x = initiation_doy, ymin = lwr, ymax = upr, fill = YEAR_, color = NULL), alpha = .15) 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 # per egg
 fm = glm(cbind(Eggs_EPY, Eggs_no_EPY) ~ YEAR_, data = ds, family = binomial)
 
@@ -1132,7 +1003,7 @@ ggplot(dx) +
   theme_classic(base_size = 24)
 
 #------------------------------------------------------------------------------------------------------------------------
-# 3. Higher rates if EPP in second clutches?
+# 3. Higher rates of EPP in second clutches?
 #------------------------------------------------------------------------------------------------------------------------
 
 # Higher EPY frequency in known second clutches?
