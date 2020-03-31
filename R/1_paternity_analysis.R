@@ -12,6 +12,7 @@
 # 6. Paternity between years 
 # 7. Paternity polyandrous clutches & renesting 
 # 8. Paternity frequency within the season 
+# 9. Paternity frequency between years
 
 # Packages
 sapply( c('data.table', 'magrittr', 'sdb', 'ggplot2', 'sf', 'auksRuak', 'arm'),
@@ -751,10 +752,50 @@ ggplot(dsAll) +
   theme_classic(base_size = 24)
 
 
+#------------------------------------------------------------------------------------------------------------------------
+# 9. Paternity frequency between years
+#------------------------------------------------------------------------------------------------------------------------
+
+# seson length and number of nests based on 3 plots monitored in each year
+dss = d[plot %in% c('brw1', 'brw2', 'brw3'), .(mean_year_initiation = mean(initiation_doy, na.rm = TRUE),
+                                               q25_initiation = quantile(initiation_doy, probs = 0.25, na.rm = TRUE),
+                                               q75_initiation = quantile(initiation_doy, probs = 0.75, na.rm = TRUE),
+                                               N = .N), by = YEAR_]
+dss[, season_length := q75_initiation - q25_initiation]
+
+# merge to all data
+d = merge(d, dss, by = 'YEAR_', all.x = TRUE)
+
+# Effect of seson lenght or number of nests, only using Rick's data for season lenght and N nests, but EPY from all
+dx = d[!is.na(anyEPY)]
+setkey(dx, anyEPY, YEAR_)
+dx = dx[CJ(anyEPY, YEAR_, unique = TRUE), .(N_anyEPY = .N, N_nests = N[c(1)], season_length = season_length[c(1)]), by = .EACHI]
+
+dx = merge(dx[anyEPY == 1, .(YEAR_, N_anyEPY1 = N_anyEPY)], dx[anyEPY == 0, .(YEAR_, N_anyEPY0 = N_anyEPY, N_nests, season_length)], by = 'YEAR_')
+dx[, percentEPY := N_anyEPY1 / N_anyEPY0 * 100]
+
+# Higher EPY frequency in longer seasons?
+ggplot(data = dx) +
+  geom_point(aes(x = season_length, y = percentEPY)) +
+  geom_smooth(aes(x = season_length, y = percentEPY), method = 'lm', color = 'black') + 
+  theme_classic()
+
+fm = glm(cbind(N_anyEPY1, N_anyEPY0) ~ season_length, data = dx, family = binomial)
+
+summary(fm)
+plot(allEffects(fm))
 
 
+# Higher frequency of EPY depending on amount of nests?
+ggplot(data = dx) +
+  geom_point(aes(x = N_nests, y = percentEPY)) +
+  geom_smooth(aes(x = N_nests, y = percentEPY), method = 'lm', color = 'black') + 
+  theme_classic()
 
+fm = glm(cbind(N_anyEPY1, N_anyEPY0) ~ N_nests, data = dx, family = binomial)
 
+summary(fm)
+plot(allEffects(fm))
 
 
 
