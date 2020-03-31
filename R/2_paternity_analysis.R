@@ -33,14 +33,15 @@ st_transform_DT(d)
 point_over_poly_DT(d, poly = study_site, buffer = 10)
 setnames(d, 'poly_overlap', 'study_site')
 
+# merge with data without position
+ds[, study_site := NA]
+d = rbind(d, ds)
+
 # check data
 # ggplot() + 
 #   geom_sf(data = study_site, fill = 'grey95') +
 #   geom_point(data = d, aes(lon, lat, color = study_site))
 
-# merge with data without position
-ds[, study_site := NA]
-d = rbind(d, ds)
 
 # bring everything in the right format
 d[, nestID := paste0(nest, '_', substr(year_, 3,4 ))]
@@ -155,11 +156,6 @@ d[is.na(female_id), N_female_clutch := 1]
 d[, .N, by = .(year_, female_clutch)]
 d[, .N, by = .(female_clutch, external)]
 
-# feamles nesting on multiple years
-ds = unique(d[!is.na(female_id)], by = 'female_id_year')
-ds[, female_clutch_years := seq_len(.N), by = female_id]
-ds[, .N, by = .(female_clutch_years)]
-
 # males renesting
 d[, male_id_year := paste0(male_id, '_', substr(year_, 3,4 ))]
 d[, N_male_clutch := .N, by = male_id]
@@ -169,12 +165,6 @@ d[!is.na(male_id), N_male_clutch := max(male_clutch), by = male_id_year]
 d[is.na(male_id), N_male_clutch := 1]
 d[, .N, by = .(year_, male_clutch)]
 d[, .N, by = .(male_clutch, external)]
-
-# males nesting on multiple years
-ds = unique(d[!is.na(male_id)], by = 'male_id_year')
-ds[, male_clutch_years := seq_len(.N), by = male_id]
-ds[, .N, by = .(male_clutch_years)]
-ds[, .N, by = .(male_clutch_years, external)]
 
 # polyandrous clutches (second clutch with different partner)
 ID2c = d[female_clutch == 2]$female_id_year

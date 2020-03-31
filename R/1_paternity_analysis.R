@@ -9,7 +9,7 @@
 # 3. Rate of polyandry & renesting on plot
 
 # Packages
-sapply( c('data.table', 'magrittr', 'sdb', 'ggplot2', 'sf', 'auksRuak'),
+sapply( c('data.table', 'magrittr', 'sdb', 'ggplot2', 'sf', 'auksRuak', 'arm'),
         require, character.only = TRUE)
 
 # Projection
@@ -56,6 +56,7 @@ d[, initiation := as.POSIXct(initiation)]
 d[, initiation_y := as.POSIXct(format(initiation, format = '%m-%d %H:%M:%S'), format = '%m-%d %H:%M:%S')]
 d[, est_hatching_datetime := as.POSIXct(est_hatching_datetime)]
 d[, hatching_datetime := as.POSIXct(hatching_datetime)]
+setorder(d, year_, initiation)
 d[, YEAR_ := factor(year_)]
 
 # nests with paternity data
@@ -338,6 +339,7 @@ setorder(ds, -study_site, -year_)
 ds
 
 # N nests full clutch sampled
+ds = d[parentage == TRUE]
 ds[, full_clutch_sampled := clutch_size == N_parentage]
 ds[, .N, full_clutch_sampled]
 ds[full_clutch_sampled == TRUE]  %>% nrow
@@ -358,4 +360,106 @@ ds = d[N_female_clutch > 1 & !is.na(anyEPY)]
 ds[, N_nests_anyEPY := sum(anyEPY), by = female_id]
 ds[, .N, by = N_nests_anyEPY] # no female with multiple nests with EPY
 unique(ds$female_id) %>% length
+
+#------------------------------------------------------------------------------------------------------------------------
+# 5. Paternity between study site and external
+#------------------------------------------------------------------------------------------------------------------------
+
+# subset nests with parentage
+ds = d[parentage == TRUE]
+
+fm = glm(anyEPY ~ study_site, data = ds, family = binomial)
+summary(fm)
+
+# calculate credibility intervals
+nd = data.frame(study_site = c(TRUE, FALSE))
+nd = droplevels(nd)
+xmat = model.matrix(~study_site, data = nd)
+nd$fit = plogis(xmat %*% coef(fm))
+nsim = 5000
+bsim = sim(fm, n.sim = nsim)
+
+fitmat = matrix(ncol = nsim, nrow = nrow(nd))
+
+for(i in 1:nsim) fitmat[, i] = plogis(xmat %*% bsim@coef[i, ])
+nd$lower = apply(fitmat, 1, quantile, probs = 0.025)
+nd$upper = apply(fitmat, 1, quantile, probs = 0.975)
+
+# intervals study site vs. external
+fit_mean = fitmat[nd$study_site == TRUE, ] 
+quantile(fit_mean, probs = c(0.025, 0.5, 0.975))
+
+fit_mean = fitmat[nd$study_site == FALSE, ] 
+quantile(fit_mean, probs = c(0.025, 0.5, 0.975))
+
+# plot 
+ggplot(data = nd) +
+  geom_point(aes(x = study_site, y = fit*100)) +
+  geom_errorbar(aes(x = study_site, ymin = lower*100, ymax = upper*100), width = .1, position = position_dodge(width = 0.5)) +
+  labs(y = 'Percent nests with EPY', x = 'Study site') +
+  ylim(min = 0, max = 20) +
+  theme_classic(base_size = 16)
+
+#------------------------------------------------------------------------------------------------------------------------
+# 5. Paternity between years 
+#------------------------------------------------------------------------------------------------------------------------
+
+# reverse factor, otherwise intercept 2003 (no EPY)
+ds[, YEAR_ := factor(YEAR_, levels = rev(sort(unique(ds$YEAR_))))]
+
+fm = glm(anyEPY ~ YEAR_ + study_site, data = ds, family = binomial)
+summary(fm)
+
+# calculate credibility intervals
+nd0 = data.frame(YEAR_ = rep(unique(ds[study_site == TRUE]$YEAR_)), study_site = TRUE)
+nd1 = data.frame(YEAR_ = rep(unique(ds[study_site == FALSE]$YEAR_)), study_site = FALSE)
+nd = (rbind(nd0, nd1))
+xmat = model.matrix(~YEAR_ + study_site, data = nd)
+nd$fit = plogis(xmat %*% coef(fm))
+nsim = 5000
+bsim = sim(fm, n.sim = nsim)
+
+fitmat = matrix(ncol = nsim, nrow = nrow(nd))
+
+for(i in 1:nsim) fitmat[, i] = plogis(xmat %*% bsim@coef[i, ])
+nd$lower = apply(fitmat, 1, quantile, probs = 0.025)
+nd$upper = apply(fitmat, 1, quantile, probs = 0.975)
+
+# correct year with 0 EPY in sample
+qb2003 = qbeta(p = c(0.025, 0.5, 0.975), 1, 13)
+
+nd$fit[nd$YEAR_ == 2003] = qb2003[2]
+nd$lower[nd$YEAR_ == 2003] = qb2003[1]
+nd$upper[nd$YEAR_ == 2003] = qb2003[3]
+
+nd = data.table(nd)
+nd[, YEAR_ := factor(YEAR_, levels = sort(unique(ds$YEAR_)))]
+
+
+ggplot(data = nd) +
+  geom_point(aes(x = YEAR_, y = fit*100, group = as.factor(study_site), color = as.factor(study_site)), 
+             position = position_dodge(width = 0.5), size = 4) +
+  geom_errorbar(aes(x = YEAR_, ymin = lower*100, ymax = upper*100, group = as.factor(study_site)), 
+                width = .1, position = position_dodge(width = 0.5)) +
+  scale_color_manual(name = 'Study site', values = c('firebrick3', 'dodgerblue2')) +
+  theme_classic(base_size = 24) + labs(x = 'Year', y = 'Percent nests with EPY')
+
+# calculate estimate mean year
+fit_mean = fitmat[nd$study_site == TRUE, ] %>% colMeans
+quantile(fit_mean, probs = c(0.025, 0.5, 0.975))
+mean(fit_mean)
+
+fit_mean = fitmat[nd$study_site == FALSE, ] %>% colMeans
+quantile(fit_mean, probs = c(0.025, 0.5, 0.975))
+mean(fit_mean)
+
+
+
+
+
+
+
+
+
+
 
