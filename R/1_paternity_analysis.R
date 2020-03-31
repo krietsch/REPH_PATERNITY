@@ -58,6 +58,7 @@ d[, found_datetime := as.POSIXct(found_datetime)]
 d[, collected_datetime := as.POSIXct(collected_datetime)]
 d[, initiation := as.POSIXct(initiation)]
 d[, initiation_y := as.POSIXct(format(initiation, format = '%m-%d %H:%M:%S'), format = '%m-%d %H:%M:%S')]
+d[, initiation_doy := yday(initiation)]
 d[, est_hatching_datetime := as.POSIXct(est_hatching_datetime)]
 d[, hatching_datetime := as.POSIXct(hatching_datetime)]
 setorder(d, year_, initiation)
@@ -540,7 +541,7 @@ nd_off[, study_site := FALSE]
 nd = rbind(nd_on, nd_off)
 nd[, YEAR_ := factor(YEAR_, levels = sort(unique(ds$YEAR_)))]
 
-# plotfor both seperated models
+# plot for both seperated models
 ggplot(data = nd) +
   geom_point(aes(x = YEAR_, y = fit*100, group = as.factor(study_site), color = as.factor(study_site)), 
              position = position_dodge(width = 0.5), size = 4) +
@@ -559,7 +560,95 @@ ggplot(data = nd) +
 
 
 
+#------------------------------------------------------------------------------------------------------------------------
+# 8. Paternity frequency within the season 
+#------------------------------------------------------------------------------------------------------------------------
 
+# subset nests with parentage, exclude year without any EPY
+ds = d[parentage == TRUE & YEAR_ != '2003']
+ds[, YEAR_ := factor(YEAR_)]
+
+fm = glm(anyEPY ~ initiation_doy * YEAR_, data = ds, family = binomial)
+summary(fm)
+
+rs = seq(min(ds$initiation_doy, na.rm = TRUE), 
+         max(ds$initiation_doy, na.rm = TRUE), 1)
+years = unique(ds$YEAR_)
+nd = data.table(YEAR_ = rep(years, each = length(rs)),
+                initiation_doy = rep(rs, length(years)))
+dx = ds[, .(min_year_ = min(initiation_doy, na.rm = TRUE), max_year = max(initiation_doy, na.rm = TRUE)), by = YEAR_]
+nd = merge(nd, dx, all.x = TRUE, by = 'YEAR_')
+nd[, initiation_in_year := initiation_doy > min_year_ & initiation_doy < max_year]
+nd = nd[initiation_in_year == TRUE]
+xmat = model.matrix(~initiation_doy * YEAR_, data = nd)
+nd$fit = plogis(xmat %*% coef(fm))
+nsim = 5000
+bsim = sim(fm, n.sim = nsim)
+
+fitmat = matrix(ncol = nsim, nrow = nrow(nd))
+
+for(i in 1:nsim) fitmat[, i] = plogis(xmat %*% bsim@coef[i, ])
+nd$lower = apply(fitmat, 1, quantile, probs = 0.025)
+nd$upper = apply(fitmat, 1, quantile, probs = 0.975)
+
+ggplot(data = nd) +
+  geom_line(aes(x = initiation_doy, y = fit*100, group = YEAR_, color = YEAR_)) +
+  geom_ribbon(aes(x = initiation_doy, ymin = lower*100, ymax = upper*100, fill = YEAR_, color = NULL), alpha = .15) +
+  theme_classic(base_size = 24) + labs(x = 'Day of the year', y = 'Percent nests with EPY')
+
+nd1 = copy(data.table(nd))
+
+# load Dale et al. data
+dale = read.csv2('./DATA/Dale_EPP.csv') %>% data.table
+
+# adjust initiation date between populations
+diff_to_Dale = mean(dale$initiation_doy, na.rm = TRUE) - mean(ds$initiation_doy, na.rm = TRUE)
+dale[, initiation_doy := initiation_doy - diff_to_Dale]
+
+fm = glm(anyEPY ~ initiation_doy, data = dale, family = binomial)
+summary(fm)
+
+# calculate credibility intervals
+rs = seq(min(dale$initiation_doy, na.rm = TRUE), 
+         max(dale$initiation_doy, na.rm = TRUE), 1)
+nd = data.table(initiation_doy = rs)
+xmat = model.matrix(~initiation_doy, data = nd)
+nd$fit = plogis(xmat %*% coef(fm))
+nsim = 5000
+bsim = sim(fm, n.sim = nsim)
+
+fitmat = matrix(ncol = nsim, nrow = nrow(nd))
+
+for(i in 1:nsim) fitmat[, i] = plogis(xmat %*% bsim@coef[i, ])
+nd$lower = apply(fitmat, 1, quantile, probs = 0.025)
+nd$upper = apply(fitmat, 1, quantile, probs = 0.975)
+
+# plot of Dale data
+plot(nd$initiation_doy, nd$fit)
+ggplot(data = nd) +
+  geom_line(aes(x = initiation_doy, y = fit*100)) +
+  geom_ribbon(aes(x = initiation_doy, ymin = lower*100, ymax = upper*100), alpha = .15) +
+  theme_classic(base_size = 24) + labs(x = 'Year', y = 'Percent nests with EPY')
+
+nd2 = copy(data.table(nd))
+
+# merge data
+nd2[, YEAR_ := '1993 (Dale et al.)']
+
+nd = rbind(nd1[, .(YEAR_, initiation_doy, fit, lower, upper)], nd2[, .(YEAR_, initiation_doy, fit, lower, upper)])
+
+# plot of our data and Dale et al. together
+ggplot(data = nd) +
+  geom_line(aes(x = initiation_doy, y = fit*100, group = YEAR_, color = YEAR_)) +
+  geom_ribbon(aes(x = initiation_doy, ymin = lower*100, ymax = upper*100, fill = YEAR_, color = NULL), alpha = .15) +
+  theme_classic(base_size = 24) + labs(x = 'Day of the year', y = 'Percent nests with EPY')
+
+ggplot() +
+  geom_line(data = nd2, aes(x = initiation_doy, y = fit*100)) +
+  geom_ribbon(data = nd2, aes(x = initiation_doy, ymin = lower*100, ymax = upper*100), alpha = .15) +
+  geom_line(data = nd1, aes(x = initiation_doy, y = fit*100, group = YEAR_, color = YEAR_)) +
+  geom_ribbon(data = nd1, aes(x = initiation_doy, ymin = lower*100, ymax = upper*100, fill = YEAR_, color = NULL), alpha = .15) +
+  theme_classic(base_size = 24) + labs(x = 'Day of the year', y = 'Percent nests with EPY')
 
 
 
