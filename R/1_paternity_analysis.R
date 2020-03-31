@@ -191,20 +191,23 @@ ID2c = d[female_clutch == 2]$female_id_year
 dx = d[female_id_year %in% ID2c]
 
 dr = merge(dx[female_clutch == 1, .(year1 = year_, nestID1 = nestID, female_id_year, m1 = male_id, anyEPY1 = anyEPY, 
-                                    ss1 = study_site)], 
+                                    ss1 = study_site, initiation1 = initiation)], 
            dx[female_clutch == 2, .(year2 = year_, nestID2 = nestID, female_id_year, m2 = male_id, anyEPY2 = anyEPY, 
-                                    ss2 = study_site)], 
+                                    ss2 = study_site, initiation2 = initiation)],  
            by = 'female_id_year', all = TRUE)
 
 dr[, same_male := m1 == m2]
 dr[is.na(same_male), same_male := FALSE]
 dr[, both_study_site := ss1 == ss2]
+dr[, diff_initiation := difftime(initiation2, initiation1, units = 'days') %>% as.numeric]
 setorder(dr, female_id_year)
 dr
 
 # polyandrous females
 dr = dr[same_male == FALSE, .(female_id_year, polyandrous = TRUE, polyandry_study_site = both_study_site)]
 d = merge(d, dr, by = 'female_id_year', all.x = TRUE)
+
+setorder(d, year_, initiation)
 
 # males renesting
 d[, male_id_year := paste0(male_id, '_', substr(year_, 3,4 ))]
@@ -221,14 +224,15 @@ ID2c = d[male_clutch == 2]$male_id_year
 dx = d[male_id_year %in% ID2c]
 
 dr = merge(dx[male_clutch == 1, .(year1 = year_, nestID1 = nestID, male_id_year, f1 = female_id, anyEPY1 = anyEPY, 
-                                  mfc1 = male_clutch, ss1 = study_site)], 
+                                  mfc1 = male_clutch, ss1 = study_site, initiation1 = initiation)], 
            dx[male_clutch == 2, .(year2 = year_, nestID2 = nestID, male_id_year, f2 = female_id, anyEPY2 = anyEPY, 
-                                  fc2 = male_clutch, ss2 = study_site)], 
+                                  fc2 = male_clutch, ss2 = study_site, initiation2= initiation)],  
            by = 'male_id_year', all = TRUE)
 
 dr[, same_female := f1 == f2]
 dr[is.na(same_female), same_female := FALSE]
 dr[, both_study_site := ss1 == ss2]
+dr[, diff_initiation := difftime(initiation2, initiation1, units = 'days') %>% as.numeric]
 setorder(dr, male_id_year)
 dr
 
@@ -562,16 +566,20 @@ ID2c = d[female_clutch == 2]$female_id_year
 dx = d[female_id_year %in% ID2c]
 
 dr = merge(dx[female_clutch == 1, .(year1 = year_, nestID1 = nestID, female_id_year, m1 = male_id, anyEPY1 = anyEPY, 
-                                    ss1 = study_site)], 
+                                    ss1 = study_site, initiation1 = initiation)], 
            dx[female_clutch == 2, .(year2 = year_, nestID2 = nestID, female_id_year, m2 = male_id, anyEPY2 = anyEPY, 
-                                    ss2 = study_site)], 
+                                    ss2 = study_site, initiation2 = initiation)], 
            by = 'female_id_year', all = TRUE)
 
 dr[, same_male := m1 == m2]
 dr[is.na(same_male), same_male := FALSE]
 dr[, both_study_site := ss1 == ss2]
+dr[, diff_initiation := difftime(initiation2, initiation1, units = 'days') %>% as.numeric]
 setorder(dr, female_id_year)
 dr = dr[same_male == FALSE]
+
+ggplot(data = dr) +
+  geom_boxplot(aes(x = factor(anyEPY2), y = diff_initiation))
 
 dsp = dr[, .(type = 'polyandrous', N_nests = nrow(dr), EPY_1nest = sum(anyEPY1), EPY_2nest = sum(anyEPY2))]
 
@@ -580,16 +588,21 @@ ID2c = d[male_clutch == 2]$male_id_year
 dx = d[male_id_year %in% ID2c]
 
 dr = merge(dx[male_clutch == 1, .(year1 = year_, nestID1 = nestID, male_id_year, f1 = female_id, anyEPY1 = anyEPY, 
-                                  mfc1 = male_clutch, ss1 = study_site)], 
+                                  mfc1 = male_clutch, ss1 = study_site, initiation1 = initiation)], 
            dx[male_clutch == 2, .(year2 = year_, nestID2 = nestID, male_id_year, f2 = female_id, anyEPY2 = anyEPY, 
-                                  fc2 = male_clutch, ss2 = study_site)], 
+                                  fc2 = male_clutch, ss2 = study_site, initiation2 = initiation)], 
            by = 'male_id_year', all = TRUE)
 
 dr[, same_female := f1 == f2]
 dr[is.na(same_female), same_female := FALSE]
 dr[, both_study_site := ss1 == ss2]
+dr[, diff_initiation := difftime(initiation2, initiation1, units = 'days') %>% as.numeric]
 setorder(dr, male_id_year)
 dr = dr[!is.na(anyEPY1)]
+dr = dr[!is.na(anyEPY2)]
+
+ggplot(data = dr) +
+  geom_boxplot(aes(x = factor(anyEPY2), y = diff_initiation))
 
 dsr = dr[, .(type = 'renesting', N_nests = nrow(dr), EPY_1nest = sum(anyEPY1), EPY_2nest = sum(anyEPY2))]
 
