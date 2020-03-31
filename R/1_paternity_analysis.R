@@ -568,7 +568,7 @@ dx = d[female_id_year %in% ID2c]
 dr = merge(dx[female_clutch == 1, .(year1 = year_, nestID1 = nestID, female_id_year, m1 = male_id, anyEPY1 = anyEPY, 
                                     ss1 = study_site, initiation1 = initiation)], 
            dx[female_clutch == 2, .(year2 = year_, nestID2 = nestID, female_id_year, m2 = male_id, anyEPY2 = anyEPY, 
-                                    ss2 = study_site, initiation2 = initiation)], 
+                                    EPY_father2 = EPY_father, ss2 = study_site, initiation2 = initiation)], 
            by = 'female_id_year', all = TRUE)
 
 dr[, same_male := m1 == m2]
@@ -582,6 +582,14 @@ ggplot(data = dr) +
   geom_boxplot(aes(x = factor(anyEPY2), y = diff_initiation))
 
 dsp = dr[, .(type = 'polyandrous', N_nests = nrow(dr), EPY_1nest = sum(anyEPY1), EPY_2nest = sum(anyEPY2))]
+
+# sperm storage?
+ds = dr[anyEPY2 == TRUE]
+ds[, sperm_storage := m1 == EPY_father2]
+ds[, .N, sperm_storage]
+
+# third male was already incubating at this time
+d[male_id_year == '270170235_19', .(initiation, clutch_size, nest_state_date)]
 
 # males renesting with same or different partner
 ID2c = d[male_clutch == 2]$male_id_year
