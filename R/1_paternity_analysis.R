@@ -7,6 +7,10 @@
 # 1. Captures on and off plot
 # 2. Incubation length & initiation date method
 # 3. Rate of polyandry & renesting on plot
+# 4. Paternity data
+# 5. Paternity between study site and external
+# 6. Paternity between years 
+# 7. Paternity first and second clutch
 
 # Packages
 sapply( c('data.table', 'magrittr', 'sdb', 'ggplot2', 'sf', 'auksRuak', 'arm'),
@@ -385,13 +389,6 @@ for(i in 1:nsim) fitmat[, i] = plogis(xmat %*% bsim@coef[i, ])
 nd$lower = apply(fitmat, 1, quantile, probs = 0.025)
 nd$upper = apply(fitmat, 1, quantile, probs = 0.975)
 
-# intervals study site vs. external
-fit_mean = fitmat[nd$study_site == TRUE, ] 
-quantile(fit_mean, probs = c(0.025, 0.5, 0.975))
-
-fit_mean = fitmat[nd$study_site == FALSE, ] 
-quantile(fit_mean, probs = c(0.025, 0.5, 0.975))
-
 # plot 
 ggplot(data = nd) +
   geom_point(aes(x = study_site, y = fit*100)) +
@@ -400,9 +397,19 @@ ggplot(data = nd) +
   ylim(min = 0, max = 20) +
   theme_classic(base_size = 16)
 
+# intervals study site vs. external
+fit_mean = fitmat[nd$study_site == TRUE, ] 
+quantile(fit_mean, probs = c(0.025, 0.5, 0.975))
+
+fit_mean = fitmat[nd$study_site == FALSE, ] 
+quantile(fit_mean, probs = c(0.025, 0.5, 0.975))
+
 #------------------------------------------------------------------------------------------------------------------------
-# 5. Paternity between years 
+# 6. Paternity between years 
 #------------------------------------------------------------------------------------------------------------------------
+
+# subset nests with parentage
+ds = d[parentage == TRUE]
 
 # reverse factor, otherwise intercept 2003 (no EPY)
 ds[, YEAR_ := factor(YEAR_, levels = rev(sort(unique(ds$YEAR_))))]
@@ -427,7 +434,6 @@ nd$upper = apply(fitmat, 1, quantile, probs = 0.975)
 
 # correct year with 0 EPY in sample
 qb2003 = qbeta(p = c(0.025, 0.5, 0.975), 1, 13)
-
 nd$fit[nd$YEAR_ == 2003] = qb2003[2]
 nd$lower[nd$YEAR_ == 2003] = qb2003[1]
 nd$upper[nd$YEAR_ == 2003] = qb2003[3]
@@ -452,6 +458,100 @@ mean(fit_mean)
 fit_mean = fitmat[nd$study_site == FALSE, ] %>% colMeans
 quantile(fit_mean, probs = c(0.025, 0.5, 0.975))
 mean(fit_mean)
+
+### differences if in seperate models?
+#------------------------------------------------------------------------------------------------------------------------
+
+# subset nests with parentage and study site
+ds = d[parentage == TRUE & study_site == TRUE]
+
+fm = glm(anyEPY ~ YEAR_, data = ds, family = binomial)
+summary(fm)
+
+# calculate credibility intervals
+nd = data.frame(YEAR_ = rep(unique(ds$YEAR_)))
+nd = droplevels(nd)
+xmat = model.matrix(~YEAR_, data = nd)
+nd$fit = plogis(xmat %*% coef(fm))
+nsim = 5000
+bsim = sim(fm, n.sim = nsim)
+
+fitmat = matrix(ncol = nsim, nrow = nrow(nd))
+
+for(i in 1:nsim) fitmat[, i] = plogis(xmat %*% bsim@coef[i, ])
+nd$lower = apply(fitmat, 1, quantile, probs = 0.025)
+nd$upper = apply(fitmat, 1, quantile, probs = 0.975)
+
+# plot 
+ggplot(data = nd) +
+  geom_point(aes(x = YEAR_, y = fit*100)) +
+  geom_errorbar(aes(x = YEAR_, ymin = lower*100, ymax = upper*100), width = .1, position = position_dodge(width = 0.5)) +
+  labs(y = 'Percent nests with EPY', x = 'Years') +
+  theme_classic(base_size = 16)
+
+# intervals external
+quantile(fitmat, probs = c(0.025, 0.5, 0.975))
+
+# copy for plot
+nd_on = copy(data.table(nd))
+
+# subset nests with parentage and external
+ds = d[parentage == TRUE & study_site == FALSE]
+
+fm = glm(anyEPY ~ YEAR_, data = ds, family = binomial)
+summary(fm)
+
+# calculate credibility intervals
+nd = data.frame(YEAR_ = rep(unique(ds$YEAR_)))
+nd = droplevels(nd)
+xmat = model.matrix(~YEAR_, data = nd)
+nd$fit = plogis(xmat %*% coef(fm))
+nsim = 5000
+bsim = sim(fm, n.sim = nsim)
+
+fitmat = matrix(ncol = nsim, nrow = nrow(nd))
+
+for(i in 1:nsim) fitmat[, i] = plogis(xmat %*% bsim@coef[i, ])
+nd$lower = apply(fitmat, 1, quantile, probs = 0.025)
+nd$upper = apply(fitmat, 1, quantile, probs = 0.975)
+
+# correct year with 0 EPY in sample
+qb2003 = qbeta(p = c(0.025, 0.5, 0.975), 1, 13)
+nd$fit[nd$YEAR_ == 2003] = qb2003[2]
+nd$lower[nd$YEAR_ == 2003] = qb2003[1]
+nd$upper[nd$YEAR_ == 2003] = qb2003[3]
+
+# plot 
+ggplot(data = nd) +
+  geom_point(aes(x = YEAR_, y = fit*100)) +
+  geom_errorbar(aes(x = YEAR_, ymin = lower*100, ymax = upper*100), width = .1, position = position_dodge(width = 0.5)) +
+  labs(y = 'Percent nests with EPY', x = 'Years') +
+  theme_classic(base_size = 16)
+
+# intervals external
+quantile(fitmat, probs = c(0.025, 0.5, 0.975))
+
+# copy for plot
+nd_off = copy(data.table(nd))
+
+# merge
+nd_on[, study_site := TRUE]
+nd_off[, study_site := FALSE]
+nd = rbind(nd_on, nd_off)
+nd[, YEAR_ := factor(YEAR_, levels = sort(unique(ds$YEAR_)))]
+
+# plotfor both seperated models
+ggplot(data = nd) +
+  geom_point(aes(x = YEAR_, y = fit*100, group = as.factor(study_site), color = as.factor(study_site)), 
+             position = position_dodge(width = 0.5), size = 4) +
+  geom_errorbar(aes(x = YEAR_, ymin = lower*100, ymax = upper*100, group = as.factor(study_site)), 
+                width = .1, position = position_dodge(width = 0.5)) +
+  scale_color_manual(name = 'Study site', values = c('firebrick3', 'dodgerblue2')) +
+  theme_classic(base_size = 24) + labs(x = 'Year', y = 'Percent nests with EPY')
+
+#------------------------------------------------------------------------------------------------------------------------
+# 7. Paternity first and second clutch
+#------------------------------------------------------------------------------------------------------------------------
 
 
 
