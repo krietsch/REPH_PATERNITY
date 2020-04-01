@@ -1,5 +1,5 @@
 #========================================================================================================================
-# Nest data summary
+# Paternity analysis
 #========================================================================================================================
 
 # Summary
@@ -743,7 +743,6 @@ ggplot(ds) +
   labs(x = '', y = 'Initiation date') +
   coord_flip() + facet_grid(year_ ~ .) +
   theme_classic(base_size = 24)
-
 
 ggplot(dsAll) +
   geom_boxplot(aes(parentage, initiation_y, color = parentage)) +
