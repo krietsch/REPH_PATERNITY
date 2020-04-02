@@ -4,14 +4,14 @@
 
 # Summary
 # 0. Prepare data for analysis
-# 1. 
+# 1. Known EPY fathers
+# 2. Breeding status and timing of EPY fathers
 
 # Anything know about EPP fathers?
 # - seen together?
 # - seen for how long?
 # - N interactions difference EPP females / EPP fathers
 # - copulation data? anything useful to say?
-
 
 # Packages
 sapply( c('data.table', 'magrittr', 'sdb', 'ggplot2', 'sf', 'auksRuak'),
@@ -96,7 +96,7 @@ d[, parentage := ifelse(!is.na(N_parentage), TRUE, FALSE)]
 d[, any_parentage_year := any(parentage == TRUE), by = year_]
 
 #------------------------------------------------------------------------------------------------------------------------
-# 1. What is known about the EPY fathers?
+# 1. Known EPY fathers
 #------------------------------------------------------------------------------------------------------------------------
 
 # double check N nests & eggs with EPY
@@ -120,14 +120,69 @@ dps[N_EPY > 1, .(nestID, EPY_father, IDfather_identified)]
 
 # How many EPY fathers identified?
 ds1 = dps[, .(N_EPY_eggs = .N), by = study_site]
-ds2 = dps[IDfather_identified == TRUE, .(N_EPY_father_identified = .N), by = study_site]
+ds2 = dps[IDfather_identified == TRUE, .(EPY_father_identified = .N), by = study_site]
 
-ds = merge(ds1, ds2, by = 'study_site')
-ds[, EPY_father_identified := paste0(round(N_EPY_father_identified / N_EPY_eggs * 100, 0), '% (', N_EPY_father_identified, '/', N_EPY_eggs, ')')]
-ds[, c('N_EPY_father_identified', 'N_EPY_eggs') := NULL]
+dss = merge(ds1, ds2, by = 'study_site')
+dss[, EPY_father_identified := paste0(round(EPY_father_identified / N_EPY_eggs * 100, 0), '% (', EPY_father_identified, '/', N_EPY_eggs, ')')]
+dss
+
+#------------------------------------------------------------------------------------------------------------------------
+# 2. Breeding status and timing of EPY fathers
+#------------------------------------------------------------------------------------------------------------------------
+
+# subset know EPY fathers
+ds = dps[IDfather_identified == TRUE, .(year_, nestID, IDmother, IDmother_year, IDfather, IDfather_year, study_site)]
+
+# merge with nests where EPY sired
+ds = merge(ds, d[nestID %in% ds$nestID, .(nestID, cuckold_male = male_id, initiation, clutch_size, 
+                                          complete, nest_state, nest_state_date)], by = 'nestID')
+
+# merge with nests of EPY_father
+ds = merge(ds, d[male_id_year %in% ds$IDfather_year, .(nestID_social = nestID, female_partner = female_id_year, initiation_soc = initiation, 
+                                                       clutch_size_soc = clutch_size, complete_soc = complete, nest_state_soc = nest_state, 
+                                                       nest_state_date_soc = nest_state_date, male_id_year)], 
+           by.x = 'IDfather_year', by.y = 'male_id_year', all = TRUE)
+
+setorder(ds, IDfather_year)
+
+# breeding
+dpu = unique(ds, by = 'IDfather_year')
+ds1 = dpu[!is.na(nestID_social), .(breeding = .N), by = study_site]
+dss = merge(dss, ds1, by = 'study_site')
+dss[, breeding := paste0(round(breeding / N_EPY_eggs * 100, 0), '% (', breeding, '/', N_EPY_eggs, ')')]
+
+# female was social female before?
+ds[!is.na(IDmother), same_female := female_partner == IDmother_year] 
+ds[same_female == TRUE, .(nestID, IDfather_year, IDmother, nestID_social, female_partner)]
+
+ds1 = ds[same_female == TRUE, .(social_female_before = .N), by = study_site]
+dss = merge(dss, ds1, by = 'study_site')
+dss[, social_female_before := paste0(round(social_female_before / N_EPY_eggs * 100, 0), '% (', social_female_before, '/', N_EPY_eggs, ')')]
+dss
+
+
+dss[, N_EPY_eggs := NULL]
+
+
+
+
+
+
+# timing of EPY nest
+ds[, while_initiation := initiation > initiation_soc & initiation < complete_soc]
+ds[, while_incubation := initiation > complete_soc & initiation < nest_state_date_soc]
+ds[, while_breeding   := initiation > initiation_soc & initiation < nest_state_date_soc]
+
+ds[, diff_EPY_to_social_nest := difftime(initiation, initiation_soc, units = 'days') %>% as.numeric]
+
+
+ds[, .(IDfather_year, initiation_soc, initiation, diff_EPY_to_social_nest, same_female)]
+
+
+
+hist(ds$diff_EPY_to_social_nest)
 
 ds
-
 
 
 
