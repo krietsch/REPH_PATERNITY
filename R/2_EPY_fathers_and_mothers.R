@@ -130,6 +130,10 @@ dss
 # 2. Breeding status and timing of EPY fathers
 #------------------------------------------------------------------------------------------------------------------------
 
+# any tagged EPY fathers?
+dc[ID %in% dps$IDfather & !is.na(gps_tag), .(year_, ID, gps_tag)]
+dc[ID %in% dps$IDmother & !is.na(gps_tag), .(year_, ID, gps_tag)]
+
 # subset know EPY fathers
 ds = dps[IDfather_identified == TRUE, .(year_, nestID, IDmother, IDmother_year, IDfather, IDfather_year, study_site)]
 
@@ -147,7 +151,7 @@ setorder(ds, IDfather_year)
 
 # breeding
 dpu = unique(ds, by = 'IDfather_year')
-ds1 = dpu[!is.na(nestID_social), .(breeding = .N), by = study_site]
+ds1 = dpu[!is.na(nestID), .(breeding = .N), by = study_site]
 dss = merge(dss, ds1, by = 'study_site')
 dss[, breeding := paste0(round(breeding / N_EPY_eggs * 100, 0), '% (', breeding, '/', N_EPY_eggs, ')')]
 
@@ -158,53 +162,30 @@ ds[same_female == TRUE, .(nestID, IDfather_year, IDmother, nestID_social, female
 ds1 = ds[same_female == TRUE, .(social_female_before = .N), by = study_site]
 dss = merge(dss, ds1, by = 'study_site')
 dss[, social_female_before := paste0(round(social_female_before / N_EPY_eggs * 100, 0), '% (', social_female_before, '/', N_EPY_eggs, ')')]
-dss
-
-
-dss[, N_EPY_eggs := NULL]
-
-
-
-
-
 
 # timing of EPY nest
+ds = ds[nestID_social != 'R320_19'] # second nest of the male (irrelevant for this analysis)
 ds[, while_initiation := initiation > initiation_soc & initiation < complete_soc]
 ds[, while_incubation := initiation > complete_soc & initiation < nest_state_date_soc]
 ds[, while_breeding   := initiation > initiation_soc & initiation < nest_state_date_soc]
-
 ds[, diff_EPY_to_social_nest := difftime(initiation, initiation_soc, units = 'days') %>% as.numeric]
 
-
-ds[, .(IDfather_year, initiation_soc, initiation, diff_EPY_to_social_nest, same_female)]
-
-
-
+ds[, .(IDfather_year, initiation_soc, nest_state_date_soc, nest_state_soc, initiation, diff_EPY_to_social_nest, 
+       same_female, while_initiation, while_incubation)]
 hist(ds$diff_EPY_to_social_nest)
 
-ds
+# female was not social female before?
+ds[is.na(same_female), same_female := FALSE] # can be excluded with initiation dates
+ds1 = ds[same_female == FALSE, .(not_social_female_before = .N), by = study_site]
+dss = merge(dss, ds1, by = 'study_site', all.x = TRUE)
+dss[is.na(dss)] = 0
+dss[, not_social_female_before := paste0(round(not_social_female_before / N_EPY_eggs * 100, 0), '% (', not_social_female_before, '/', N_EPY_eggs, ')')]
+
+dss[, N_EPY_eggs := NULL]
+dss
 
 
 
-
-
-dps = dp[EPY == 1 & !is.na(IDfather)]
-
-ds = dr[ID_year %in% dps$IDfather_year] 
-dss = unique(ds, by = 'ID_year')
-
-dps[!(IDfather %in% dss$ID)]
-# 241159604 male on Rick's plots (breeding)
-
-dss[any_nest_study_site == TRUE]
-# all known EPY fathers where breeding in the study site
-
-# any tagged EPY fathers?
-dc[ID %in% dps$IDfather & !is.na(gps_tag), .(year_, ID, gps_tag)]
-dc[ID %in% dps$IDmother & !is.na(gps_tag), .(year_, ID, gps_tag)]
-
-# timing of EPF in relation to own nest initiation
-dnEPP = d[male_id_year %in% dss$ID_year]
 
 #------------------------------------------------------------------------------------------------------------------------
 # 2. Map of nests with EPP
