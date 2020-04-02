@@ -115,12 +115,22 @@ dpu = unique(dps, by = 'nestID')
 dpu[, .N, by = N_EPY]
 
 # How many different EPY fathers?
+dps[N_EPY > 1, .(nestID, EPY_father, IDfather_identified)]
+# only one case known with two different fathers: R409_19
+
+# How many EPY fathers identified?
+ds1 = dps[, .(N_EPY_eggs = .N), by = study_site]
+ds2 = dps[IDfather_identified == TRUE, .(N_EPY_father_identified = .N), by = study_site]
+
+ds = merge(ds1, ds2, by = 'study_site')
+ds[, EPY_father_identified := paste0(round(N_EPY_father_identified / N_EPY_eggs * 100, 0), '% (', N_EPY_father_identified, '/', N_EPY_eggs, ')')]
+ds[, c('N_EPY_father_identified', 'N_EPY_eggs') := NULL]
+
+ds
 
 
 
 
-
-dps[, .N, by = .(IDfather_identified, external)]
 
 
 dps = dp[EPY == 1 & !is.na(IDfather)]
