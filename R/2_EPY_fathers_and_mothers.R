@@ -14,7 +14,7 @@
 
 
 # Packages
-sapply( c('data.table', 'magrittr', 'sdb', 'ggplot2', 'sf', 'auksRuak', 'arm'),
+sapply( c('data.table', 'magrittr', 'sdb', 'ggplot2', 'sf', 'auksRuak'),
         require, character.only = TRUE)
 
 # Projection
@@ -84,6 +84,10 @@ dps[, anyEPY := ifelse(EPY > 0, 1, 0)]
 dps[is.infinite(EPY_father), EPY_father := NA]
 dps[!is.na(EPY_father)] %>% nrow # known EPY fathers
 
+# assign study_site data
+dp[nestID %in% d[study_site == TRUE]$nestID, study_site := TRUE]
+dp[is.na(study_site), study_site := FALSE]
+
 # merge with nests
 d = merge(d, dps[, .(nestID, N_parentage = N, N_EPY = EPY, anyEPY, EPY_father)], by = 'nestID', all.x = TRUE)
 
@@ -92,9 +96,31 @@ d[, parentage := ifelse(!is.na(N_parentage), TRUE, FALSE)]
 d[, any_parentage_year := any(parentage == TRUE), by = year_]
 
 #------------------------------------------------------------------------------------------------------------------------
-# 1. 
+# 1. What is known about the EPY fathers?
 #------------------------------------------------------------------------------------------------------------------------
 
+# double check N nests & eggs with EPY
+dps = dp[EPY == 1]
+dps[, IDfather_identified := !is.na(IDfather)]
+
+# nests with EPY
+unique(dps$nestID) %>% length
+
+# eggs with EPY
+nrow(dps)
+
+# nests with multiple EPY
+dps[, N_EPY := .N, by = nestID]
+dpu = unique(dps, by = 'nestID')
+dpu[, .N, by = N_EPY]
+
+# How many different EPY fathers?
+
+
+
+
+
+dps[, .N, by = .(IDfather_identified, external)]
 
 
 dps = dp[EPY == 1 & !is.na(IDfather)]
@@ -113,7 +139,7 @@ dc[ID %in% dps$IDfather & !is.na(gps_tag), .(year_, ID, gps_tag)]
 dc[ID %in% dps$IDmother & !is.na(gps_tag), .(year_, ID, gps_tag)]
 
 # timing of EPF in relation to own nest initiation
-dnEPP = dn[male_id_year %in% dss$ID_year]
+dnEPP = d[male_id_year %in% dss$ID_year]
 
 #------------------------------------------------------------------------------------------------------------------------
 # 2. Map of nests with EPP

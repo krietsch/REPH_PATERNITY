@@ -755,6 +755,8 @@ ggplot(dsAll) +
 # 9. Paternity frequency between years
 #------------------------------------------------------------------------------------------------------------------------
 
+require(effects)
+
 # seson length and number of nests based on 3 plots monitored in each year
 dss = d[plot %in% c('brw1', 'brw2', 'brw3'), .(mean_year_initiation = mean(initiation_doy, na.rm = TRUE),
                                                q25_initiation = quantile(initiation_doy, probs = 0.25, na.rm = TRUE),
