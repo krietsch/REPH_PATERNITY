@@ -6,15 +6,10 @@
 # 0. Prepare data for analysis
 # 1. Known EPY fathers
 # 2. Breeding status and timing of EPY fathers
-
-# Anything know about EPP fathers?
-# - seen together?
-# - seen for how long?
-# - N interactions difference EPP females / EPP fathers
-# - copulation data? anything useful to say?
+# 3. Distance between EPY nest and social nest and maps
 
 # Packages
-sapply( c('data.table', 'magrittr', 'sdb', 'ggplot2', 'sf', 'auksRuak'),
+sapply( c('data.table', 'magrittr', 'sdb', 'ggplot2', 'sf', 'auksRuak', 'foreach'),
         require, character.only = TRUE)
 
 # Projection
@@ -36,6 +31,7 @@ DBI::dbDisconnect(con)
 ds = d[is.na(lon)] # seperate data without position
 d = d[!is.na(lon)]
 st_transform_DT(d)
+st_transform_DT(dr)
 
 # Assign locations in the study area 
 point_over_poly_DT(d, poly = study_site, buffer = 10)
@@ -139,12 +135,12 @@ ds = dps[IDfather_identified == TRUE, .(year_, nestID, IDmother, IDmother_year, 
 
 # merge with nests where EPY sired
 ds = merge(ds, d[nestID %in% ds$nestID, .(nestID, cuckold_male = male_id, initiation, clutch_size, 
-                                          complete, nest_state, nest_state_date)], by = 'nestID')
+                                          complete, nest_state, nest_state_date, lat, lon)], by = 'nestID')
 
 # merge with nests of EPY_father
 ds = merge(ds, d[male_id_year %in% ds$IDfather_year, .(nestID_social = nestID, female_partner = female_id_year, initiation_soc = initiation, 
                                                        clutch_size_soc = clutch_size, complete_soc = complete, nest_state_soc = nest_state, 
-                                                       nest_state_date_soc = nest_state_date, male_id_year)], 
+                                                       nest_state_date_soc = nest_state_date, lat_soc = lat, lon_soc = lon, male_id_year)], 
            by.x = 'IDfather_year', by.y = 'male_id_year', all = TRUE)
 
 setorder(ds, IDfather_year)
@@ -154,6 +150,9 @@ dpu = unique(ds, by = 'IDfather_year')
 ds1 = dpu[!is.na(nestID), .(breeding = .N), by = study_site]
 dss = merge(dss, ds1, by = 'study_site')
 dss[, breeding := paste0(round(breeding / N_EPY_eggs * 100, 0), '% (', breeding, '/', N_EPY_eggs, ')')]
+
+# other two males where breeding the year before
+d[male_id %in% dpu[is.na(nestID_social)]$IDfather]
 
 # female was social female before?
 ds[!is.na(IDmother), same_female := female_partner == IDmother_year] 
@@ -172,7 +171,14 @@ ds[, diff_EPY_to_social_nest := difftime(initiation, initiation_soc, units = 'da
 
 ds[, .(IDfather_year, initiation_soc, nest_state_date_soc, nest_state_soc, initiation, diff_EPY_to_social_nest, 
        same_female, while_initiation, while_incubation)]
-hist(ds$diff_EPY_to_social_nest)
+
+ggplot(data = ds) +
+  geom_histogram(aes(x = round(diff_EPY_to_social_nest, 0))) +
+  theme_classic(base_size = 18)
+
+mean(ds$diff_EPY_to_social_nest)
+min(ds$diff_EPY_to_social_nest)
+max(ds$diff_EPY_to_social_nest)
 
 # female was not social female before?
 ds[is.na(same_female), same_female := FALSE] # can be excluded with initiation dates
@@ -184,86 +190,70 @@ dss[, not_social_female_before := paste0(round(not_social_female_before / N_EPY_
 dss[, N_EPY_eggs := NULL]
 dss
 
-
-
-
 #------------------------------------------------------------------------------------------------------------------------
-# 2. Map of nests with EPP
+# 3. Distance between EPY nest and social nest and maps
 #------------------------------------------------------------------------------------------------------------------------
 
-setorder(dn, initiation)
+# calculate distance between nests
+ds[, dist_nests := sqrt(sum((c(lat, lon) - c(lat_soc, lon_soc))^2)) , by = 1:nrow(ds)]
+
+mean(ds$dist_nests)
+median(ds$dist_nests)
+min(ds$dist_nests)
+max(ds$dist_nests)
+
+setorder(d, initiation)
 
 # create base maps
-bm1 = create_bm(dn[study_site == TRUE], buffer = 500)
-bm2 = create_bm(dn, buffer = 500)
-bm3 = create_bm(dn[study_site == TRUE], buffer = 1000)
+bm1 = create_bm(d[study_site == TRUE], buffer = 500)
+bm2 = create_bm(d, buffer = 500)
+bm3 = create_bm(d[study_site == TRUE], buffer = 1000)
 
 
-# nests and secend nests within / between years
+# nests with EPY and without
 p = 
   bm1 +
-  geom_point(data = dn[external == 0], aes(lon, lat, color = as.character(anyEPY)), size = 2)
+  geom_point(data = d[external == 0], aes(lon, lat, color = as.character(anyEPY)), size = 2)
 p
 
+# only EPY nests
+p = 
+  bm1 +
+  geom_point(data = d[external == 0 & anyEPY == TRUE], aes(lon, lat), size = 2)
+p
 
 # map of sightings of female and EPP father with nests
-IDs = dss$ID_year
-i = dss$ID_year[2]
+IDs = dpu$IDfather_year
+IDs = dr[ID_year %in% IDs]$ID_year %>% unique # subset only males that where seen in the year of EPY
+# i = IDs[2]
 
 foreach(i = IDs) %do% {
   
-  dm = d[ID_year == i]
-  dmn = dn[male_id_year == i]
+  dm = dr[ID_year == i]
+  dmn = d[male_id_year == i]
   dpf = dp[IDfather_year == i & EPY == 1]$IDmother_year
-  dpfn = dn[female_id_year == dpf]
-  df = d[ID_year == dpf]
+  dpfn = d[female_id_year == dpf & anyEPY == TRUE]
+  df = dr[ID_year == dpf]
   
-  dextent = rbind(dm, df)
+  dextent_r = rbind(dm, df)
+  dextent_n = rbind(dmn, dpfn)
+  dextent = rbind(dextent_r[, .(lat, lon)], dextent_n[, .(lat, lon)])
   
-  bm = create_bm(dextent, buffer= 200)
+  bm = create_bm(dextent, buffer = 200)
   
   p =
     bm +
-    geom_point(data = dmn, aes(lon, lat), color = 'blue', alpha = 0.5, size = 6) +
-    geom_point(data = dpfn, aes(lon, lat), color = 'red', alpha = 0.5, size = 4) +
-    geom_point(data = dm, aes(lon, lat), color = 'blue', size = 2) +
-    geom_point(data = df, aes(lon, lat), color = 'red', size = 2) +
+    geom_point(data = dmn, aes(lon, lat), color = 'dodgerblue4', size = 6, alpha = 0.5) +
+    geom_point(data = dpfn, aes(lon, lat), color = 'firebrick2', size = 4, alpha = 0.5) +
+    geom_point(data = dm, aes(lon, lat), color = 'dodgerblue4', size = 2, alpha = 0.5) +
+    geom_point(data = df, aes(lon, lat), color = 'firebrick2', size = 2, alpha = 0.5) +
     ggtitle(paste('EPY father ', i, ' and female ', dpf))
   
-  png(paste0('./REPORTS/EPP_FATHERS/', i,'.png'), width = 600, height = 600)
+  png(paste0('./REPORTS/EPY_nest_maps/', i,'.png'), width = 600, height = 600)
   print(p)
   dev.off()
   
 }
-
-
-# two males not seen in the year of EPP
-i = 270170094
-i = 270170262
-
-
-dm = d[ID == i]
-dmn = dn[male_id == i]
-dpf = dp[IDfather == i & EPY == 1]$IDmother_year
-dpfn = dn[female_id_year == dpf]
-df = d[ID_year == dpf]
-
-dextent = rbind(dm, df)
-bm = create_bm(dextent, buffer= 200)
-
-p = 
-  bm +
-  geom_point(data = dmn, aes(lon, lat), color = 'blue', alpha = 0.5, size = 6) +
-  geom_point(data = dpfn, aes(lon, lat), color = 'red', alpha = 0.5, size = 4) +
-  geom_point(data = dm, aes(lon, lat), color = 'blue', size = 2) +
-  geom_point(data = df, aes(lon, lat), color = 'red', size = 2) +
-  ggtitle(paste('EPY father (year before) ', i, ' and female ', dpf))
-
-
-png(paste0('./REPORTS/EPP_FATHERS/', i,'.png'), width = 600, height = 600)
-print(p)
-dev.off()
-
 
 
 
