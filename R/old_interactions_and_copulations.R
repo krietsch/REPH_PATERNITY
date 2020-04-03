@@ -1,7 +1,3 @@
-#========================================================================================================================
-# Interactions and copulations
-#========================================================================================================================
-
 # Summary
 # 1. Assign locations in the study area
 # 2. Data summary
@@ -15,11 +11,15 @@ PROJ = '+proj=laea +lat_0=90 +lon_0=-156.653428 +x_0=0 +y_0=0 +datum=WGS84 +unit
 
 # Data
 con = dbcon('jkrietsch', db = 'REPHatBARROW') 
-d  = dbq(con, 'select * FROM RESIGHTINGS')
+d = dbq(con, 'select * FROM RESIGHTINGS')
 dc = dbq(con, 'select * FROM CAPTURES')
 dn = dbq(con, 'select * FROM NESTS')
 dp = dbq(con, 'select * FROM PATERNITY')
 DBI::dbDisconnect(con)
+
+# load nest info by ID created in 1_nests_&_parentage
+load('./DATA/ID_nest_information.RData') 
+dnID[, any_nest := TRUE]
 
 # Change projection
 ds = dn[is.na(lon)] # seperate data without position
@@ -42,22 +42,9 @@ setnames(dn, 'poly_overlap', 'study_site')
 ds[, study_site := NA]
 dn = rbind(dn, ds)
 
-# datetime
-d[, datetime_ := as.POSIXct(datetime_)]
-d[, datetime_y := as.POSIXct(format(datetime_, format = '%m-%d %H:%M:%S'), format = '%m-%d %H:%M:%S')]
-d[, year_ := year(datetime_)]
-
-# nestID
-dn[, nestID := paste0(nest, '_', substr(year_, 3,4 ))]
-dp[, nestID := paste0(nest, '_', substr(year_, 3,4 ))]
-
-# ID_year
-d[, ID_year := paste0(ID, '_', substr(year_, 3,4 ))]
-dc[, ID_year := paste0(ID, '_', substr(year_, 3,4 ))]
-dn[!is.na(male_id), male_id_year := paste0(male_id, '_', substr(year_, 3,4 ))]
-dn[!is.na(female_id), female_id_year := paste0(female_id, '_', substr(year_, 3,4 ))]
-dp[!is.na(IDfather), IDfather_year := paste0(IDfather, '_', substr(year_, 3,4 ))]
-dp[!is.na(IDmother), IDmother_year := paste0(IDmother, '_', substr(year_, 3,4 ))]
+# dnID adjustmensts
+dn[, male_id_year := paste0(male_id, '_', substr(year_, 3,4 ))]
+dn[, female_id_year := paste0(female_id, '_', substr(year_, 3,4 ))]
 
 # table with pairs with nest
 dnp1 = dn[!is.na(male_id) & !is.na(female_id), .(ID1 = male_id_year, ID2 = female_id_year)]
@@ -66,25 +53,37 @@ dnp = rbind(dnp1, dnp2)
 dnp[, nest_together := 1]
 dnp = unique(dnp, by = c('ID1', 'ID2'))
 
+# datetime
+d[, datetime_ := anytime(datetime_)]
+d[, datetime_y := as.POSIXct(format(datetime_, format = '%m-%d %H:%M:%S'), format = '%m-%d %H:%M:%S')]
+d[, year_ := year(datetime_)]
+
+# assign categories of interest
+d[, ID_year := paste0(ID, '_', substr(year_, 3,4 ))]
+
 # individuals seen at least once in study site
-d[, seen_in_study_site := any(study_site == TRUE), by = ID_year]
+d[, seen_in_study_site := any(study_site == TRUE), by = .(year_, sex)]
+
+# exclude NOBA and birds never seen in study site
+d = d[!is.na(ID)]
+d = d[seen_in_study_site == TRUE]
 
 # first and last seen &  tenure time
-d[!is.na(ID), first_obs := min(datetime_, na.rm = TRUE), by = ID_year]
-d[!is.na(ID), last_obs  := max(datetime_, na.rm = TRUE), by = ID_year]
-d[!is.na(ID), tenure := as.numeric(difftime(last_obs, first_obs, units = 'days')), by = ID_year]
+d[, first_obs := min(datetime_, na.rm = TRUE), by = .(year_, ID)]
+d[, last_obs  := max(datetime_, na.rm = TRUE), by = .(year_, ID)]
+d[, tenure := as.numeric(difftime(last_obs, first_obs, units = 'days')), by = .(year_, ID)]
 
 # number of observations per year
-d[!is.na(ID), N_obs := .N, by = ID_year]
+d[, N_obs := .N, by = .(year_, ID)]
 
 # number of copulations
 d[, .N, by = cop]
 d[, copAS := ifelse(!is.na(cop), 1, 0), by = 1:nrow(d)]
-d[!is.na(ID), N_cop := sum(copAS, na.rm = TRUE), by = ID_year]
+d[, N_cop := sum(copAS, na.rm = TRUE), by = .(year_, ID)]
 
 # on how many days seen?
-d[, date_ := as.POSIXct(format(datetime_, format = '%y-%m-%d'), format = '%y-%m-%d')]
-du = unique(d[!is.na(ID)], by = c('date_', 'ID_year'))
+d[, date_ := as.Date(datetime_)]
+du = unique(d, by = c('date_', 'ID_year'))
 du = du[, .(N_obs_days = .N), by = ID_year]
 d = merge(d, du[, .(ID_year, N_obs_days)], by = 'ID_year', all.x = TRUE)
 
@@ -92,18 +91,24 @@ d = merge(d, du[, .(ID_year, N_obs_days)], by = 'ID_year', all.x = TRUE)
 d[, N := .N, by = obs_id]
 
 # check if sex in resightings fits captures
-d_sex = unique(d[!is.na(ID)], by = 'ID')
+d_sex = unique(d, by = 'ID')
 dc_sex = unique(dc, by = 'ID')
 
 dx = merge(d_sex[, .(ID, sex)], dc_sex[, .(ID, sex_observed)], by = 'ID', all.x = TRUE)
 dx[, identical(sex, sex_observed)]
-dx[is.na(sex_observed)]
 
 drs = unique(d, by = 'ID_year')
 drs = drs[, .(ID_year, sex)]
 
+# dnID adjustmensts
+dnID[, ID_year := paste0(ID, '_', substr(year_, 3,4 ))]
+dnID[, pID_year := paste0(pID, '_', substr(year_, 3,4 ))]
+
 # females that had EPY in a clutch
-dpm = dp[, anyEPY := any(EPY == 1), nestID] %>% unique(., by = 'IDmother_year')
+dp[, nestID := paste0(nest, '_', substr(year_, 3,4 ))]
+dp[, IDfather_year := paste0(IDfather, '_', substr(year_, 3,4 ))]
+dp[, IDmother_year := paste0(IDmother, '_', substr(year_, 3,4 ))]
+dpm = dp[, anyEPY := any(EPY == 1), nestID] %>% unique(., by = 'IDmother')
 dpm = dpm[, .(year_, IDmother, anyEPY)]
 dpm[, ID_year := paste0(IDmother, '_', substr(year_, 3,4 ))]
 
@@ -121,6 +126,246 @@ dpEPY = unique(dpEPY, by = c('ID1', 'ID2'))
 
 #------------------------------------------------------------------------------------------------------------------------
 # 1. Interactions
+#------------------------------------------------------------------------------------------------------------------------
+
+ds = d[, .(ID, ID_year, obs_id)]
+unique(ds$ID_year) %>% length
+
+# create matrix with observation ID_year by individual
+gbi = get_group_by_individual(ds[, .(ID_year, obs_id)], data_format = 'individuals')
+
+# calculate a network
+netw = get_network(gbi, data_format = 'GBI')
+
+# plot network
+pn = graph.adjacency(netw, mode = 'undirected',weighted = TRUE, diag = FALSE)
+plot(pn, vertex.label = NA, edge.width = 10*E(pn)$weight^2, vertex.size = 4, edge.color = 'black')
+
+# assign sex
+ID_netw = unique(ds$ID_year)
+dcn = drs[ID_year %in% ID_netw, .(ID_year, sex)]
+dcn = unique(dcn)
+dcn[, ID_year := as.character(ID_year)]
+
+ID_pn = data.table(ID_year = V(pn)$name)
+ID_pn[, order := 1:nrow(ID_pn)]
+ID_pn = merge(ID_pn, dcn, by = 'ID_year')
+setorder(ID_pn, order)
+
+V(pn)$sex = ID_pn$sex
+
+plot(pn, vertex.label = NA, edge.width = 10*E(pn)$weight^2, vertex.size = 4, edge.color = 'black',
+     vertex.color = c('red', 'blue')[1+(V(pn)$sex == 'M')])
+
+# point size by number of observations
+ds_N = ds[, .N, by = ID_year]
+ds_N[, ID := as.character(ID_year)]
+
+ID_pn = merge(ID_pn, ds_N, by = 'ID_year')
+setorder(ID_pn, order)
+
+V(pn)$size = as.numeric(ID_pn$N) %>% log
+
+plot(pn, vertex.label = NA, edge.width = 10*E(pn)$weight^2, vertex.size = V(pn)$size+2, edge.color = 'black',
+     vertex.color = c('red', 'blue')[1+(V(pn)$sex == 'M')])
+
+# point color by nest or not
+ID_pn = merge(ID_pn, dnID[, .(ID_year, any_nest, N_clutch)], by = 'ID_year', all.x = TRUE)
+ID_pn[is.na(any_nest), any_nest := FALSE]
+ID_pn[is.na(N_clutch), N_clutch := 1]
+setorder(ID_pn, order)
+
+V(pn)$any_nest = ID_pn$any_nest
+V(pn)$N_clutch = ID_pn$N_clutch
+
+plot(pn, vertex.label = NA, edge.width = 10*E(pn)$weight^2, vertex.size = V(pn)$size+2, edge.color = 'black',
+     vertex.color = c('red', 'green')[1+(V(pn)$any_nest == TRUE)])
+
+plot(pn, vertex.label = NA, edge.width = 10*E(pn)$weight^2, vertex.size = V(pn)$size+2, edge.color = 'black',
+     vertex.color = c('red', 'green')[1+(V(pn)$any_nest == TRUE)], vertex.shape = c('circle', 'square')[1+(V(pn)$sex == 'F')])
+
+plot(pn, vertex.label = NA, edge.width = 10*E(pn)$weight^2, vertex.size = V(pn)$size+2, edge.color = 'black',
+     vertex.color = c('red', 'green')[1+(V(pn)$any_nest == TRUE)], vertex.shape = c('circle', 'square')[1+(V(pn)$N_clutch == 2)])
+
+plot(pn, vertex.label = NA, edge.width = 10*E(pn)$weight^2, vertex.size = V(pn)$size+2, edge.color = 'black', edge.color = 'black',
+     vertex.color = c('red', 'blue')[1+(V(pn)$sex == 'M')], vertex.shape = c('circle', 'square')[1+(V(pn)$N_clutch == 2)])
+
+
+# pair-wise table
+dw = as.table(netw) %>% data.table
+setnames(dw, c('ID', 'ID2', 'association'))
+
+# exclude duplicated associations
+# dw = dw[ID < ID2]
+dw = dw[association != 0]
+
+# merge with nest data
+dw = merge(dw, dn[, .(male_id_year, female_id_year, pair1 = TRUE)], by.x = c('ID', 'ID2'), by.y = c('male_id_year', 'female_id_year'), all.x = TRUE)
+dw = merge(dw, dn[, .(male_id_year, female_id_year, pair2 = TRUE)], by.x = c('ID', 'ID2'), by.y = c('female_id_year', 'male_id_year'), all.x = TRUE)
+dw[pair1 == TRUE | pair2 == TRUE, pair := TRUE]
+dw[is.na(pair), pair := FALSE]
+dw[, pair1 := NULL]
+dw[, pair2 := NULL]
+
+# paired ID's
+dw[, any_pair := any(pair == TRUE), by = ID]
+dw[pair == TRUE, partner := 'nest_partner']
+dw[pair == FALSE & any_pair == TRUE, partner := 'nest_other_contacts']
+dw[is.na(partner), partner := 'unknown']
+
+# assign sex
+ID_netw = unique(dw$ID)
+dcn = drs[ID_year %in% ID_netw, .(ID_year, sex)]
+dcn = unique(dcn)
+dcn[, ID_year := as.character(ID_year)]
+
+dw = merge(dw, dcn[, .(ID_year, IDsex = sex)], by.x = 'ID', by.y = 'ID_year', all.x = TRUE)
+dw = merge(dw, dcn[, .(ID_year, ID2sex = sex)], by.x = 'ID2', by.y = 'ID_year', all.x = TRUE)
+
+# assign breeding
+dw = merge(dw, dnID[, .(ID_year, IDany_nest = any_nest, IDN_clutch = N_clutch)], by.x = 'ID', by.y = 'ID_year', all.x = TRUE)
+dw[is.na(IDany_nest), IDany_nest := FALSE]
+dw[is.na(IDN_clutch), IDN_clutch := FALSE]
+
+# assign females with any EPY or none
+dw = merge(dw, dpm[, .(ID_year, anyEPY)], by.x = 'ID', by.y = 'ID_year', all.x = TRUE)
+
+# assign males that sired EPY
+dw = merge(dw, dpf[, .(ID_year, siredEPY)], by.x = 'ID', by.y = 'ID_year', all.x = TRUE)
+
+# days a ID was seen
+dID = unique(d, by = 'ID_year')
+dw = merge(dw, dID[, .(ID_year, first_obs, last_obs, tenure, N_obs, N_obs_days)], by.x = 'ID', by.y = 'ID_year', all.x = TRUE)
+
+dw[, first_obs_y := as.POSIXct(format(first_obs, format = '%m-%d h:m:s'), format = '%m-%d h:m:s')]
+dw[, last_obs_y := as.POSIXct(format(last_obs, format = '%m-%d h:m:s'), format = '%m-%d h:m:s')]
+
+# number of ID's interacted with
+dw[, N_interactions := .N, by = ID]
+dw[, N_interactions_per_obs_day := N_interactions / N_obs_days]
+
+# same sex?
+dw[, same_sex := IDsex == ID2sex]
+
+
+ds = unique(dw, by = 'ID')
+ggplot(data = ds) +
+  geom_point(aes(tenure, N_interactions))
+
+ggplot(data = ds) +
+  geom_point(aes(N_obs_days, N_obs))
+
+ggplot(data = ds) +
+  geom_point(aes(N_interactions_per_obs_day, N_interactions, color = anyEPY))
+
+ggplot(data = ds) +
+  geom_boxplot(aes(x = anyEPY, y = N_interactions_per_obs_day))
+
+ggplot(data = ds) +
+  geom_boxplot(aes(x = anyEPY, y = N_obs))
+
+ggplot(data = ds) +
+  geom_boxplot(aes(IDany_nest, N_interactions_per_obs_day, color = IDsex))
+
+ggplot(data = ds[same_sex == FALSE]) +
+  geom_boxplot(aes(IDsex, N_interactions_per_obs_day, color = IDsex))
+
+fm = lm(N_interactions_per_obs_day ~ IDsex, data = ds)
+summary(fm)
+
+ds[same_sex == FALSE, .(mean_interactions_per_obs_day = mean(N_interactions_per_obs_day), 
+                        sd_interactions_per_obs_day = sd(N_interactions_per_obs_day)), by = IDsex]
+
+ds[same_sex == FALSE, .(mean_interactions_per_obs_day = mean(N_interactions_per_obs_day), 
+                        sd_interactions_per_obs_day = sd(N_interactions_per_obs_day)), by = anyEPY]
+
+ds[same_sex == FALSE, .(mean_interactions_per_obs_day = mean(N_interactions_per_obs_day), 
+                        sd_interactions_per_obs_day = sd(N_interactions_per_obs_day)), by = siredEPY]
+
+dx = ds[same_sex == FALSE, .N, by = .(N_interactions, IDsex)]
+setorder(dx, N_interactions) 
+
+p = 
+ggplot(data = dx) +
+  geom_bar(aes(x = N_interactions, y = N, group = IDsex, fill = IDsex), alpha = 0.6, size = 1.3, stat = "identity", position = 'dodge') +
+  scale_x_discrete(limits = c(1:10)) +
+  theme_classic(base_size = 24)
+p
+
+# png(paste0('./REPORTS/INTERACTIONS/N_interactionsn.png'), width = 900, height = 600)
+# p
+# dev.off()
+
+
+setorder(d, first_obs)
+lev = c(as.character(unique(d$ID)))
+d[, ID_ := factor(ID, levels = lev)]
+
+ggplot(data = d[N_obs > 30]) +
+  geom_point(aes(x = datetime_y, y = ID_))
+
+
+ggplot(data = d) +
+  geom_point(aes(x = N_obs_days, y = N_obs, color = sex))
+
+ggplot(data = d) +
+  geom_point(aes(x = N_obs_days, y = tenure, color = sex))
+
+
+
+
+
+
+
+ggplot(data = d) +
+  geom_point(aes(x = N_obs_days, y = N_obs, color = as.character(year_)))
+
+ggplot(data = ds) +
+  geom_point(aes(first_obs_y, N_interactions))
+
+
+
+ggplot(data = d) +
+  geom_density(aes(x = first_obs_y, color = year_))
+
+ggplot(data = ds) +
+  geom_density(aes(x = first_obs_y, color = tenure))
+
+ds[, long_tenure := tenure > median(tenure, na.rm = TRUE)]
+
+ggplot(data = ds) +
+  geom_density(aes(x = first_obs_y, color = long_tenure))
+
+
+dw[siredEPY == TRUE]
+
+dp[IDfather == 270170235 & EPY == 1]
+
+dw[ID == '273145109_19']
+
+
+ds = unique(dw, by = 'ID')
+
+ggplot(data = ds) +
+  geom_histogram(aes(N_interactions, fill = anyEPY))
+
+ggplot(data = ds) +
+  geom_histogram(aes(N_interactions, fill = siredEPY))
+
+ggplot(data = ds) +
+  geom_boxplot(aes(x = anyEPY, y = N_interactions))
+
+# plot association index pair vs. unknown
+ggplot() +
+  geom_violin(data = dw, aes(pair, association)) +
+  theme_classic(base_size = 24)
+
+ggplot() +
+  geom_violin(data = dw, aes(partner, association)) +
+  theme_classic(base_size = 24)
+
+#------------------------------------------------------------------------------------------------------------------------
+# 2. Interactions statistic
 #------------------------------------------------------------------------------------------------------------------------
 
 # split data in obs_id with only one individual
