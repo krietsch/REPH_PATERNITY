@@ -59,9 +59,21 @@ dn[!is.na(female_id), female_id_year := paste0(female_id, '_', substr(year_, 3,4
 dp[!is.na(IDfather), IDfather_year := paste0(IDfather, '_', substr(year_, 3,4 ))]
 dp[!is.na(IDmother), IDmother_year := paste0(IDmother, '_', substr(year_, 3,4 ))]
 
+# unique nest information by ID
+dm = dn[, .(year_, nestID, ID_year = male_id_year, study_site)]
+df = dn[, .(year_, nestID, ID_year = female_id_year, study_site)]
+
+dnID = rbind(dm, df)
+dnID = dnID[!is.na(ID_year) & year_ > 2000]
+
+# any nest in study site?
+dnID[, any_nest := TRUE]
+dnID[, any_nest_study_site := any(study_site == TRUE), by = ID_year]
+dnID = unique(dnID, by = 'ID_year')
+
 # table with pairs with nest
-dnp1 = dn[!is.na(male_id) & !is.na(female_id), .(ID1 = male_id_year, ID2 = female_id_year)]
-dnp2 = dnp1[, .(ID1 = ID2, ID2 = ID1)]
+dnp1 = dn[!is.na(male_id) & !is.na(female_id), .(ID1 = male_id_year, ID2 = female_id_year, nestID)]
+dnp2 = dnp1[, .(ID1 = ID2, ID2 = ID1, nestID)]
 dnp = rbind(dnp1, dnp2)
 dnp[, nest_together := 1]
 dnp = unique(dnp, by = c('ID1', 'ID2'))
@@ -88,6 +100,10 @@ du = unique(d[!is.na(ID)], by = c('date_', 'ID_year'))
 du = du[, .(N_obs_days = .N), by = ID_year]
 d = merge(d, du[, .(ID_year, N_obs_days)], by = 'ID_year', all.x = TRUE)
 
+# exclude NOBA and birds never seen in study site
+d = d[!is.na(ID)]
+d = d[seen_in_study_site == TRUE]
+
 # ID's per obs_id
 d[, N := .N, by = obs_id]
 
@@ -103,14 +119,15 @@ drs = unique(d, by = 'ID_year')
 drs = drs[, .(ID_year, sex)]
 
 # females that had EPY in a clutch
-dpm = dp[, anyEPY := any(EPY == 1), nestID] %>% unique(., by = 'IDmother_year')
-dpm = dpm[, .(year_, IDmother, anyEPY)]
-dpm[, ID_year := paste0(IDmother, '_', substr(year_, 3,4 ))]
+dpm = dp[, any_EPY := any(EPY == 1), IDmother_year] %>% unique(., by = 'IDmother_year')
+dpm = dpm[, .(year_, ID_year = IDmother_year, any_EPY)]
 
 # males that sired EPY
-dpf = dp[EPY == 1, .(year_, IDfather)]
-dpf[, ID_year := paste0(IDfather, '_', substr(year_, 3,4 ))]
-dpf[, siredEPY := 1]
+dpf = dp[, any_EPY := any(EPY == 1), IDfather_year] %>% unique(., by = 'IDfather_year')
+dpf = dpf[, .(year_, ID_year = IDfather_year, any_EPY)]
+
+dpmf = rbind(dpm, dpf)
+dpmf = dpmf[!is.na(ID_year)]
 
 # EPY together
 dpEPY1 = dp[EPY == 1 & !is.na(IDmother) & !is.na(IDfather), .(ID1 = IDfather_year, ID2 = IDmother_year)]
@@ -144,12 +161,17 @@ di = merge(di, d[, .(obs_id, ID_year, ID1sex = sex, ID1copAS = copAS, author, ye
                      datetime_y, date_, seen_in_study_site, N, N_obs, N_obs_days, N_cop)], 
            by.x = c('obs_id', 'ID1'), by.y = c('obs_id', 'ID_year'), all.x = TRUE)
 
-# any nest? any EPY?
-di = merge(di, dnID[, .(ID_year, any_nest, anyEPY)], by.x = 'ID1', by.y = 'ID_year', all.x = TRUE)
+# any nest? 
+di = merge(di, dnID[, .(ID_year, any_nest, any_nest_study_site)], by.x = 'ID1', by.y = 'ID_year', all.x = TRUE)
+di[is.na(any_nest), any_nest := FALSE]
+di[is.na(any_nest_study_site), any_nest_study_site := FALSE]
 
 # any nest together?
 di = merge(di, dnp, by = c('ID1', 'ID2'), all.x = TRUE)
 di[is.na(nest_together), nest_together := 0]
+
+# any EPY?
+di = merge(di, dpmf[, .(ID_year, any_EPY)], by.x = 'ID1', by.y = 'ID_year', all.x = TRUE)
 
 # EPY together?
 di = merge(di, dpEPY, by = c('ID1', 'ID2'), all.x = TRUE)
@@ -198,7 +220,7 @@ ggplot(data = ds) +
   facet_grid(.~year_)
 
 ggplot(data = ds) +
-  geom_density(aes(datetime_y, color = as.character(anyEPY))) +
+  geom_density(aes(datetime_y, color = as.character(any_EPY))) +
   theme_classic() + 
   facet_grid(.~year_)
 
@@ -281,9 +303,9 @@ sapply( c('lme4', 'effects', 'multcomp', 'glmmTMB'),
         require, character.only = TRUE)
 
 ds = unique(di, by = c('ID1', 'ID2'))
-ds[, .N, anyEPY]
+ds[, .N, any_EPY]
 
-fm = glmmTMB(interaction_ ~ anyEPY + (1 | year_) +  (1 | ID1) + (1 | nest_together), data = di, family = binomial)
+fm = glmmTMB(interaction_ ~ any_EPY + (1 | year_) +  (1 | ID1) + (1 | nest_together), data = di, family = binomial)
 
 summary(fm)
 plot(allEffects(fm))
@@ -361,22 +383,22 @@ load('./DATA/ID_nest_information.RData') # load nest info by ID created in 1_nes
 dnID[, any_nest := TRUE]
 dnID[, ID_year := paste0(ID, '_', substr(year_, 3, 4))]
 
-ID_pn = merge(ID_pn, dnID[, .(ID_year, any_nest, N_clutch, anyEPY)], by = 'ID_year', all.x = TRUE)
+ID_pn = merge(ID_pn, dnID[, .(ID_year, any_nest, N_clutch, any_EPY)], by = 'ID_year', all.x = TRUE)
 ID_pn[is.na(any_nest), any_nest := FALSE]
 ID_pn[is.na(N_clutch), N_clutch := 1]
-ID_pn[is.na(anyEPY), anyEPY := NA]
+ID_pn[is.na(any_EPY), any_EPY := NA]
 setorder(ID_pn, order)
 
 V(pn)$any_nest = ID_pn$any_nest
 V(pn)$N_clutch = ID_pn$N_clutch
-V(pn)$anyEPY = ID_pn$anyEPY
+V(pn)$any_EPY = ID_pn$any_EPY
 
 plot(pn, vertex.label = NA, edge.width = 10*E(pn)$weight^2, vertex.size = V(pn)$size+2, edge.color = 'black',
      vertex.color = c('red', 'green')[1+(V(pn)$any_nest == TRUE)])
 
 
 plot(pn, vertex.label = NA, edge.width = 10*E(pn)$weight^2, vertex.size = V(pn)$size+2, edge.color = 'black',
-     vertex.color = c('red', 'green')[1+(V(pn)$anyEPY == TRUE)], vertex.shape = c('circle', 'square')[1+(V(pn)$sex == 'F')])
+     vertex.color = c('red', 'green')[1+(V(pn)$any_EPY == TRUE)], vertex.shape = c('circle', 'square')[1+(V(pn)$sex == 'F')])
 
 
 
