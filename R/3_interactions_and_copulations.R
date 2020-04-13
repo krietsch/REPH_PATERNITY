@@ -60,8 +60,8 @@ dp[!is.na(IDfather), IDfather_year := paste0(IDfather, '_', substr(year_, 3,4 ))
 dp[!is.na(IDmother), IDmother_year := paste0(IDmother, '_', substr(year_, 3,4 ))]
 
 # unique nest information by ID
-dm = dn[, .(year_, nestID, ID_year = male_id_year, study_site)]
-df = dn[, .(year_, nestID, ID_year = female_id_year, study_site)]
+dm = dn[, .(year_, nestID, ID_year = male_id_year, study_site, initiation)]
+df = dn[, .(year_, nestID, ID_year = female_id_year, study_site, initiation)]
 
 dnID = rbind(dm, df)
 dnID = dnID[!is.na(ID_year) & year_ > 2000]
@@ -69,6 +69,7 @@ dnID = dnID[!is.na(ID_year) & year_ > 2000]
 # any nest in study site?
 dnID[, any_nest := TRUE]
 dnID[, any_nest_study_site := any(study_site == TRUE), by = ID_year]
+dnID[!is.na(ID_year), first_initiation := min(initiation, na.rm = TRUE), by = ID_year]
 dnID = unique(dnID, by = 'ID_year')
 
 # table with pairs with nest
@@ -158,11 +159,11 @@ di = merge(di, d[, .(obs_id, ID_year, ID2sex = sex, ID2copAS = copAS)],
            by.x = c('obs_id', 'ID2'), by.y = c('obs_id', 'ID_year'), all.x = TRUE)
 
 di = merge(di, d[, .(obs_id, ID_year, ID1sex = sex, ID1copAS = copAS, author, year_, datetime_, 
-                     datetime_y, date_, seen_in_study_site, N, N_obs, N_obs_days, N_cop)], 
+                     datetime_y, date_, lat, lon, seen_in_study_site, N, N_obs, N_obs_days, N_cop, first_obs, last_obs)], 
            by.x = c('obs_id', 'ID1'), by.y = c('obs_id', 'ID_year'), all.x = TRUE)
 
 # any nest? 
-di = merge(di, dnID[, .(ID_year, any_nest, any_nest_study_site)], by.x = 'ID1', by.y = 'ID_year', all.x = TRUE)
+di = merge(di, dnID[, .(ID_year, any_nest, any_nest_study_site, first_initiation)], by.x = 'ID1', by.y = 'ID_year', all.x = TRUE)
 di[is.na(any_nest), any_nest := FALSE]
 di[is.na(any_nest_study_site), any_nest_study_site := FALSE]
 
@@ -182,6 +183,98 @@ di[, interaction_ := ifelse(!is.na(ID2), 1, 0), by = 1:nrow(di)]
 di[, same_sex := ifelse(ID1sex == ID2sex, 1, 0), by = 1:nrow(di)]
 di[, copAS := ifelse(ID1copAS == 1 & ID2copAS == 1, 1, 0), by = 1:nrow(di)]
 di[, N_cop_ID := sum(copAS, na.rm = TRUE), by = ID1]
+
+# number of interactions
+di[, N_interactions := sum(interaction_, na.rm = TRUE), by = ID1]
+
+# number of unique interactions
+diu = unique(di, by = c('ID1', 'ID2'))
+diu[, N_interactions_unique := sum(interaction_, na.rm = TRUE), by = ID1]
+diu = unique(diu, by = 'ID1')
+di = merge(di, diu[, .(ID1, N_interactions_unique)], by = 'ID1', all.x = TRUE)
+
+# number of unique copulation partner
+diu = unique(di, by = c('ID1', 'ID2'))
+diu = diu[copAS == 1]
+diu[, N_copAS_unique := sum(copAS, na.rm = TRUE), by = ID1]
+diu = unique(diu, by = 'ID1')
+di = merge(di, diu[, .(ID1, N_copAS_unique)], by = 'ID1', all.x = TRUE)
+
+# first and last time seen together
+di[!is.na(ID1) & !is.na(ID2), first_obs_together := min(datetime_, na.rm = TRUE), by = .(ID1, ID2)]
+di[!is.na(ID1) & !is.na(ID2), last_obs_together  := max(datetime_, na.rm = TRUE), by = .(ID1, ID2)]
+di[!is.na(ID1) & !is.na(ID2), tenure_together := as.numeric(difftime(last_obs_together, first_obs_together, units = 'days')), by = .(ID1, ID2)]
+
+# first and last time seen after nest initation 
+di[any_nest == TRUE, first_obs_first_initiation := as.numeric(difftime(first_obs, first_initiation, units = 'days')), by = ID1]
+di[any_nest == TRUE, last_obs_first_initiation := as.numeric(difftime(last_obs, first_initiation, units = 'days')), by = ID1]
+
+
+
+
+diu = unique(di, by = 'ID1')
+
+diu[first_obs_first_initiation > 20]
+
+
+
+bm = create_bm(di[ID1 == '273145369_19']) 
+
+bm +
+  geom_point(data = di[ID1 == '273145369_19'], aes(lon, lat))
+
+
+ggplot(data = di[seen_in_study_site == TRUE]) +
+  geom_point(aes(lon, lat, color = as.character(nest_together)))
+
+ggplot(data = di[seen_in_study_site == TRUE & tenure_together > 1]) +
+  geom_point(aes(lon, lat, color = as.character(nest_together)))
+
+
+ggplot(data = diu[seen_in_study_site == TRUE]) +
+  geom_boxplot(aes(any_nest_study_site, first_obs_first_initiation))
+
+ggplot(data = diu[seen_in_study_site == TRUE]) +
+  geom_boxplot(aes(any_nest_study_site, last_obs_first_initiation, color = ID1sex))
+
+ggplot(data = diu[ID1sex == 'F']) +
+  geom_boxplot(aes(any_nest_study_site, first_obs_first_initiation, color = as.factor(year_)))
+
+ggplot(data = diu[ID1sex == 'F']) +
+  geom_boxplot(aes(any_nest_study_site, last_obs_first_initiation, color = as.factor(year_)))
+
+ggplot(data = diu[ID1sex == 'F']) +
+  geom_boxplot(aes(any_nest_study_site, initiation_y, color = as.factor(year_)))
+
+
+hist(diu[tenure_together > 1]$tenure_together)
+
+
+ggplot(data = diu) +
+  geom_boxplot(aes(any_nest, tenure_together))
+
+ggplot(data = diu) +
+  geom_boxplot(aes(as.character(nest_together), tenure_together))
+
+diu[, .N, by = nest_together]
+
+
+hist(di$N_obs)
+hist(di$N_obs_days)
+
+
+
+ggplot(data = diu) +
+  geom_boxplot(aes(any_EPY, N_interactions_unique))
+
+ggplot(data = diu) +
+  geom_boxplot(aes(any_nest, N_interactions_unique))
+
+ggplot(data = diu) +
+  geom_boxplot(aes(any_EPY, N_copAS_unique))
+
+ggplot(data = diu) +
+  geom_boxplot(aes(any_nest, N_copAS_unique))
 
 # distribution plots
 cdplot(as.factor(interaction_) ~ datetime_y, data = di)
