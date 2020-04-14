@@ -209,8 +209,14 @@ di[!is.na(ID1) & !is.na(ID2), tenure_together := as.numeric(difftime(last_obs_to
 di[any_nest == TRUE, first_obs_first_initiation := as.numeric(difftime(first_obs, first_initiation, units = 'days')), by = ID1]
 di[any_nest == TRUE, last_obs_first_initiation := as.numeric(difftime(last_obs, first_initiation, units = 'days')), by = ID1]
 
+# any other opposite sex met during time together?
+di[ ]
+
+ds = unique(di[nest_together == 1], by = c('ID1', 'ID2'))
+ds[, start_paired]
 
 
+di[interaction_ == 1, interaction_while_paired := any(datetime_ < first_obs_together )]
 
 diu = unique(di, by = 'ID1')
 
@@ -243,12 +249,19 @@ ggplot(data = diu[ID1sex == 'F']) +
 ggplot(data = diu[ID1sex == 'F']) +
   geom_boxplot(aes(any_nest_study_site, last_obs_first_initiation, color = as.factor(year_)))
 
-ggplot(data = diu[ID1sex == 'F']) +
-  geom_boxplot(aes(any_nest_study_site, initiation_y, color = as.factor(year_)))
+ggplot(data = diu) +
+  geom_boxplot(aes(factor(year_), first_obs_first_initiation, color = ID1sex))
+
+
+ggplot(data = diu[any_nest_study_site == TRUE]) +
+  geom_boxplot(aes(factor(year_), last_obs_first_initiation, color = ID1sex))
 
 
 hist(diu[tenure_together > 1]$tenure_together)
 
+diu[last_obs_first_initiation > 10 & ID1sex == 'F' & year_ == 2018, .(year_, ID1, last_obs_first_initiation)]
+
+di[last_obs_first_initiation > 20 & ID1sex == 'F' & year_ == 2017]
 
 ggplot(data = diu) +
   geom_boxplot(aes(any_nest, tenure_together))
