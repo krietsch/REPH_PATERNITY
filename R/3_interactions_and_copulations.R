@@ -71,6 +71,7 @@ dnID = dnID[!is.na(ID_year) & year_ > 2000]
 dnID[, any_nest := TRUE]
 dnID[, any_nest_study_site := any(study_site == TRUE), by = ID_year]
 dnID[!is.na(ID_year) & !is.na(initiation), first_initiation := min(initiation, na.rm = TRUE), by = ID_year]
+dnID[, N_clutches := .N, by = ID_year]
 dnID = unique(dnID, by = 'ID_year')
 
 # table with pairs with nest
@@ -80,6 +81,19 @@ dnp = rbind(dnp1, dnp2)
 dnp[, nest_together := 1]
 dnp[!is.na(initiation), first_initiation_together := min(initiation, na.rm = TRUE), by = .(ID1, ID2)]
 dnp = unique(dnp, by = c('ID1', 'ID2'))
+
+# how many nest partners?
+dnp[, N_partners := .N, by = ID1]
+dnp[, .N, by = N_partners]
+setorder(dnp, initiation)
+dnp[, partner := seq_len(.N), by = ID1]
+
+# first & second partner partner
+ds = dnp[partner == 1]
+dnp = merge(dnp, ds[, .(ID1, ID1_1st_partner = ID2)], by = 'ID1', all.x = TRUE)
+ds = dnp[partner == 2]
+dnp = merge(dnp, ds[, .(ID1, ID1_2nd_partner = ID2)], by = 'ID1', all.x = TRUE)
+dnp[, c('N_partners', 'partner') := NULL]
 
 # individuals seen at least once in study site
 d[, seen_in_study_site := any(study_site == TRUE), by = ID_year]
@@ -165,7 +179,7 @@ di = merge(di, d[, .(obs_id, ID_year, ID1sex = sex, ID1copAS = copAS, author, ye
            by.x = c('obs_id', 'ID1'), by.y = c('obs_id', 'ID_year'), all.x = TRUE)
 
 # any nest? 
-di = merge(di, dnID[, .(ID_year, any_nest, any_nest_study_site, first_initiation)], by.x = 'ID1', by.y = 'ID_year', all.x = TRUE)
+di = merge(di, dnID[, .(ID_year, any_nest, any_nest_study_site, first_initiation, N_clutches)], by.x = 'ID1', by.y = 'ID_year', all.x = TRUE)
 di[is.na(any_nest), any_nest := FALSE]
 di[is.na(any_nest_study_site), any_nest_study_site := FALSE]
 
@@ -223,12 +237,22 @@ di[nest_together == 1, last_obs_together_cor_initiation := dplyr::if_else(last_o
 di[!is.na(ID1) & !is.na(ID2), tenure_together_cor_initiation := as.numeric(difftime(last_obs_together_cor_initiation, 
                                                                                     first_obs_together_cor_initiation, units = 'days')), by = .(ID1, ID2)]
 
+# seen any other birds of opposite sex while tenure together? 
+ds = unique(di[ID2 == ID1_1st_partner], by = 'ID1')
+di = merge(di, ds[, .(ID1, first_obs_1st_partner = first_obs_together_cor_initiation, 
+                      last_obs_1st_partner = last_obs_together_cor_initiation)], by = 'ID1', all.x = TRUE)
 
-#  
-ggplot(data = di[nest_together == 1]) +
+di[, not_1st_partner_opp_sex := ]
+
+
+
+diu = unique(di, by = 'ID1')
+
+# tenure together 
+ggplot(data = diu[nest_together == 1]) +
   geom_boxplot(aes(factor(year_), tenure_together_cor_initiation))
 
-ggplot(data = di[nest_together == 1]) +
+ggplot(data = diu[nest_together == 1]) +
   geom_boxplot(aes(factor(year_), tenure_together))
 
 # any other opposite sex met during time together?
@@ -242,7 +266,7 @@ ds[, start_paired]
 
 di[interaction_ == 1, interaction_while_paired := any(datetime_ < first_obs_together )]
 
-diu = unique(di, by = 'ID1')
+
 
 diu[first_obs_first_initiation > 20]
 
@@ -275,6 +299,14 @@ ggplot(data = diu[ID1sex == 'F']) +
 
 ggplot(data = diu) +
   geom_boxplot(aes(factor(year_), first_obs_first_initiation, color = ID1sex))
+
+
+ggplot(data = diu[ID1sex == 'F']) +
+  geom_boxplot(aes(factor(year_), last_obs_first_initiation, color = factor(N_clutches)))
+
+
+diu[ID1sex == 'F' & last_obs_first_initiation > 10, .N, by = N_clutches]
+
 
 
 ggplot(data = diu[any_nest_study_site == TRUE]) +
