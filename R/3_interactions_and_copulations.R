@@ -242,11 +242,27 @@ ds = unique(di[ID2 == ID1_1st_partner], by = 'ID1')
 di = merge(di, ds[, .(ID1, first_obs_1st_partner = first_obs_together_cor_initiation, 
                       last_obs_1st_partner = last_obs_together_cor_initiation)], by = 'ID1', all.x = TRUE)
 
-di[, not_1st_partner_opp_sex := ]
+di[, paired_1st_partner := datetime_ >= first_obs_1st_partner & datetime_ <= last_obs_1st_partner]
+di[, not_1st_partner_opp_sex := same_sex == 0 & ID2 != ID1_1st_partner]
+di[, contact_other_than_1st_partner_while_paired := paired_1st_partner == TRUE & not_1st_partner_opp_sex == TRUE]
+di[, copulation_other_than_1st_partner_while_paired := paired_1st_partner == TRUE & not_1st_partner_opp_sex == TRUE & ID1copAS == 1]
+
+di[contact_other_than_1st_partner_while_paired == TRUE, .N, by = ID1]
+di[copulation_other_than_1st_partner_while_paired == TRUE, .N, by = ID1]
 
 
 
-diu = unique(di, by = 'ID1')
+
+
+
+
+di[contact_other_than_1st_partner_while_paired == TRUE & copulation_other_than_1st_partner_while_paired == FALSE]
+
+setorder(di, datetime_)
+
+di[ID1 == '273145091_19']
+
+ diu = unique(di, by = 'ID1')
 
 # tenure together 
 ggplot(data = diu[nest_together == 1]) +
