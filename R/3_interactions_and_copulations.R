@@ -46,6 +46,7 @@ dn = rbind(dn, ds)
 d[, datetime_ := as.POSIXct(datetime_)]
 d[, datetime_y := as.POSIXct(format(datetime_, format = '%m-%d %H:%M:%S'), format = '%m-%d %H:%M:%S')]
 d[, year_ := year(datetime_)]
+dn[, initiation := as.POSIXct(initiation)]
 
 # nestID
 dn[, nestID := paste0(nest, '_', substr(year_, 3,4 ))]
@@ -69,14 +70,15 @@ dnID = dnID[!is.na(ID_year) & year_ > 2000]
 # any nest in study site?
 dnID[, any_nest := TRUE]
 dnID[, any_nest_study_site := any(study_site == TRUE), by = ID_year]
-dnID[!is.na(ID_year), first_initiation := min(initiation, na.rm = TRUE), by = ID_year]
+dnID[!is.na(ID_year) & !is.na(initiation), first_initiation := min(initiation, na.rm = TRUE), by = ID_year]
 dnID = unique(dnID, by = 'ID_year')
 
 # table with pairs with nest
-dnp1 = dn[!is.na(male_id) & !is.na(female_id), .(ID1 = male_id_year, ID2 = female_id_year, nestID)]
-dnp2 = dnp1[, .(ID1 = ID2, ID2 = ID1, nestID)]
+dnp1 = dn[!is.na(male_id) & !is.na(female_id), .(ID1 = male_id_year, ID2 = female_id_year, nestID, initiation)]
+dnp2 = dnp1[, .(ID1 = ID2, ID2 = ID1, nestID, initiation)]
 dnp = rbind(dnp1, dnp2)
 dnp[, nest_together := 1]
+dnp[!is.na(initiation), first_initiation_together := min(initiation, na.rm = TRUE), by = .(ID1, ID2)]
 dnp = unique(dnp, by = c('ID1', 'ID2'))
 
 # individuals seen at least once in study site
@@ -209,8 +211,30 @@ di[!is.na(ID1) & !is.na(ID2), tenure_together := as.numeric(difftime(last_obs_to
 di[any_nest == TRUE, first_obs_first_initiation := as.numeric(difftime(first_obs, first_initiation, units = 'days')), by = ID1]
 di[any_nest == TRUE, last_obs_first_initiation := as.numeric(difftime(last_obs, first_initiation, units = 'days')), by = ID1]
 
+# first_paired assuming paired at least a day before initiation
+di[nest_together == 1, first_obs_together_cor_initiation := dplyr::if_else(first_obs_together < c(first_initiation_together - 86400), 
+                                                                           first_obs_together, c(first_initiation_together - 86400)), by = ID1] 
+
+# last_paired assuming paired at least 3 days after initiation (during egg laying)
+di[nest_together == 1, last_obs_together_cor_initiation := dplyr::if_else(last_obs_together > c(first_initiation_together + 3*86400), 
+                                                                          last_obs_together, c(first_initiation_together + 3*86400)), by = ID1]
+
+# tenure together using also initiation data
+di[!is.na(ID1) & !is.na(ID2), tenure_together_cor_initiation := as.numeric(difftime(last_obs_together_cor_initiation, 
+                                                                                    first_obs_together_cor_initiation, units = 'days')), by = .(ID1, ID2)]
+
+
+#  
+ggplot(data = di[nest_together == 1]) +
+  geom_boxplot(aes(factor(year_), tenure_together_cor_initiation))
+
+ggplot(data = di[nest_together == 1]) +
+  geom_boxplot(aes(factor(year_), tenure_together))
+
 # any other opposite sex met during time together?
-di[ ]
+
+
+di[1,]$first_initiation_together - 86400
 
 ds = unique(di[nest_together == 1], by = c('ID1', 'ID2'))
 ds[, start_paired]
