@@ -5,9 +5,9 @@ require(foreach)
 require(ggplot2)
 
 # define parameters
-GER_pop = 83729368 # source: https://www.worldometers.info/world-population/germany-population/ (17.4.2020)
-known_active_cases = 51846 # source: https://www.worldometers.info/coronavirus/ (17.4.2020)
-unknown_active_cases = 51846 # assume real active case number is twice as high
+GER_pop = 83738147 # source: https://www.worldometers.info/world-population/germany-population/ (28.4.2020)
+known_active_cases = 35477 # source: https://www.worldometers.info/coronavirus/ (17.4.2020)
+unknown_active_cases = 35477 # assume real active case number is twice as high
   
 x = rep(0, c(GER_pop - known_active_cases - unknown_active_cases))
 y = rep(1, unknown_active_cases)
