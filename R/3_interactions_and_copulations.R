@@ -254,8 +254,6 @@ di[copulation_other_than_1st_partner_while_paired == TRUE, .N, by = ID1]
 
 
 
-
-
 di[contact_other_than_1st_partner_while_paired == TRUE & copulation_other_than_1st_partner_while_paired == FALSE]
 
 setorder(di, datetime_)
@@ -347,7 +345,8 @@ diu[, .N, by = nest_together]
 hist(di$N_obs)
 hist(di$N_obs_days)
 
-
+hist(diu$N_interactions_unique)
+hist(diu$N_copAS_unique)
 
 ggplot(data = diu) +
   geom_boxplot(aes(any_EPY, N_interactions_unique))
@@ -487,6 +486,35 @@ fm = glmmTMB(interaction_ ~ any_EPY + (1 | year_) +  (1 | ID1) + (1 | nest_toget
 
 summary(fm)
 plot(allEffects(fm))
+
+#------------------------------------------------------------------------------------------------------------------------
+# 2. Plots by ID with interactions
+#------------------------------------------------------------------------------------------------------------------------
+
+# clutch compler
+dn[, nest_state_date := as.POSIXct(nest_state_date)]
+
+nIDs = dn[!is.na(male_id) & !is.na(female_id)]$nestID %>% unique
+
+i = 'R901_17'
+
+dsn = dn[nestID == i]
+
+dsm = di[ID1 == dsn$male_id_year]
+dsf = di[ID1 == dsn$female_id_year]
+
+dsn_ic = data.table(nestID = dsn$nestID,
+                    datetime_ = c(dsn$initiation, dsn$nest_state_date))
+
+ggplot() +
+  geom_line(data = dsn_ic, aes(x = datetime_, y = 1)) +
+  geom_point(data = dsm, aes(x = datetime_, y = 2), color = 'dodgerblue4') +
+  geom_point(data = dsm, aes(x = datetime_, y = 1.5, color = not_1st_partner_opp_sex)) +
+  geom_point(data = dsf, aes(x = datetime_, y = 3), color = 'firebrick2') +
+  geom_point(data = dsf, aes(x = datetime_, y = 2.5, color = not_1st_partner_opp_sex)) +
+  theme_classic(base_size = 18)
+
+
 
 
 
