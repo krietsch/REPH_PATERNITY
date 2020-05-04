@@ -257,6 +257,11 @@ di[copulation_other_than_1st_partner_while_paired == TRUE, .N, by = ID1]
 di[ID1copAS == 1 & ID2copAS == 1 & ID2 != ID1_1st_partner, copAS_not_1st_partner := TRUE]
 di[ID1copAS == 1 & ID2copAS == 1 & ID2 == ID1_2nd_partner, copAS_2nd_partner := TRUE]
 
+# timing of this copulation
+di[copAS_not_1st_partner == TRUE, copEPC_timing := difftime(datetime_, first_initiation, units = 'days') %>% as.numeric]
+di[copAS_not_1st_partner == TRUE, copEPC_first := min(copEPC_timing, na.rm = TRUE), by = .(ID1, ID2)]
+di[copAS_not_1st_partner == TRUE, copEPC_last := max(copEPC_timing, na.rm = TRUE), by = .(ID1, ID2)]
+
 # second partner?
 unique(di[copAS_not_1st_partner == TRUE, .(ID1, ID2, copAS_2nd_partner)], by = 'ID1')
 
@@ -338,7 +343,16 @@ dn = merge(dn, dn2, by = 'N', all.x = TRUE)
 dn = merge(dn, dn3, by = 'N', all.x = TRUE)
 dn
 
-# 
+# Extra-1st partner copulations timing
+
+ds = unique(di[!is.na(ID2)], by = c('ID1', 'ID2'))
+
+hist(ds[copAS_not_1st_partner == TRUE]$copEPC_first)
+hist(ds[copAS_not_1st_partner == TRUE]$copEPC_last)
+
+ds[copAS_not_1st_partner == TRUE & ID1copAS == 1 & ID2copAS == 1, .(ID1, ID1sex, ID2, datetime_, first_initiation, copEPC_timing, copEPC_first, copEPC_last)]
+
+
 
 
 
