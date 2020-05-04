@@ -184,8 +184,11 @@ di[is.na(any_nest), any_nest := FALSE]
 di[is.na(any_nest_study_site), any_nest_study_site := FALSE]
 
 # any nest together?
-di = merge(di, dnp, by = c('ID1', 'ID2'), all.x = TRUE)
+di = merge(di, dnp[, .(ID1, ID2, nestID, initiation, nest_together, first_initiation_together)], by = c('ID1', 'ID2'), all.x = TRUE)
 di[is.na(nest_together), nest_together := 0]
+
+# merge partner to all
+di = merge(di, dnp[, .(ID1, ID1_1st_partner, ID1_2nd_partner)], by = 'ID1', all.x = TRUE)
 
 # any EPY?
 di = merge(di, dpmf[, .(ID_year, any_EPY)], by.x = 'ID1', by.y = 'ID_year', all.x = TRUE)
@@ -250,6 +253,31 @@ di[, copulation_other_than_1st_partner_while_paired := paired_1st_partner == TRU
 di[contact_other_than_1st_partner_while_paired == TRUE, .N, by = ID1]
 di[copulation_other_than_1st_partner_while_paired == TRUE, .N, by = ID1]
 
+# copulation with other than first partner? 
+di[ID1copAS == 1 & ID2copAS == 1 & ID2 != ID1_1st_partner, copAS_not_1st_partner := TRUE]
+di[ID1copAS == 1 & ID2copAS == 1 & ID2 == ID1_2nd_partner, copAS_2nd_partner := TRUE]
+
+# second partner?
+unique(di[copAS_not_1st_partner == TRUE, .(ID1, ID2, copAS_2nd_partner)], by = 'ID1')
+
+# seen with anybody except first partner? 
+di[ID2 != ID1_1st_partner & same_sex == 0, seen_with_other_than_1st_partner := TRUE]
+di[ID2 == ID1_2nd_partner, seen_with_2nd_partner := TRUE]
+
+
+unique(di[seen_with_other_than_1st_partner == TRUE, .(ID1, ID2, seen_with_2nd_partner)], by = c('ID1', 'ID2'))
+
+
+
+
+
+
+
+
+
+
+
+
 #------------------------------------------------------------------------------------------------------------------------
 # 2. Interactions summary
 #------------------------------------------------------------------------------------------------------------------------
@@ -310,7 +338,7 @@ dn = merge(dn, dn2, by = 'N', all.x = TRUE)
 dn = merge(dn, dn3, by = 'N', all.x = TRUE)
 dn
 
-
+# 
 
 
 
