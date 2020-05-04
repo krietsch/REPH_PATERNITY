@@ -350,10 +350,11 @@ ds = unique(di[!is.na(ID2)], by = c('ID1', 'ID2'))
 hist(ds[copAS_not_1st_partner == TRUE]$copEPC_first)
 hist(ds[copAS_not_1st_partner == TRUE]$copEPC_last)
 
-ds[copAS_not_1st_partner == TRUE & ID1copAS == 1 & ID2copAS == 1, .(ID1, ID1sex, ID2, datetime_, first_initiation, copEPC_timing, copEPC_first, copEPC_last)]
+ds[copAS_not_1st_partner == TRUE & ID1copAS == 1 & ID2copAS == 1, .(ID1, ID1sex, ID2, ID1_2nd_partner, datetime_, 
+                                                                    first_initiation, copEPC_timing, copEPC_first, copEPC_last)]
 
 
-
+############## copulations clost to first initiation 
 
 
 di[contact_other_than_1st_partner_while_paired == TRUE & copulation_other_than_1st_partner_while_paired == FALSE]
