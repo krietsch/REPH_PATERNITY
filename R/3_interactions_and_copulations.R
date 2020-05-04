@@ -154,7 +154,7 @@ dpEPY[, EPY_together := 1]
 dpEPY = unique(dpEPY, by = c('ID1', 'ID2'))
 
 #------------------------------------------------------------------------------------------------------------------------
-# 1. Interactions
+# 1. Interactions anaylsis
 #------------------------------------------------------------------------------------------------------------------------
 
 # split data in obs_id with only one individual
@@ -250,9 +250,11 @@ di[, copulation_other_than_1st_partner_while_paired := paired_1st_partner == TRU
 di[contact_other_than_1st_partner_while_paired == TRUE, .N, by = ID1]
 di[copulation_other_than_1st_partner_while_paired == TRUE, .N, by = ID1]
 
+#------------------------------------------------------------------------------------------------------------------------
+# 2. Interactions summary
+#------------------------------------------------------------------------------------------------------------------------
 
-
-# unique interactions
+### unique interactions
 ds = unique(di[!is.na(ID2)], by = c('ID1', 'ID2'))
 
 # unique interactions
@@ -279,11 +281,9 @@ dn3
 # merge
 dn = merge(dn, dn2, by = 'N', all.x = TRUE)
 dn = merge(dn, dn3, by = 'N', all.x = TRUE)
-
 dn
 
-
-# unique copulations
+### unique copulations total
 ds = unique(di[ID1copAS == 1 & ID2copAS == 1 & !is.na(ID2)], by = c('ID1', 'ID2'))
 dss = ds[, .N, by = ID1]
 
@@ -291,11 +291,24 @@ dn = dss[, .(N_cop = .N), by = N]
 setorder(dn, N)
 dn
 
+# females 
+dss = ds[ID1sex == 'F', .N, by = ID1]
 
+dn2 = dss[, .(N_cop_F = .N), by = N]
+setorder(dn2, N)
+dn2
 
+# females 
+dss = ds[ID1sex == 'M', .N, by = ID1]
 
+dn3 = dss[, .(N_cop_M = .N), by = N]
+setorder(dn3, N)
+dn3
 
-
+# merge
+dn = merge(dn, dn2, by = 'N', all.x = TRUE)
+dn = merge(dn, dn3, by = 'N', all.x = TRUE)
+dn
 
 
 
