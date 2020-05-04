@@ -252,6 +252,53 @@ di[copulation_other_than_1st_partner_while_paired == TRUE, .N, by = ID1]
 
 
 
+# unique interactions
+ds = unique(di[!is.na(ID2)], by = c('ID1', 'ID2'))
+
+# unique interactions
+dss = ds[, .N, by = ID1]
+
+dn = dss[, .(N_int = .N), by = N]
+setorder(dn, N)
+dn
+
+# unique opposite sex interactions
+dss = ds[same_sex == 0, .N, by = ID1]
+
+dn2 = dss[, .(N_oppo_sex_int = .N), by = N]
+setorder(dn2, N)
+dn2
+
+# unique same sex interactions
+dss = ds[same_sex == 1, .N, by = ID1]
+
+dn3 = dss[, .(N_same_sex_int = .N), by = N]
+setorder(dn3, N)
+dn3
+
+# merge
+dn = merge(dn, dn2, by = 'N', all.x = TRUE)
+dn = merge(dn, dn3, by = 'N', all.x = TRUE)
+
+dn
+
+
+# unique copulations
+ds = unique(di[ID1copAS == 1 & ID2copAS == 1 & !is.na(ID2)], by = c('ID1', 'ID2'))
+dss = ds[, .N, by = ID1]
+
+dn = dss[, .(N_cop = .N), by = N]
+setorder(dn, N)
+dn
+
+
+
+
+
+
+
+
+
 
 
 di[contact_other_than_1st_partner_while_paired == TRUE & copulation_other_than_1st_partner_while_paired == FALSE]
