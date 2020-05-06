@@ -301,14 +301,6 @@ dsp[, EPY := paste0(round(N_anyEPY / N_parentage * 100, 0), '% (', N_anyEPY, '/'
 dsp[, c('N_parentage', 'N_anyEPY') := NULL]
 dss = merge(dss, dsp, by = 'year_')
 
-# add percentage of sampled nests on plot
-dsp = ds[!is.na(N_parentage), .(N_parentage = .N), by = year_]
-dspn = ds[, .(N_nests = .N), by = year_]
-dsp = merge(dsp, dspn, by = 'year_')
-dsp[, N_parentage := paste0(round(N_parentage / N_nests * 100, 0), '% (', N_parentage, '/', N_nests, ')')]
-dsp[, N_nests := NULL]
-dss = merge(dss, dsp, by = 'year_')
-
 dss
 
 #------------------------------------------------------------------------------------------------------------------------
@@ -320,6 +312,22 @@ dss
 # bm + geom_point(data = d[parentage == TRUE], aes(lon, lat, color = study_site))
 # bm + geom_point(data = d[parentage == TRUE], aes(lon, lat, color = YEAR_))
 # bm + geom_point(data = d[parentage == TRUE], aes(lon, lat, color = as.character(anyEPY)))
+
+# data sets and data available
+d[study_site == TRUE, data_type := 'study_site']
+d[parentage == TRUE & study_site == FALSE & external == 0, data_type := 'own_off_site']
+
+# plots with parentage data, total nests in years with data
+plot_R = d[parentage == TRUE & study_site == FALSE & external == 1 & plot %like% 'brw']$plot %>% unique
+year_R = d[parentage == TRUE & study_site == FALSE & external == 1 & plot %like% 'brw']$year_ %>% unique
+d[plot %in% plot_R & year_ %in% year_R, data_type := 'survey_plot']
+d[parentage == TRUE & external == 1 & !(plot %like% 'brw') & year_ %in% year_R, data_type := 'clutch_removal_exp']
+
+ds = d[!is.na(data_type), .(N_nests = .N), by =  data_type]
+ds2 = d[parentage == TRUE, .(N_parentage = .N), by =  data_type]
+ds = merge(ds, ds2, by = c('data_type'), all.x = TRUE)
+ds[, N_parentage := paste0(round(N_parentage / N_nests * 100, 0), '% (', N_parentage, '/', N_nests, ')')]
+ds
 
 # split in NARL study site and everything else
 ds = d[, .(N_nests = .N), by =  study_site]
