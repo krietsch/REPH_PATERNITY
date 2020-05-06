@@ -154,7 +154,7 @@ dpEPY[, EPY_together := 1]
 dpEPY = unique(dpEPY, by = c('ID1', 'ID2'))
 
 #------------------------------------------------------------------------------------------------------------------------
-# 1. Interactions
+# 1. Interactions anaylsis
 #------------------------------------------------------------------------------------------------------------------------
 
 # split data in obs_id with only one individual
@@ -184,8 +184,11 @@ di[is.na(any_nest), any_nest := FALSE]
 di[is.na(any_nest_study_site), any_nest_study_site := FALSE]
 
 # any nest together?
-di = merge(di, dnp, by = c('ID1', 'ID2'), all.x = TRUE)
+di = merge(di, dnp[, .(ID1, ID2, nestID, initiation, nest_together, first_initiation_together)], by = c('ID1', 'ID2'), all.x = TRUE)
 di[is.na(nest_together), nest_together := 0]
+
+# merge partner to all
+di = merge(di, dnp[, .(ID1, ID1_1st_partner, ID1_2nd_partner)], by = 'ID1', all.x = TRUE)
 
 # any EPY?
 di = merge(di, dpmf[, .(ID_year, any_EPY)], by.x = 'ID1', by.y = 'ID_year', all.x = TRUE)
@@ -250,8 +253,108 @@ di[, copulation_other_than_1st_partner_while_paired := paired_1st_partner == TRU
 di[contact_other_than_1st_partner_while_paired == TRUE, .N, by = ID1]
 di[copulation_other_than_1st_partner_while_paired == TRUE, .N, by = ID1]
 
+# copulation with other than first partner? 
+di[ID1copAS == 1 & ID2copAS == 1 & ID2 != ID1_1st_partner, copAS_not_1st_partner := TRUE]
+di[ID1copAS == 1 & ID2copAS == 1 & ID2 == ID1_2nd_partner, copAS_2nd_partner := TRUE]
+
+# timing of this copulation
+di[copAS_not_1st_partner == TRUE, copEPC_timing := difftime(datetime_, first_initiation, units = 'days') %>% as.numeric]
+di[copAS_not_1st_partner == TRUE, copEPC_first := min(copEPC_timing, na.rm = TRUE), by = .(ID1, ID2)]
+di[copAS_not_1st_partner == TRUE, copEPC_last := max(copEPC_timing, na.rm = TRUE), by = .(ID1, ID2)]
+
+# second partner?
+unique(di[copAS_not_1st_partner == TRUE, .(ID1, ID2, copAS_2nd_partner)], by = 'ID1')
+
+# seen with anybody except first partner? 
+di[ID2 != ID1_1st_partner & same_sex == 0, seen_with_other_than_1st_partner := TRUE]
+di[ID2 == ID1_2nd_partner, seen_with_2nd_partner := TRUE]
 
 
+unique(di[seen_with_other_than_1st_partner == TRUE, .(ID1, ID2, seen_with_2nd_partner)], by = c('ID1', 'ID2'))
+
+
+
+
+
+
+
+
+
+
+
+
+#------------------------------------------------------------------------------------------------------------------------
+# 2. Interactions summary
+#------------------------------------------------------------------------------------------------------------------------
+
+### unique interactions
+ds = unique(di[!is.na(ID2)], by = c('ID1', 'ID2'))
+
+# unique interactions
+dss = ds[, .N, by = ID1]
+
+dn = dss[, .(N_int = .N), by = N]
+setorder(dn, N)
+dn
+
+# unique opposite sex interactions
+dss = ds[same_sex == 0, .N, by = ID1]
+
+dn2 = dss[, .(N_oppo_sex_int = .N), by = N]
+setorder(dn2, N)
+dn2
+
+# unique same sex interactions
+dss = ds[same_sex == 1, .N, by = ID1]
+
+dn3 = dss[, .(N_same_sex_int = .N), by = N]
+setorder(dn3, N)
+dn3
+
+# merge
+dn = merge(dn, dn2, by = 'N', all.x = TRUE)
+dn = merge(dn, dn3, by = 'N', all.x = TRUE)
+dn
+
+### unique copulations total
+ds = unique(di[ID1copAS == 1 & ID2copAS == 1 & !is.na(ID2)], by = c('ID1', 'ID2'))
+dss = ds[, .N, by = ID1]
+
+dn = dss[, .(N_cop = .N), by = N]
+setorder(dn, N)
+dn
+
+# females 
+dss = ds[ID1sex == 'F', .N, by = ID1]
+
+dn2 = dss[, .(N_cop_F = .N), by = N]
+setorder(dn2, N)
+dn2
+
+# females 
+dss = ds[ID1sex == 'M', .N, by = ID1]
+
+dn3 = dss[, .(N_cop_M = .N), by = N]
+setorder(dn3, N)
+dn3
+
+# merge
+dn = merge(dn, dn2, by = 'N', all.x = TRUE)
+dn = merge(dn, dn3, by = 'N', all.x = TRUE)
+dn
+
+# Extra-1st partner copulations timing
+
+ds = unique(di[!is.na(ID2)], by = c('ID1', 'ID2'))
+
+hist(ds[copAS_not_1st_partner == TRUE]$copEPC_first)
+hist(ds[copAS_not_1st_partner == TRUE]$copEPC_last)
+
+ds[copAS_not_1st_partner == TRUE & ID1copAS == 1 & ID2copAS == 1, .(ID1, ID1sex, ID2, ID1_2nd_partner, datetime_, 
+                                                                    first_initiation, copEPC_timing, copEPC_first, copEPC_last)]
+
+
+############## copulations clost to first initiation 
 
 
 di[contact_other_than_1st_partner_while_paired == TRUE & copulation_other_than_1st_partner_while_paired == FALSE]
