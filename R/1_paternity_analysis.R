@@ -299,8 +299,16 @@ dspn = ds[!is.na(N_parentage) & anyEPY == TRUE, .(N_anyEPY = .N), by = year_]
 dsp = merge(dsp, dspn, by = 'year_')
 dsp[, EPY := paste0(round(N_anyEPY / N_parentage * 100, 0), '% (', N_anyEPY, '/', N_parentage, ')')]
 dsp[, c('N_parentage', 'N_anyEPY') := NULL]
-
 dss = merge(dss, dsp, by = 'year_')
+
+# add percentage of sampled nests on plot
+dsp = ds[!is.na(N_parentage), .(N_parentage = .N), by = year_]
+dspn = ds[, .(N_nests = .N), by = year_]
+dsp = merge(dsp, dspn, by = 'year_')
+dsp[, N_parentage := paste0(round(N_parentage / N_nests * 100, 0), '% (', N_parentage, '/', N_nests, ')')]
+dsp[, N_nests := NULL]
+dss = merge(dss, dsp, by = 'year_')
+
 dss
 
 #------------------------------------------------------------------------------------------------------------------------

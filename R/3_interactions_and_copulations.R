@@ -22,7 +22,7 @@ dp = dbq(con, 'select * FROM PATERNITY')
 DBI::dbDisconnect(con)
 
 # Change projection
-ds = dn[is.na(lon)] # seperate data without position
+ds = dn[is.na(lon)] # separate data without position
 dn = dn[!is.na(lon)]
 st_transform_DT(dn)
 st_transform_DT(d)
