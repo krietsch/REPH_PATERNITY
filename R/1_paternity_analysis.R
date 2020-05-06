@@ -307,12 +307,6 @@ dss
 # 4. Paternity data
 #------------------------------------------------------------------------------------------------------------------------
 
-# position of nests with parentage data
-# bm = create_bm(d)
-# bm + geom_point(data = d[parentage == TRUE], aes(lon, lat, color = study_site))
-# bm + geom_point(data = d[parentage == TRUE], aes(lon, lat, color = YEAR_))
-# bm + geom_point(data = d[parentage == TRUE], aes(lon, lat, color = as.character(anyEPY)))
-
 # data sets and data available
 d[study_site == TRUE, data_type := 'study_site']
 d[parentage == TRUE & study_site == FALSE & external == 0, data_type := 'own_off_site']
@@ -329,6 +323,13 @@ ds = merge(ds, ds2, by = c('data_type'), all.x = TRUE)
 ds[, N_parentage := paste0(round(N_parentage / N_nests * 100, 0), '% (', N_parentage, '/', N_nests, ')')]
 ds
 
+# position of nests with parentage data
+bm = create_bm(d)
+bm + geom_point(data = d[parentage == TRUE], aes(lon, lat, color = study_site))
+bm + geom_point(data = d[parentage == TRUE & !is.na(data_type)], aes(lon, lat, color = data_type))
+bm + geom_point(data = d[parentage == TRUE], aes(lon, lat, color = YEAR_))
+bm + geom_point(data = d[parentage == TRUE], aes(lon, lat, color = as.character(anyEPY)))
+
 # split in NARL study site and everything else
 ds = d[, .(N_nests = .N), by =  study_site]
 ds2 = d[parentage == TRUE, .(N_parentage = .N), by =  study_site]
@@ -343,7 +344,8 @@ ds[, EPY_nests := paste0(round(N_EPY / N_parentage * 100, 0), '% (', N_EPY, '/',
 ds[, EPY_eggs  := paste0(round(N_eggs_EPY / N_eggs * 100, 0), '% (', N_eggs_EPY, '/', N_eggs, ')')]
 ds[, c('N_parentage', 'N_EPY', 'N_eggs', 'N_eggs_EPY') := NULL]
 setorder(ds, -study_site)
-ds
+ds[, year_ := 'total']
+dt = copy(ds)
 
 # split in NARL study site and everything else by year
 ds = d[, .(N_nests = .N), by = .(year_, study_site)]
@@ -355,7 +357,7 @@ ds = merge(ds, ds3, by = c('year_', 'study_site'), all.x = TRUE)
 ds = merge(ds, ds4, by = c('year_', 'study_site'), all.x = TRUE)
 ds[is.na(ds)] = 0
 ds = ds[N_parentage != 0]
-ds[, EPY := paste0(round(N_EPY / N_parentage * 100, 0), '% (', N_EPY, '/', N_parentage, ')')]
+ds[, EPY_nests := paste0(round(N_EPY / N_parentage * 100, 0), '% (', N_EPY, '/', N_parentage, ')')]
 ds[, EPY_eggs  := paste0(round(N_eggs_EPY / N_eggs * 100, 0), '% (', N_eggs_EPY, '/', N_eggs, ')')]
 # mean
 ds[study_site == TRUE, N_EPY / N_parentage * 100]  %>% mean %>% round(., 0)
@@ -364,8 +366,20 @@ ds[study_site == TRUE, N_eggs_EPY / N_eggs * 100]  %>% mean %>% round(., 0)
 ds[study_site == FALSE, N_eggs_EPY / N_eggs * 100] %>% mean %>% round(., 0)
 
 ds[, c('N_parentage', 'N_EPY', 'N_eggs', 'N_eggs_EPY') := NULL]
-setorder(ds, -study_site, -year_)
+setorder(ds, -study_site, year_)
+
+# bind with total
+ds[, year_ := as.character(year_)]
+ds = rbind(ds, dt, use.names = TRUE)
+
+# data type
+ds[study_site == TRUE, data_type := 'study site']
+ds[study_site == FALSE, data_type := 'external']
+
+ds = ds[, .(year_, data_type, EPY_nests, EPY_eggs)]
 ds
+
+# openxlsx::write.xlsx(ds, './REPORTS/EPY_frequency/EPY_summary_table.xlsx')
 
 # N nests full clutch sampled
 ds = d[parentage == TRUE]
