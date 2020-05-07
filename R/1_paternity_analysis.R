@@ -411,6 +411,7 @@ unique(ds$female_id) %>% length
 # subset nests with parentage
 ds = d[parentage == TRUE]
 
+# by nests
 fm = glm(anyEPY ~ study_site, data = ds, family = binomial)
 summary(fm)
 
@@ -438,10 +439,44 @@ ggplot(data = nd) +
 
 # intervals study site vs. external
 fit_mean = fitmat[nd$study_site == TRUE, ] 
-quantile(fit_mean, probs = c(0.025, 0.5, 0.975))
+quantile(fit_mean, probs = c(0.025, 0.5, 0.975)) %>% round(., 3) * 100
 
 fit_mean = fitmat[nd$study_site == FALSE, ] 
-quantile(fit_mean, probs = c(0.025, 0.5, 0.975))
+quantile(fit_mean, probs = c(0.025, 0.5, 0.975)) %>% round(., 3) * 100
+
+# by eggs
+fm = glm(cbind(N_EPY, N_parentage) ~ study_site, data = ds, family = binomial)
+summary(fm)
+
+# calculate credibility intervals
+nd = data.frame(study_site = c(TRUE, FALSE))
+nd = droplevels(nd)
+xmat = model.matrix(~study_site, data = nd)
+nd$fit = plogis(xmat %*% coef(fm))
+nsim = 5000
+bsim = sim(fm, n.sim = nsim)
+
+fitmat = matrix(ncol = nsim, nrow = nrow(nd))
+
+for(i in 1:nsim) fitmat[, i] = plogis(xmat %*% bsim@coef[i, ])
+nd$lower = apply(fitmat, 1, quantile, probs = 0.025)
+nd$upper = apply(fitmat, 1, quantile, probs = 0.975)
+
+# plot 
+ggplot(data = nd) +
+  geom_point(aes(x = study_site, y = fit*100)) +
+  geom_errorbar(aes(x = study_site, ymin = lower*100, ymax = upper*100), width = .1, position = position_dodge(width = 0.5)) +
+  labs(y = 'Percent nests with EPY', x = 'Study site') +
+  ylim(min = 0, max = 20) +
+  theme_classic(base_size = 16)
+
+# intervals study site vs. external
+fit_mean = fitmat[nd$study_site == TRUE, ] 
+quantile(fit_mean, probs = c(0.025, 0.5, 0.975)) %>% round(., 3) * 100
+
+fit_mean = fitmat[nd$study_site == FALSE, ] 
+quantile(fit_mean, probs = c(0.025, 0.5, 0.975)) %>% round(., 3) * 100
+
 
 #------------------------------------------------------------------------------------------------------------------------
 # 6. Paternity between years 
