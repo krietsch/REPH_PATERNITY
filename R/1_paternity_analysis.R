@@ -615,6 +615,7 @@ nd = rbind(nd_on, nd_off)
 nd[, YEAR_ := factor(YEAR_, levels = sort(unique(ds$YEAR_)))]
 
 # plot for both seperated models
+p = 
 ggplot(data = nd) +
   geom_point(aes(x = YEAR_, y = fit*100, group = as.factor(study_site), color = as.factor(study_site)), 
              position = position_dodge(width = 0.5), size = 4) +
@@ -622,6 +623,12 @@ ggplot(data = nd) +
                 width = .1, position = position_dodge(width = 0.5)) +
   scale_color_manual(name = 'Study site', values = c('firebrick3', 'dodgerblue2')) +
   theme_classic(base_size = 24) + labs(x = 'Year', y = 'Percent nests with EPY')
+p
+
+png(paste0('./REPORTS/FIGURES/EPY_frequency_years.png'), width = 1200, height = 800)
+p
+dev.off()
+
 
 #------------------------------------------------------------------------------------------------------------------------
 # 7. Paternity polyandrous clutches & renesting 
@@ -779,20 +786,30 @@ nd2 = copy(data.table(nd))
 # merge data
 nd2[, YEAR_ := '1993 (Dale et al.)']
 
-nd = rbind(nd1[, .(YEAR_, initiation_doy, fit, lower, upper)], nd2[, .(YEAR_, initiation_doy, fit, lower, upper)])
+nd = rbind(nd2[, .(YEAR_, initiation_doy, fit, lower, upper)], nd1[, .(YEAR_, initiation_doy, fit, lower, upper)])
+
+# ggplot colors
+gg_color_hue <- function(n) {
+  hues = seq(15, 375, length = n + 1)
+  hcl(h = hues, l = 65, c = 100)[1:n]
+}
+
+cols = gg_color_hue(7)
 
 # plot of our data and Dale et al. together
+p = 
 ggplot(data = nd) +
   geom_line(aes(x = initiation_doy, y = fit*100, group = YEAR_, color = YEAR_)) +
   geom_ribbon(aes(x = initiation_doy, ymin = lower*100, ymax = upper*100, fill = YEAR_, color = NULL), alpha = .15) +
+  scale_color_manual(values = c('black', cols), name = 'Year') +
+  scale_fill_manual(values = c('black', cols), name = 'Year') + 
   theme_classic(base_size = 24) + labs(x = 'Day of the year', y = 'Percent nests with EPY')
+p
 
-ggplot() +
-  geom_line(data = nd2, aes(x = initiation_doy, y = fit*100)) +
-  geom_ribbon(data = nd2, aes(x = initiation_doy, ymin = lower*100, ymax = upper*100), alpha = .15) +
-  geom_line(data = nd1, aes(x = initiation_doy, y = fit*100, group = YEAR_, color = YEAR_)) +
-  geom_ribbon(data = nd1, aes(x = initiation_doy, ymin = lower*100, ymax = upper*100, fill = YEAR_, color = NULL), alpha = .15) +
-  theme_classic(base_size = 24) + labs(x = 'Day of the year', y = 'Percent nests with EPY')
+png(paste0('./REPORTS/FIGURES/EPY_frequency_nest_initiation.png'), width = 1200, height = 800)
+p
+dev.off()
+
 
 #------------------------------------------------------------------------------------------------------------------------
 ### Sample timing and EPY frequency
