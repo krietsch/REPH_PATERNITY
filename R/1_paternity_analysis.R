@@ -643,15 +643,26 @@ dr[, both_study_site := ss1 == ss2]
 dr[, diff_initiation := difftime(initiation2, initiation1, units = 'days') %>% as.numeric]
 setorder(dr, female_id_year)
 dr = dr[same_male == FALSE]
+dr[, sperm_storage := m1 == EPY_father2]
+
+dr[anyEPY2 == 1, .(female_id_year, m1, EPY_father2, initiation1, initiation2, diff_initiation)]
 
 ggplot(data = dr) +
   geom_boxplot(aes(x = factor(anyEPY2), y = diff_initiation))
+
+# difference in initiation dates
+dr[anyEPY2 == 0]$diff_initiation %>% median
+dr[anyEPY2 == 0]$diff_initiation %>% min
+dr[anyEPY2 == 0]$diff_initiation %>% max
+dr[sperm_storage == TRUE]$diff_initiation
+dr[sperm_storage == FALSE]$diff_initiation
+
+
 
 dsp = dr[, .(type = 'polyandrous', N_nests = nrow(dr), EPY_1nest = sum(anyEPY1), EPY_2nest = sum(anyEPY2))]
 
 # sperm storage?
 ds = dr[anyEPY2 == TRUE]
-ds[, sperm_storage := m1 == EPY_father2]
 ds[, .N, sperm_storage]
 
 # third male was already incubating at this time
