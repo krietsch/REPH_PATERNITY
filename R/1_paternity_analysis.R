@@ -63,6 +63,7 @@ d[, initiation_y := as.POSIXct(format(initiation, format = '%m-%d %H:%M:%S'), fo
 d[, initiation_doy := yday(initiation)]
 d[, est_hatching_datetime := as.POSIXct(est_hatching_datetime)]
 d[, hatching_datetime := as.POSIXct(hatching_datetime)]
+d[, nest_state_date := as.POSIXct(nest_state_date)]
 setorder(d, year_, initiation)
 d[, YEAR_ := factor(year_)]
 
@@ -665,7 +666,6 @@ dr[sperm_storage == TRUE]$diff_initiation
 dr[sperm_storage == FALSE]$diff_initiation
 
 
-
 dsp = dr[, .(type = 'polyandrous', N_nests = nrow(dr), EPY_1nest = sum(anyEPY1), EPY_2nest = sum(anyEPY2))]
 
 # sperm storage?
@@ -680,7 +680,7 @@ ID2c = d[male_clutch == 2]$male_id_year
 dx = d[male_id_year %in% ID2c]
 
 dr = merge(dx[male_clutch == 1, .(year1 = year_, nestID1 = nestID, male_id_year, f1 = female_id, anyEPY1 = anyEPY, 
-                                  mfc1 = male_clutch, ss1 = study_site, initiation1 = initiation)], 
+                                  mfc1 = male_clutch, ss1 = study_site, initiation1 = initiation, nest_state_date1 = nest_state_date)], 
            dx[male_clutch == 2, .(year2 = year_, nestID2 = nestID, male_id_year, f2 = female_id, anyEPY2 = anyEPY, 
                                   fc2 = male_clutch, ss2 = study_site, initiation2 = initiation)], 
            by = 'male_id_year', all = TRUE)
@@ -689,12 +689,37 @@ dr[, same_female := f1 == f2]
 dr[is.na(same_female), same_female := FALSE]
 dr[, both_study_site := ss1 == ss2]
 dr[, diff_initiation := difftime(initiation2, initiation1, units = 'days') %>% as.numeric]
-setorder(dr, male_id_year)
+dr[, diff_nest_state := difftime(initiation2, nest_state_date1, units = 'days') %>% as.numeric]
+setorder(dr, same_female)
 dr = dr[!is.na(anyEPY1)]
 dr = dr[!is.na(anyEPY2)]
 
 ggplot(data = dr) +
   geom_boxplot(aes(x = factor(anyEPY2), y = diff_initiation))
+
+ggplot(data = dr) +
+  geom_boxplot(aes(x = factor(same_female), y = diff_nest_state))
+
+# difference in initiation dates
+dr[anyEPY2 == 1]$diff_nest_state
+
+dr[anyEPY2 == 0]$diff_nest_state %>% length
+dr[anyEPY2 == 0]$diff_nest_state
+dr[anyEPY2 == 0]$diff_nest_state %>% median
+dr[anyEPY2 == 0]$diff_nest_state %>% min
+dr[anyEPY2 == 0]$diff_nest_state %>% max
+
+dr[same_female == TRUE]$diff_nest_state %>% length
+dr[same_female == TRUE]$diff_nest_state
+dr[same_female == TRUE]$diff_nest_state %>% median
+dr[same_female == TRUE]$diff_nest_state %>% min
+dr[same_female == TRUE]$diff_nest_state %>% max
+
+dr[same_female == FALSE]$diff_nest_state %>% length
+dr[same_female == FALSE]$diff_nest_state
+dr[same_female == FALSE]$diff_nest_state %>% median
+dr[same_female == FALSE]$diff_nest_state %>% min
+dr[same_female == FALSE]$diff_nest_state %>% max
 
 dsr = dr[, .(type = 'renesting', N_nests = nrow(dr), EPY_1nest = sum(anyEPY1), EPY_2nest = sum(anyEPY2))]
 
