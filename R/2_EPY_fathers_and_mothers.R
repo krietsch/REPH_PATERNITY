@@ -169,7 +169,8 @@ ds = ds[nestID_social != 'R320_19'] # second nest of the male (irrelevant for th
 ds[, while_initiation := initiation > initiation_soc & initiation < complete_soc]
 ds[, while_incubation := initiation > complete_soc & initiation < nest_state_date_soc]
 ds[, while_breeding   := initiation > initiation_soc & initiation < nest_state_date_soc]
-ds[, diff_EPY_to_social_nest := difftime(initiation, initiation_soc, units = 'days') %>% as.numeric]
+ds[, diff_EPY_to_social_nest := difftime(initiation_soc, initiation, units = 'days') %>% as.numeric]
+ds[, diff_EPY_to_social_nest_complete := difftime(complete_soc, initiation, units = 'days') %>% as.numeric]
 
 ds[, .(IDfather_year, initiation_soc, nest_state_date_soc, nest_state_soc, initiation, diff_EPY_to_social_nest, 
        same_female, while_initiation, while_incubation)]
@@ -178,9 +179,16 @@ ggplot(data = ds) +
   geom_histogram(aes(x = round(diff_EPY_to_social_nest, 0))) +
   theme_classic(base_size = 18)
 
-mean(ds$diff_EPY_to_social_nest)
-min(ds$diff_EPY_to_social_nest)
-max(ds$diff_EPY_to_social_nest)
+ds$diff_EPY_to_social_nest
+ds$diff_EPY_to_social_nest %>% length
+ds$diff_EPY_to_social_nest %>% mean
+ds$diff_EPY_to_social_nest %>% min
+ds$diff_EPY_to_social_nest %>% max
+
+ds$diff_EPY_to_social_nest_complete
+
+ds[, .(nestID, initiation, initiation_soc, diff_EPY_to_social_nest, complete_soc, diff_EPY_to_social_nest_complete, same_female)]
+
 
 # female was not social female before?
 ds[is.na(same_female), same_female := FALSE] # can be excluded with initiation dates
@@ -199,6 +207,11 @@ dss
 # calculate distance between nests
 ds[, dist_nests := sqrt(sum((c(lat, lon) - c(lat_soc, lon_soc))^2)) , by = 1:nrow(ds)]
 
+ggplot(data = ds) +
+  geom_histogram(aes(x = round(dist_nests, 0))) +
+  theme_classic(base_size = 18)
+
+ds$dist_nests
 mean(ds$dist_nests)
 median(ds$dist_nests)
 min(ds$dist_nests)
