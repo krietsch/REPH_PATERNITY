@@ -153,6 +153,8 @@ dss[, breeding := paste0(round(breeding / N_EPY_eggs * 100, 0), '% (', breeding,
 
 # other two males where breeding the year before
 d[male_id %in% dpu[is.na(nestID_social)]$IDfather]
+dr[ID == 270170094 & year_ == 2019]
+dr[ID == 270170262 & year_ == 2018]
 
 # female was social female before?
 ds[!is.na(IDmother), same_female := female_partner == IDmother_year] 
