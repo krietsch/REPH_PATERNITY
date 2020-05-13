@@ -56,8 +56,8 @@ ggplot(data = ds) +
 
 dss = ds[, .(N_nests = sum(N_nests), nests_EPY = sum(nests_EPY)), by = social_mating_system]
 dss[, percent_nests_EPY := nests_EPY / N_nests * 100]
-dss[, social_mating_system := factor(social_mating_system, levels = c('monogamy', 'sequential polyandry', 'simultaneous polyandry', 'Lekking'))]
-ds[, social_mating_system := factor(social_mating_system, levels = c('monogamy', 'sequential polyandry', 'simultaneous polyandry', 'Lekking'))]
+dss[, social_mating_system := factor(social_mating_system, levels = c('monogamy', 'sequential polyandry', 'simultaneous polyandry', 'lekking'))]
+ds[, social_mating_system := factor(social_mating_system, levels = c('monogamy', 'sequential polyandry', 'simultaneous polyandry', 'lekking'))]
 
 dss[, EPY_lwr    := qbeta(p = c(0.025), 1+nests_EPY, 1+N_nests) * 100]
 dss[, EPY_median := qbeta(p = c(0.500), 1+nests_EPY, 1+N_nests) * 100]
@@ -74,11 +74,33 @@ ggplot() +
 require(ggpol)
 ggplot() +
   # geom_point(data = dss, aes(x = social_mating_system, y = percent_nests_EPY, size = N_nests)) +
-  # geom_point(data = ds, aes(x = social_mating_system, y = percent_nests_EPY, size = N_nests, color = species)) +
-  geom_boxjitter(data = ds, aes(x = social_mating_system, y = percent_nests_EPY, fill  = social_mating_system), jitter.size = 2,
-                 outlier.color = NA, jitter.shape = 21, jitter.color = NA, jitter.height = 0.05, jitter.width = 0.075, errorbar.draw = FALSE) +
-  
+  geom_point(data = ds, aes(x = social_mating_system, y = percent_nests_EPY, size = N_nests, color = species), 
+             position = position_dodge(width = 0.3)) +
+  geom_boxjitter(data = ds, aes(x = social_mating_system, y = percent_nests_EPY, group = social_mating_system), jitter.size = 2,
+                 outlier.color = NA, jitter.shape = 21, jitter.color = NA, errorbar.draw = FALSE) +
+    theme_classic(base_size = 16) + labs(y = 'Percent nests with EPY', x = 'Species') 
+
+ggplot() +
+  geom_violin(data = ds, aes(x = social_mating_system, y = percent_nests_EPY, group = social_mating_system)) +
+  geom_point(data = ds, aes(x = social_mating_system, y = percent_nests_EPY, size = N_nests, color = species), 
+             position = position_dodge(width = 0.3)) +
   theme_classic(base_size = 16) + labs(y = 'Percent nests with EPY', x = 'Species') 
+
+ds[, label := paste0(nests_EPY, '/', N_nests, ' ', species)]
+
+p = ggplot() +
+      geom_point_interactive(data = ds, aes(x = social_mating_system, y = percent_nests_EPY, color = species, size = N_nests,
+                             tooltip = label, data_id = label)) + 
+  theme_classic(base_size = 16) + labs(y = 'Percent nests with EPY', x = 'Species') 
+
+x <- girafe(ggobj = p)
+if( interactive() ) print(x)
+
+htmlwidgets::saveWidget(x, file="./REPORTS/widget_saved_wo_padding.html", background = "white")
+
+
+
+
 
 ggplot(data = ds) +
   geom_point(aes(x = species_short, y = percent_nests_EPY, size = N_nests, group = source), position = position_dodge(width = 0.5))  +
