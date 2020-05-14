@@ -3,8 +3,11 @@
 #========================================================================================================================
 
 # Summary
-# 1. Assign locations in the study area
-# 2. Data summary
+# 0. Prepare data for analysis
+# 1. Interactions anaylsis
+# 2. Interactions summary
+# 3. Plots by ID with interactions
+# 4. Copulations
 
 # Packages
 sapply( c('data.table', 'magrittr', 'sdb', 'ggplot2', 'anytime', 'sf', 'foreach', 'auksRuak', 'viridis', 'asnipe', 'igraph'),
@@ -591,7 +594,7 @@ summary(fm)
 plot(allEffects(fm))
 
 #------------------------------------------------------------------------------------------------------------------------
-# 2. Plots by ID with interactions
+# 3. Plots by ID with interactions
 #------------------------------------------------------------------------------------------------------------------------
 
 # clutch compler
@@ -623,7 +626,7 @@ ggplot() +
 
 
 #------------------------------------------------------------------------------------------------------------------------
-# 2. Copulations
+# 4. Copulations
 #------------------------------------------------------------------------------------------------------------------------
 
 d[!is.na(cop), .N, cop]
