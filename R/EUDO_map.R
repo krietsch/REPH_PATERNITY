@@ -50,6 +50,7 @@ DBI::dbDisconnect(con)
 # change names
 setnames(d, c('latitude', 'longitude', 'locationDate'), c('lat', 'lon', 'datetime_'))
 d[, datetime_ := as.POSIXct(datetime_)]
+setorder(d, tagID, datetime_)
 
 # subset tracks on migration
 d = d[tagID == 66809 | tagID == 66813]
@@ -71,6 +72,10 @@ d$lat %>% max
 
 # add point id 
 d[, point_id := seq_len(.N), by = tagID] 
+
+# exclude total outliers
+d = d[!(tagID == 66809 & point_id %in% c(1, 2, 13, 14, 15, 28, 29, 30, 162, 163, 1034, 1036))]
+d = d[!(tagID == 66813 & point_id %in% c(30, 31, 5, 6, 7, 8, 9, 10, 791, 792))]
 
 # create kml's
 kml(dat = d_plot(d[tagID == 66809]), file = paste0('./REPORTS/ID_', 66809,'_TRACK.kml'), scale = 0.5)
