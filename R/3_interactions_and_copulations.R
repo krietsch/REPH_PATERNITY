@@ -202,7 +202,10 @@ di[is.na(EPY_together), EPY_together := 0]
 
 # type of interactions
 di[, interaction_ := ifelse(!is.na(ID2), 1, 0), by = 1:nrow(di)]
+di[, any_interaction := any(interaction_ == 1), by = ID1]
 di[, same_sex := ifelse(ID1sex == ID2sex, 1, 0), by = 1:nrow(di)]
+di[, any_same_sex := any(same_sex == 1), by = ID1]
+di[, any_opp_sex := any(same_sex == 0), by = ID1]
 di[, copAS := ifelse(ID1copAS == 1 & ID2copAS == 1, 1, 0), by = 1:nrow(di)]
 di[, N_cop_ID := sum(copAS, na.rm = TRUE), by = ID1]
 
@@ -290,8 +293,12 @@ unique(di[seen_with_other_than_1st_partner == TRUE, .(ID1, ID2, seen_with_2nd_pa
 # 2. Interactions summary
 #------------------------------------------------------------------------------------------------------------------------
 
+# unique ID's by year
+ds = unique(di[N_obs_days > 1], by = 'ID1')
+ds[, .N, by = year_]
+
 ### unique interactions
-ds = unique(di[!is.na(ID2)], by = c('ID1', 'ID2'))
+ds = unique(di[!is.na(ID2) & N_obs_days > 1], by = c('ID1', 'ID2'))
 
 # unique interactions
 dss = ds[, .N, by = ID1]
@@ -300,6 +307,14 @@ dn = dss[, .(N_int = .N), by = N]
 setorder(dn, N)
 dn
 
+# no interactions
+dso = unique(di[any_interaction == FALSE & N_obs_days > 1], by = 'ID1')
+dss = dso[, .N, by = ID1]
+
+dno = dss[, .(N_int = .N), by = N]
+dno[, N := 0]
+dn = rbind(dno, dn)
+
 # unique opposite sex interactions
 dss = ds[same_sex == 0, .N, by = ID1]
 
@@ -307,12 +322,28 @@ dn2 = dss[, .(N_oppo_sex_int = .N), by = N]
 setorder(dn2, N)
 dn2
 
+# no opposite interactions
+dso = unique(di[any_opp_sex == FALSE & N_obs_days > 1 | is.na(any_opp_sex) & N_obs_days > 1], by = 'ID1')
+dss = dso[, .N, by = ID1]
+
+dno = dss[, .(N_oppo_sex_int = .N), by = N]
+dno[, N := 0]
+dn2 = rbind(dno, dn2)
+
 # unique same sex interactions
 dss = ds[same_sex == 1, .N, by = ID1]
 
 dn3 = dss[, .(N_same_sex_int = .N), by = N]
 setorder(dn3, N)
 dn3
+
+# no same sex interactions
+dso = unique(di[any_same_sex == FALSE & N_obs_days > 1 | is.na(any_same_sex) & N_obs_days > 1], by = 'ID1')
+dss = dso[, .N, by = ID1]
+
+dno = dss[, .(N_same_sex_int = .N), by = N]
+dno[, N := 0]
+dn3 = rbind(dno, dn3)
 
 # merge
 dn = merge(dn, dn2, by = 'N', all.x = TRUE)
@@ -334,7 +365,7 @@ dn2 = dss[, .(N_cop_F = .N), by = N]
 setorder(dn2, N)
 dn2
 
-# females 
+# males 
 dss = ds[ID1sex == 'M', .N, by = ID1]
 
 dn3 = dss[, .(N_cop_M = .N), by = N]
