@@ -363,9 +363,18 @@ dn
 
 ### unique copulations total
 ds = unique(di[ID1copAS == 1 & ID2copAS == 1 & !is.na(ID2)], by = c('ID1', 'ID2'))
-dss = ds[, .N, by = ID1]
+dss = ds[, .(N_cop_partner = .N), by = ID1]
 
-dn = dss[, .(N_cop = .N), by = N]
+dss = merge(dss, unique(di[, .(ID1, N_cop)], by = 'ID1'), all.x = TRUE)
+
+# How many with more than one observed copulation?
+dss[N_cop > 1] %>% nrow / dss %>% nrow * 100
+
+# How many of those with more than one partner?
+dss[N_cop > 1 & N_cop_partner > 1] %>% nrow / dss[N_cop > 1] %>% nrow * 100
+
+dn = dss[, .(N_cop = .N), by = N_cop_partner]
+setnames(dn, 'N_cop_partner', 'N')
 setorder(dn, N)
 dn
 
