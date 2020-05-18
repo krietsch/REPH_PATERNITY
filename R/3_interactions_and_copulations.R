@@ -299,55 +299,66 @@ ds[, .N, by = year_]
 
 ### unique interactions
 ds = unique(di[!is.na(ID2) & N_obs_days > 1], by = c('ID1', 'ID2'))
+dss = ds[, .N, by = .(ID1sex, ID1)]
+dss = dss[, .(N_int = .N), by = .(ID1sex, N)]
 
-# unique interactions
-dss = ds[, .N, by = ID1]
-
-dn = dss[, .(N_int = .N), by = N]
-setorder(dn, N)
-dn
-
-# no interactions
+# no opposite interactions
 dso = unique(di[any_interaction == FALSE & N_obs_days > 1], by = 'ID1')
-dss = dso[, .N, by = ID1]
+dso = dso[, .N, by = .(ID1sex, ID1)]
+dso = dso[, .(N_int = .N), by = .(ID1sex, N)]
+dso[, N := 0]
 
-dno = dss[, .(N_int = .N), by = N]
-dno[, N := 0]
-dn = rbind(dno, dn)
+dn1 = rbind(dso, dss)
+setorder(dn1, N)
 
 # unique opposite sex interactions
-dss = ds[same_sex == 0, .N, by = ID1]
-
-dn2 = dss[, .(N_oppo_sex_int = .N), by = N]
+dss = ds[same_sex == 0, .N, by = .(ID1sex, ID1)]
+dn2 = dss[, .(N_oppo_sex_int = .N), by = .(ID1sex, N)]
 setorder(dn2, N)
 dn2
 
 # no opposite interactions
 dso = unique(di[any_opp_sex == FALSE & N_obs_days > 1 | is.na(any_opp_sex) & N_obs_days > 1], by = 'ID1')
-dss = dso[, .N, by = ID1]
+dss = dso[, .N, by = .(ID1sex, ID1)]
 
-dno = dss[, .(N_oppo_sex_int = .N), by = N]
+dno = dss[, .(N_oppo_sex_int = .N), by = .(ID1sex, N)]
 dno[, N := 0]
 dn2 = rbind(dno, dn2)
 
 # unique same sex interactions
-dss = ds[same_sex == 1, .N, by = ID1]
-
-dn3 = dss[, .(N_same_sex_int = .N), by = N]
+dss = ds[same_sex == 1, .N, by = .(ID1sex, ID1)]
+dn3 = dss[, .(N_same_sex_int = .N), by = .(ID1sex, N)]
 setorder(dn3, N)
 dn3
 
 # no same sex interactions
 dso = unique(di[any_same_sex == FALSE & N_obs_days > 1 | is.na(any_same_sex) & N_obs_days > 1], by = 'ID1')
-dss = dso[, .N, by = ID1]
+dss = dso[, .N, by = .(ID1sex, ID1)]
 
-dno = dss[, .(N_same_sex_int = .N), by = N]
+dno = dss[, .(N_same_sex_int = .N), by = .(ID1sex, N)]
 dno[, N := 0]
 dn3 = rbind(dno, dn3)
 
 # merge
-dn = merge(dn, dn2, by = 'N', all.x = TRUE)
-dn = merge(dn, dn3, by = 'N', all.x = TRUE)
+dn = merge(dn1, dn2, by = c('N', 'ID1sex'), all.x = TRUE)
+dn = merge(dn, dn3, by = c('N', 'ID1sex'), all.x = TRUE)
+
+dn = merge(dn[ID1sex == 'F', .(N, N_int_F = N_int, N_oppo_sex_int_F = N_oppo_sex_int, N_same_sex_int_F = N_same_sex_int)], 
+           dn[ID1sex == 'M', .(N, N_int_M = N_int, N_oppo_sex_int_M = N_oppo_sex_int, N_same_sex_int_M = N_same_sex_int)], 
+           by = 'N', all.x = TRUE)
+
+dn[is.na(dn)] = 0
+dn[, N_interactions_F_M := paste0(sum(N_int_F, N_int_M), ' (', N_int_F, '/', N_int_M, ')'), by = N]
+dn[, N_oppo_sex_int_F_M := paste0(sum(N_oppo_sex_int_F, N_oppo_sex_int_M), ' (', N_oppo_sex_int_F, '/', N_oppo_sex_int_M, ')'), by = N]
+dn[, N_same_sex_int_F_M := paste0(sum(N_same_sex_int_F, N_same_sex_int_M), ' (', N_same_sex_int_F, '/', N_same_sex_int_M, ')'), by = N]
+
+dn = dn[, .(N, N_interactions_F_M, N_oppo_sex_int_F_M, N_same_sex_int_F_M)]
+
+# replace 0 (0/0)
+for (col in dn[, names(.SD)[lapply(.SD, class) %in% c("character", "factor")]]) {
+  set(dn, dn[get(col) %in% c('0 (0/0)'), which = TRUE], col, '')
+}
+
 dn
 
 ### unique copulations total
@@ -398,6 +409,20 @@ setorder(di, datetime_)
 di[ID1 == '273145091_19']
 
  diu = unique(di, by = 'ID1')
+ 
+ 
+ 
+ 
+ 
+ 
+ds = unique(di, by = c('date_','ID1', 'ID2'))
+dss = ds[, .N, by = .(year_, date_)]
+
+ggplot(data = dss[year_ == 2019]) +
+  geom_point(aes(date_, N))
+
+
+
 
 # tenure together 
 ggplot(data = diu[nest_together == 1]) +
