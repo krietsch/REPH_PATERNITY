@@ -290,8 +290,8 @@ dss[is.na(dss)] = 0
 # percent renesting / polyandrous
 dss[, renesting_males          := paste0(round(renesting_males / unique_males * 100, 0), '% (', renesting_males, '/', unique_males, ')')]
 dss[, renesting_males_NARL     := paste0(round(renesting_males_NARL / unique_males * 100, 0), '% (', renesting_males_NARL, '/', unique_males, ')')]
-dss[, polyandrous_females      := paste0(round(polyandrous_females / unique_females * 100, 0), '% (', polyandrous_females, '/', unique_males, ')')]
-dss[, polyandrous_females_NARL := paste0(round(polyandrous_females_NARL / unique_females * 100, 0), '% (', polyandrous_females_NARL, '/', unique_males, ')')]
+dss[, polyandrous_females      := paste0(round(polyandrous_females / unique_females * 100, 0), '% (', polyandrous_females, '/', unique_females, ')')]
+dss[, polyandrous_females_NARL := paste0(round(polyandrous_females_NARL / unique_females * 100, 0), '% (', polyandrous_females_NARL, '/', unique_females, ')')]
 dss[, c('unique_males', 'unique_females') := NULL]
 
 # add EPY on plot
