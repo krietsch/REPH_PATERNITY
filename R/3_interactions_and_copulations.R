@@ -51,6 +51,12 @@ d[, datetime_y := as.POSIXct(format(datetime_, format = '%m-%d %H:%M:%S'), forma
 d[, year_ := year(datetime_)]
 dn[, initiation := as.POSIXct(initiation)]
 
+# first REPH and first copulation
+d[, min(datetime_), by = year_]
+d[!is.na(cop), min(datetime_), by = year_]
+d[!is.na(cop), max(datetime_), by = year_]
+d[!is.na(cop)]
+
 # nestID
 dn[, nestID := paste0(nest, '_', substr(year_, 3,4 ))]
 dp[, nestID := paste0(nest, '_', substr(year_, 3,4 ))]
@@ -313,6 +319,19 @@ setorder(dn1, N)
 
 # unique opposite sex interactions
 dss = ds[same_sex == 0, .N, by = .(ID1sex, ID1)]
+
+dss %>% nrow
+
+dss[N > 2]$N %>% length
+dss[ID1sex == 'F' & N > 2]$N %>% length
+dss[ID1sex == 'M' & N > 2]$N %>% length
+
+dss[ID1sex == 'F']$N %>% mean
+dss[ID1sex == 'F']$N %>% max
+
+dss[ID1sex == 'M']$N %>% mean
+dss[ID1sex == 'M']$N %>% max
+
 dn2 = dss[, .(N_oppo_sex_int = .N), by = .(ID1sex, N)]
 setorder(dn2, N)
 dn2
@@ -362,6 +381,8 @@ for (col in dn[, names(.SD)[lapply(.SD, class) %in% c("character", "factor")]]) 
 dn
 
 ### unique copulations total
+di[ID1copAS == 1 & ID2copAS == 1 & !is.na(ID2)] %>% nrow
+
 ds = unique(di[ID1copAS == 1 & ID2copAS == 1 & !is.na(ID2)], by = c('ID1', 'ID2'))
 dss = ds[, .(N_cop_partner = .N), by = ID1]
 
@@ -405,9 +426,21 @@ hist(ds[copAS_not_1st_partner == TRUE]$copEPC_first)
 hist(ds[copAS_not_1st_partner == TRUE]$copEPC_last)
 
 setorder(ds, ID1sex, copEPC_timing)
-ds[copAS_not_1st_partner == TRUE & ID1copAS == 1 & ID2copAS == 1, .(ID1, ID1sex, ID2, ID1_2nd_partner, datetime_, 
-                                                                    first_initiation, copEPC_timing, copEPC_first, copEPC_last, copulation_other_than_1st_partner_while_paired)]
+dss = ds[copAS_not_1st_partner == TRUE & ID1copAS == 1 & ID2copAS == 1, .(ID1, ID1sex, ID2, ID1_2nd_partner, datetime_, 
+                                                                         first_initiation, copEPC_timing, copEPC_first, copEPC_last, copulation_other_than_1st_partner_while_paired)]
+dss
 
+dss$copEPC_first %>% median
+dss$copEPC_first %>% min
+dss$copEPC_first %>% max
+
+dss[ID1sex == 'F']$copEPC_first %>% median
+dss[ID1sex == 'F']$copEPC_first %>% min
+dss[ID1sex == 'F']$copEPC_first %>% max
+
+dss[ID1sex == 'M']$copEPC_first %>% median
+dss[ID1sex == 'M']$copEPC_first %>% min
+dss[ID1sex == 'M']$copEPC_first %>% max
 
 ############## copulations clost to first initiation 
 
