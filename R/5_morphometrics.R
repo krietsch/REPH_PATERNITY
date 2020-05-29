@@ -81,14 +81,15 @@ dps[!is.na(EPY_father)] %>% nrow # known EPY fathers
 d = merge(d, dps[, .(nestID, N_parentage = N, N_EPY = EPY, anyEPY, EPY_father)], by = 'nestID', all.x = TRUE)
 
 #------------------------------------------------------------------------------------------------------------------------
-# 1. Tarsus and bill length breeders vs. non-breeders
+# 1. Tarsus and bill length extra-pair fathers
 #------------------------------------------------------------------------------------------------------------------------
 
-dcu = dc[, .(tarsus = mean(tarsus, na.rm = TRUE), culmen = mean(culmen, na.rm = TRUE)), by = ID]
+dcu = dc[, .(tarsus = mean(tarsus, na.rm = TRUE), culmen = mean(culmen, na.rm = TRUE), min_year = min(year_, na.rm = TRUE)), by = ID]
 dcu[tarsus > 25, tarsus := NA]
 
 d = merge(d, dcu, by.x = 'male_id', by.y = 'ID', all.x = TRUE)
-d = merge(d, dcu[, .(ID, tarsus_EPY_father = tarsus, culmen_EPY_father = culmen)], by.x = 'EPY_father', by.y = 'ID', all.x = TRUE)
+d = merge(d, dcu[, .(ID, tarsus_EPY_father = tarsus, culmen_EPY_father = culmen, min_year_EPY_father = min_year)], 
+          by.x = 'EPY_father', by.y = 'ID', all.x = TRUE)
 
 ds = d[!is.na(tarsus) & !is.na(!culmen)]
 ds[, YEAR_ := factor(YEAR_, levels = rev(sort(unique(ds$YEAR_))))]
@@ -98,6 +99,13 @@ ds[, YEAR_ := factor(YEAR_, levels = rev(sort(unique(ds$YEAR_))))]
 ggplot(ds) + 
   geom_density(aes(x = tarsus), size = 1.3) +
   theme_bw(base_size = 13) 
+
+ggplot(ds[!is.na(anyEPY)]) + 
+  geom_density(aes(x = tarsus, color = as.character(anyEPY)), size = 1.3) +
+  scale_color_manual(values = c('firebrick', 'dodgerblue')) +
+  ylab('') +
+  theme_bw(base_size = 13) 
+
 
 ggplot(ds) +
   geom_point(aes(initiation_y, tarsus, color = YEAR_)) +
@@ -140,13 +148,22 @@ dss2 = ds[!is.na(EPY_father), .(ID = EPY_father, tarsus = tarsus_EPY_father, cul
 
 dss = rbind(dss1, dss2)
 
+ggplot(dss[anyEPY > 0]) + 
+  geom_density(aes(x = tarsus, color = as.character(anyEPY)), size = 1.3) +
+  scale_color_manual(values = c('firebrick', 'dodgerblue')) +
+  ylab('') +
+  theme_bw(base_size = 13) 
 
+dss[anyEPY == 2 & tarsus > 24]
 
 ggplot(dss) +
   geom_boxplot(aes(as.character(anyEPY), tarsus), notch = TRUE)
 
 
 dss = ds[!is.na(EPY_father)]
+
+
+t.test(ds[anyEPY == 1]$tarsus, dss$tarsus_EPY_father)
 
 t.test(dss$tarsus, dss$tarsus_EPY_father)
 t.test(dss$tarsus, dss$tarsus_EPY_father, paired = TRUE)
@@ -156,7 +173,24 @@ t.test(dss$culmen, dss$culmen_EPY_father)
 t.test(dss$culmen, dss$culmen_EPY_father, paired = TRUE)
 
 
+#------------------------------------------------------------------------------------------------------------------------
+# 2. Age of extra-pair fathers
+#------------------------------------------------------------------------------------------------------------------------
 
+ds = d[!is.na(EPY_father)]
+ds[, age_social_father := year_ - min_year]
+ds[, age_EPY_father := year_ - min_year_EPY_father]
+
+t.test(ds$age_social_father, ds$age_EPY_father, paired = TRUE)
+
+dps[!is.na(EPY_father)]$EPY_father
+
+ds = d[male_id %in% dps[!is.na(EPY_father)]$EPY_father]
+
+merge(ds, dcu)
+
+
+ds[, .N, by = male_id]
 
 
 
