@@ -17,7 +17,8 @@ PROJ = '+proj=laea +lat_0=90 +lon_0=-156.653428 +x_0=0 +y_0=0 +datum=WGS84 +unit
 con = dbcon('jkrietsch', db = 'REPHatBARROW')  
 d = dbq(con, 'select * FROM NESTS')
 de = dbq(con, 'select * FROM EGGS')
-dm = dbq(con, 'select * FROM MICROSATS')
+dp = dbq(con, 'select * FROM PATERNITY')
+dms = dbq(con, 'select * FROM MICROSATS')
 DBI::dbDisconnect(con)
 
 #------------------------------------------------------------------------------------------------------------------------
@@ -66,15 +67,40 @@ d[, YEAR_ := factor(year_)]
 # check homozygosity of undeveloped eggs 
 de[undeveloped == 1]$ID
 
-dm = dm[ID %in% de[undeveloped == 1]$ID]
+# subset undeveloped eggs
+dm = dms[ID %in% de[undeveloped == 1]$ID]
+de = de[ID %in% de[undeveloped == 1]$ID]
+
+# merge with father microsats
+de[, .(ID, nestID)]
+unique(de[, .(ID, nestID)], by = 'ID')
+
+dm = merge(dm, unique(de[, .(ID, nestID)], by = 'ID'), by = 'ID', all.x = TRUE)
+dm = merge(dm, dp[, .(IDchick, IDmother, IDfather)], by.x  = 'ID', by.y = 'IDchick', all.x = TRUE)
+dm[, IDfather := as.character(IDfather)]
+dm = merge(dm, unique(dms[, .(ID, marker, af = a, bf = b)], by = 'ID'), by.x  = c('IDfather', 'marker'), by.y = c('ID', 'marker'), all.x = TRUE)
+
+# what could have come from the father?
+dm[, a_pot_father := a == af | a == bf]
+dm[, b_pot_father := b == af | b == bf]
+
+dm[, pot_father := a_pot_father == TRUE | a_pot_father == TRUE]
 
 dm[, homozygot := a == b]
 
-dm[, .N, .(ID, homozygot)]
+dp[IDchick == 'R207_3_19']
 
 
+dm[ID == 'R404_3_19']
 
+ds = dm[!is.na(homozygot), .N, .(ID, homozygot)]
+setorder(ds, homozygot)
 
+dm[is.na(a) & is.na(b), .N, by = ID]
 
+ds = dm[, .N, .(ID, pot_father)]
+
+setorder(ds, pot_father)
+ds
 
 
