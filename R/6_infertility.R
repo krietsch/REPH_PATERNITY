@@ -60,47 +60,85 @@ d[, nest_state_date := as.POSIXct(nest_state_date)]
 setorder(d, year_, initiation)
 d[, YEAR_ := factor(year_)]
 
+setorder(d, year_, initiation)
+
+# first and second clutches by females
+d[, female_id_year := paste0(female_id, '_', substr(year_, 3,4 ))]
+d[, N_female_clutch := .N, by = female_id]
+d[, female_clutch := seq_len(.N), by = .(female_id, year_)]
+d[is.na(female_id), female_clutch := 1]
+d[!is.na(female_id), N_female_clutch := max(female_clutch), by = .(female_id, year_)]
+d[is.na(female_id), N_female_clutch := 1]
+d[, .N, by = .(year_, female_clutch)]
+d[, .N, by = .(female_clutch, external)]
+
+d[, female_id := as.character(female_id)]
 #------------------------------------------------------------------------------------------------------------------------
 # 1. Infertility in eggs
 #------------------------------------------------------------------------------------------------------------------------
 
 # check homozygosity of undeveloped eggs 
 de[undeveloped == 1]$ID
+de[undeveloped == 1]$ID %>% length
 
 # subset undeveloped eggs
 dm = dms[ID %in% de[undeveloped == 1]$ID]
 de = de[ID %in% de[undeveloped == 1]$ID]
 
 # merge with father microsats
-de[, .(ID, nestID)]
-unique(de[, .(ID, nestID)], by = 'ID')
-
-dm = merge(dm, unique(de[, .(ID, nestID)], by = 'ID'), by = 'ID', all.x = TRUE)
+dm = merge(dm, unique(de[, .(ID, nestID, external)], by = 'ID'), by = 'ID', all.x = TRUE)
 dm = merge(dm, dp[, .(IDchick, IDmother, IDfather)], by.x  = 'ID', by.y = 'IDchick', all.x = TRUE)
 dm[, IDfather := as.character(IDfather)]
-dm = merge(dm, unique(dms[, .(ID, marker, af = a, bf = b)], by = 'ID'), by.x  = c('IDfather', 'marker'), by.y = c('ID', 'marker'), all.x = TRUE)
+dm[, IDmother := as.character(IDmother)]
+dm = merge(dm, unique(dms[, .(ID, marker, af = a, bf = b)], by = c('ID', 'marker')), 
+           by.x  = c('IDfather', 'marker'), by.y = c('ID', 'marker'), all.x = TRUE)
+dm = merge(dm, unique(dms[, .(ID, marker, am = a, bm = b)], by = c('ID', 'marker')), 
+           by.x  = c('IDmother', 'marker'), by.y = c('ID', 'marker'), all.x = TRUE)
+
+# which chicks were undeveloped and have no genotype
+dm[is.na(a) & !is.na(b)]
+dm[is.na(b) & !is.na(a)]
+
+dm[, aNA := ifelse(is.na(a), 0, 1)]
+dm[, N_genotype := sum(aNA), by = ID]
+
+# homozygot and heterozygot
+dm[, homozygot := ifelse(a == b, 1, 0)]
+dm[, heterozygot := ifelse(a == b, 0, 1)]
+
+dm[, N_homo := sum(homozygot, na.rm = TRUE), by = ID]
+dm[, N_hetero := sum(heterozygot, na.rm = TRUE), by = ID]
 
 # what could have come from the father?
-dm[, a_pot_father := a == af | a == bf]
-dm[, b_pot_father := b == af | b == bf]
+dm[, a_pot_father := ifelse(a == af | a == bf, 1, 0)]
+dm[, b_pot_father := ifelse(b == af | b == bf, 1, 0)]
+dm[, pot_father := ifelse(a_pot_father == 1 | a_pot_father == 1, 1, 0)]
+dm[, N_pot_father := sum(pot_father, na.rm = TRUE), by = ID]
 
-dm[, pot_father := a_pot_father == TRUE | a_pot_father == TRUE]
+# what could have come from the mother?
+dm[, a_pot_mother := ifelse(a == am | a == bm, 1, 0)]
+dm[, b_pot_mother := ifelse(b == am | b == bm, 1, 0)]
+dm[, pot_mother := ifelse(a_pot_mother == 1 | a_pot_mother == 1, 1, 0)]
+dm[, N_pot_mother := sum(pot_mother, na.rm = TRUE), by = ID]
 
-dm[, homozygot := a == b]
 
-dp[IDchick == 'R207_3_19']
+ds = unique(dm[, .(ID, nestID, IDfather, IDmother, N_genotype, N_homo, N_hetero, N_pot_father, N_pot_mother)], by = 'ID')
+ds[, per_hetero := round(N_hetero / N_genotype * 100, 2)]
 
+# only include our data
+ds = ds[!(ID %like% 'REPH')]
 
-dm[ID == 'R404_3_19']
+# assign potenially infertile clutches
+ds[, pot_infertile := per_hetero < 1 | is.na(per_hetero)]
 
-ds = dm[!is.na(homozygot), .N, .(ID, homozygot)]
-setorder(ds, homozygot)
-
-dm[is.na(a) & is.na(b), .N, by = ID]
-
-ds = dm[, .N, .(ID, pot_father)]
-
-setorder(ds, pot_father)
+setorder(ds, per_hetero)
 ds
 
+# check female clutch
+ds = merge(ds, d[, .(nestID, female_clutch, N_female_clutch)], by.x = 'nestID', by.y = 'nestID', all.x = TRUE)
 
+# known next clutch
+ds[, known_next_clutch := female_clutch < N_female_clutch]
+
+setorder(ds, -known_next_clutch, female_clutch, IDmother)
+ds
