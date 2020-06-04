@@ -2,37 +2,39 @@
 # Egg ID duplicates
 #========================================================================================================================
 
-# Summary
-# 0. Prepare data for analysis
-# 1. Captures on and off plot
-
 # Packages
-sapply( c('data.table', 'magrittr', 'sdb', 'ggplot2', 'sf', 'auksRuak', 'arm'),
+sapply( c('data.table', 'magrittr', 'sdb', 'DBI'),
         require, character.only = TRUE)
-
-# Projection
-PROJ = '+proj=laea +lat_0=90 +lon_0=-156.653428 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0 '
-
 # Data
 con = dbcon('jkrietsch', db = 'REPHatBARROW')  
-d = dbq(con, 'select * FROM NESTS')
-de = dbq(con, 'select * FROM EGGS')
-dp = dbq(con, 'select * FROM PATERNITY')
-dms = dbq(con, 'select * FROM MICROSATS')
-DBI::dbDisconnect(con)
+d = dbq(con, 'select * FROM EGGS')
 
 #------------------------------------------------------------------------------------------------------------------------
 # 0. Prepare data for analysis
 #------------------------------------------------------------------------------------------------------------------------
 
-de[ID == 'REPH485_4_18']
+d[, dup := duplicated(d, by = 'ID')]
+ds = d[dup == TRUE]
+ds
 
-duplicated(de, by = 'ID')
+# Rick's nests
+d = d[nest %like% 'REPH']
+d[, ID2 := paste0(nest, '_', egg_id, '_', substr(year_, 3,4 ))]
 
+# all with wrong name
+d = d[ID != ID2]
 
+# save data to DB
+dt = d[, .(pk, ID2)]
 
+# save new values from d in a temp table
+dbWriteTable(con, 'temp', dt , row.names = FALSE)
 
+# update target table based on values in temp table
+dbExecute(con, "update EGGS e, temp t set e.ID = t.ID2 where e.pk = t.pk")
+dbExecute(con,"drop table temp")
 
+dbDisconnect(con)
 
 
 
