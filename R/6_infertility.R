@@ -1,10 +1,11 @@
 #========================================================================================================================
-# Paternity analysis
+# Infertility analysis
 #========================================================================================================================
 
 # Summary
 # 0. Prepare data for analysis
-# 1. Captures on and off plot
+# 1. Infertility in eggs
+# 2. Percentage of collected eggs
 
 # Packages
 sapply( c('data.table', 'magrittr', 'sdb', 'ggplot2', 'sf', 'auksRuak', 'arm'),
@@ -142,3 +143,30 @@ ds[, known_next_clutch := female_clutch < N_female_clutch]
 
 setorder(ds, -known_next_clutch, female_clutch, IDmother)
 ds
+
+#------------------------------------------------------------------------------------------------------------------------
+# 2. Percentage of collected eggs
+#------------------------------------------------------------------------------------------------------------------------
+
+d = d[external == 0 & !is.na(collected_datetime)]
+
+# undeveloped eggs 
+ds %>% nrow
+
+# undeveloped eggs in N eggs
+ds %>% nrow / sum(d$clutch_size) * 100
+
+# undeveloped eggs in N clutches
+ds$nestID %>% unique %>% length
+
+# undeveloped eggs potentially infertile 
+ds[pot_infertile == TRUE] %>% nrow
+
+# undeveloped eggs in N eggs
+ds[pot_infertile == TRUE] %>% nrow / sum(d$clutch_size) * 100
+
+# known_next_clutch and infertile egg in clutch before
+# no egg infertile in first clutch of female which laid another clutch afterwards
+
+
+
