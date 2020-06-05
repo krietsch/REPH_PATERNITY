@@ -61,6 +61,10 @@ d[, nest_state_date := as.POSIXct(nest_state_date)]
 setorder(d, year_, initiation)
 d[, YEAR_ := factor(year_)]
 
+# collected after incubation
+d[, complete := initiation + clutch_size * 86400]
+d[, diff_collected_complete := difftime(collected_datetime, complete, units = 'days') %>% as.numeric]
+
 setorder(d, year_, initiation)
 
 # first and second clutches by females
@@ -130,13 +134,13 @@ ds[, per_hetero := round(N_hetero / N_genotype * 100, 2)]
 ds = ds[!(ID %like% 'REPH')]
 
 # assign potenially infertile clutches
-ds[, pot_infertile := per_hetero < 1 | is.na(per_hetero)]
+ds[, pot_infertile := N_genotype < 2]
 
 setorder(ds, per_hetero)
 ds
 
 # check female clutch
-ds = merge(ds, d[, .(nestID, female_clutch, N_female_clutch)], by.x = 'nestID', by.y = 'nestID', all.x = TRUE)
+ds = merge(ds, d[, .(nestID, female_clutch, N_female_clutch, initiation, diff_collected_complete)], by.x = 'nestID', by.y = 'nestID', all.x = TRUE)
 
 # known next clutch
 ds[, known_next_clutch := female_clutch < N_female_clutch]
@@ -158,6 +162,8 @@ ds %>% nrow / sum(d$clutch_size) * 100
 
 # undeveloped eggs in N clutches
 ds$nestID %>% unique %>% length
+d %>% nrow
+ds$nestID %>% unique %>% length / d %>% nrow * 100
 
 # undeveloped eggs potentially infertile 
 ds[pot_infertile == TRUE] %>% nrow
@@ -168,5 +174,13 @@ ds[pot_infertile == TRUE] %>% nrow / sum(d$clutch_size) * 100
 # known_next_clutch and infertile egg in clutch before
 # no egg infertile in first clutch of female which laid another clutch afterwards
 
+setorder(ds, IDmother)
+ds
 
+hist(ds$diff_collected_complete)
 
+ds[IDmother == '19222']$diff_collected_complete
+
+ds$diff_collected_complete %>% median
+ds$diff_collected_complete %>% min
+ds$diff_collected_complete %>% max
