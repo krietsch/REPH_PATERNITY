@@ -385,9 +385,22 @@ ds
 # N nests full clutch sampled
 ds = d[parentage == TRUE]
 ds[, full_clutch_sampled := clutch_size == N_parentage]
+ds[is.na(full_clutch_sampled), full_clutch_sampled := FALSE]
 ds[, .N, full_clutch_sampled]
 ds[full_clutch_sampled == TRUE]  %>% nrow
 ds[full_clutch_sampled == TRUE]  %>% nrow / ds %>% nrow * 100 # percent of all
+
+# seperated in external and not
+ds[study_site == TRUE & full_clutch_sampled == TRUE]  %>% nrow
+ds[study_site == TRUE & full_clutch_sampled == TRUE]  %>% nrow / ds[study_site == TRUE] %>% nrow * 100 # percent of all
+
+# why not?
+ds[study_site == TRUE & full_clutch_sampled == FALSE] # twice no DNA extracted, once egg gone before sampled
+
+ds[study_site == FALSE & parentage == TRUE]  %>% nrow
+ds[study_site == FALSE & full_clutch_sampled == TRUE]  %>% nrow
+ds[study_site == FALSE & full_clutch_sampled == TRUE]  %>% nrow / ds[study_site == FALSE] %>% nrow * 100 # percent of all
+
 mean(ds$clutch_size, na.rm = TRUE)
 sd(ds$clutch_size, na.rm = TRUE)
 min(ds$clutch_size, na.rm = TRUE)
@@ -404,6 +417,13 @@ ds = d[N_female_clutch > 1 & !is.na(anyEPY)]
 ds[, N_nests_anyEPY := sum(anyEPY), by = female_id]
 ds[, .N, by = N_nests_anyEPY] # no female with multiple nests with EPY
 unique(ds$female_id) %>% length
+
+# how often was the male assigned in the field in nests with parentage data?
+d[parentage == TRUE] %>% nrow
+d[parentage == TRUE & male_field == 1] %>% nrow
+d[parentage == TRUE & male_field == 1] %>% nrow / d[parentage == TRUE] %>% nrow
+d[parentage == TRUE & female_field == 1] %>% nrow
+d[parentage == TRUE & female_field == 1] %>% nrow / d[parentage == TRUE] %>% nrow
 
 #------------------------------------------------------------------------------------------------------------------------
 # 5. Paternity between study site and external
