@@ -424,6 +424,10 @@ d[parentage == TRUE & male_field == 1] %>% nrow
 d[parentage == TRUE & male_field == 1] %>% nrow / d[parentage == TRUE] %>% nrow
 d[parentage == TRUE & female_field == 1] %>% nrow
 d[parentage == TRUE & female_field == 1] %>% nrow / d[parentage == TRUE] %>% nrow
+d[parentage == TRUE & female_assigned == 2] %>% nrow / d[parentage == TRUE] %>% nrow
+
+d[parentage == TRUE & female_assigned == 2 & study_site == TRUE] %>% nrow / d[parentage == TRUE & study_site == TRUE] %>% nrow
+d[parentage == TRUE & female_assigned == 2 & study_site == FALSE] %>% nrow / d[parentage == TRUE & study_site == FALSE] %>% nrow
 
 d[parentage == TRUE & study_site == TRUE & female_field == 1] %>% nrow / d[parentage == TRUE & study_site == TRUE] %>% nrow
 
