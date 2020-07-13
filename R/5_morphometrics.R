@@ -84,11 +84,12 @@ d = merge(d, dps[, .(nestID, N_parentage = N, N_EPY = EPY, anyEPY, EPY_father)],
 # 1. Tarsus and bill length extra-pair fathers
 #------------------------------------------------------------------------------------------------------------------------
 
-dcu = dc[, .(tarsus = mean(tarsus, na.rm = TRUE), culmen = mean(culmen, na.rm = TRUE), min_year = min(year_, na.rm = TRUE)), by = ID]
+dcu = dc[, .(tarsus = mean(tarsus, na.rm = TRUE), culmen = mean(culmen, na.rm = TRUE), 
+             weight = mean(weight, na.rm = TRUE), min_year = min(year_, na.rm = TRUE)), by = ID]
 dcu[tarsus > 25, tarsus := NA]
 
 d = merge(d, dcu, by.x = 'male_id', by.y = 'ID', all.x = TRUE)
-d = merge(d, dcu[, .(ID, tarsus_EPY_father = tarsus, culmen_EPY_father = culmen, min_year_EPY_father = min_year)], 
+d = merge(d, dcu[, .(ID, tarsus_EPY_father = tarsus, culmen_EPY_father = culmen, weight_EPY_father = weight, min_year_EPY_father = min_year)], 
           by.x = 'EPY_father', by.y = 'ID', all.x = TRUE)
 
 ds = d[!is.na(tarsus) & !is.na(!culmen)]
@@ -143,8 +144,9 @@ plot(allEffects(fm))
 glht(fm) %>% summary
 
 
-dss1 = ds[!is.na(anyEPY), .(ID = male_id, tarsus, culmen, anyEPY)]
-dss2 = ds[!is.na(EPY_father), .(ID = EPY_father, tarsus = tarsus_EPY_father, culmen = culmen_EPY_father, anyEPY = 2)]
+dss1 = ds[!is.na(anyEPY), .(ID = male_id, tarsus, culmen, weight, anyEPY)]
+dss2 = ds[!is.na(EPY_father), .(ID = EPY_father, tarsus = tarsus_EPY_father, culmen = culmen_EPY_father, 
+                                weight = weight_EPY_father, anyEPY = 2)]
 
 dss = rbind(dss1, dss2)
 
@@ -160,6 +162,13 @@ ggplot(dss) +
   geom_boxplot(aes(as.character(anyEPY), tarsus), notch = TRUE)
 
 
+ggplot(dss[anyEPY > 0]) + 
+  geom_density(aes(x = weight, color = as.character(anyEPY)), size = 1.3) +
+  scale_color_manual(values = c('firebrick', 'dodgerblue')) +
+  ylab('') +
+  theme_bw(base_size = 13) 
+
+
 dss = ds[!is.na(EPY_father)]
 
 
@@ -171,6 +180,8 @@ t.test(dss$tarsus, dss$tarsus_EPY_father, paired = TRUE)
 
 t.test(dss$culmen, dss$culmen_EPY_father)
 t.test(dss$culmen, dss$culmen_EPY_father, paired = TRUE)
+
+
 
 
 #------------------------------------------------------------------------------------------------------------------------

@@ -325,11 +325,11 @@ ds[, N_parentage := paste0(round(N_parentage / N_nests * 100, 0), '% (', N_paren
 ds
 
 # position of nests with parentage data
-bm = create_bm(d)
-bm + geom_point(data = d[parentage == TRUE], aes(lon, lat, color = study_site))
-bm + geom_point(data = d[parentage == TRUE & !is.na(data_type)], aes(lon, lat, color = data_type))
-bm + geom_point(data = d[parentage == TRUE], aes(lon, lat, color = YEAR_))
-bm + geom_point(data = d[parentage == TRUE], aes(lon, lat, color = as.character(anyEPY)))
+# bm = create_bm(d)
+# bm + geom_point(data = d[parentage == TRUE], aes(lon, lat, color = study_site))
+# bm + geom_point(data = d[parentage == TRUE & !is.na(data_type)], aes(lon, lat, color = data_type))
+# bm + geom_point(data = d[parentage == TRUE], aes(lon, lat, color = YEAR_))
+# bm + geom_point(data = d[parentage == TRUE], aes(lon, lat, color = as.character(anyEPY)))
 
 # split in NARL study site and everything else
 ds = d[, .(N_nests = .N), by =  study_site]
