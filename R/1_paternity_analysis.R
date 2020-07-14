@@ -702,9 +702,9 @@ ggplot(data = nd) +
   theme_classic(base_size = 24) + labs(x = 'Year', y = 'Percent nests with EPY')
 p
 
-png(paste0('./REPORTS/FIGURES/EPY_frequency_years.png'), width = 1200, height = 800)
-p
-dev.off()
+# png(paste0('./REPORTS/FIGURES/EPY_frequency_years.png'), width = 1200, height = 800)
+# p
+# dev.off()
 
 
 #------------------------------------------------------------------------------------------------------------------------
@@ -841,11 +841,21 @@ ds[, mean_initiation := mean(initiation, na.rm = TRUE), by = year_]
 ds[, initiation_st := difftime(initiation, mean_initiation, units = 'days') %>% as.numeric]
 
 
-ggplot(data = ds) +
-  geom_boxplot(aes(clutch_identity, initiation_st), fill = 'grey85', outlier.alpha = 0) +
-  geom_jitter(aes(clutch_identity, initiation_st, fill = anyEPY), width = 0.3, height = 0, shape = 21) +
-  scale_fill_manual(values = c('white', 'black')) +
-  theme_classic(base_size = 18)
+p = 
+  ggplot(data = ds) +
+    geom_boxplot(aes(clutch_identity, initiation_st), fill = 'grey85', outlier.alpha = 0) +
+    geom_jitter(aes(clutch_identity, initiation_st, fill = anyEPY), width = 0.3, height = 0, shape = 21, size = 3) +
+    scale_fill_manual(values = c('white', 'black'), name = 'any EPY', labels = c('no', 'yes')) +
+    scale_x_discrete(labels = c('without EPY', 'with EPY', 'first', 'second', 'third')) +
+    xlab('one known clutch          multiple known clutches    ') + ylab('clutch initiation standardized') +
+    theme_classic(base_size = 24)
+p
+
+
+# png(paste0('./REPORTS/FIGURES/EPY_timing_multiple_clutches_study_site.png'), width = 800, height = 800)
+# p
+# dev.off()
+
 
 # timing of polyandrous females
 ds1 = d[study_site == TRUE]
@@ -875,12 +885,21 @@ ds[, anyEPY := as.character(anyEPY)]
 ds[, mean_initiation := mean(initiation, na.rm = TRUE), by = year_]
 ds[, initiation_st := difftime(initiation, mean_initiation, units = 'days') %>% as.numeric]
 
+p = 
+  ggplot(data = ds) +
+    geom_boxplot(aes(clutch_identity, initiation_st), fill = 'grey85', outlier.alpha = 0) +
+    geom_jitter(aes(clutch_identity, initiation_st, fill = anyEPY), width = 0.3, height = 0, shape = 21, size = 3) +
+    scale_fill_manual(values = c('white', 'black'), name = 'any EPY', labels = c('no', 'yes')) +
+    scale_x_discrete(labels = c('without EPY', 'with EPY', 'first', 'second', 'third')) +
+    xlab('one known clutch          multiple known clutches    ') + ylab('clutch initiation standardized') +
+    theme_classic(base_size = 24)
+p
 
-ggplot(data = ds) +
-  geom_boxplot(aes(clutch_identity, initiation_st), fill = 'grey85', outlier.alpha = 0) +
-  geom_jitter(aes(clutch_identity, initiation_st, fill = anyEPY), width = 0.3, height = 0, shape = 21) +
-  scale_fill_manual(values = c('white', 'black')) +
-  theme_classic(base_size = 18)
+
+# png(paste0('./REPORTS/FIGURES/EPY_timing_multiple_clutches_all.png'), width = 800, height = 800)
+# p
+# dev.off()
+
   
 #------------------------------------------------------------------------------------------------------------------------
 # 9. Paternity frequency within the season 
