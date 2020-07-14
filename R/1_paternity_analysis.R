@@ -11,8 +11,9 @@
 # 5. Paternity between study site and external
 # 6. Paternity between years 
 # 7. Paternity polyandrous clutches & renesting 
-# 8. Paternity frequency within the season 
-# 9. Paternity frequency between years
+# 8. Timing of second and third clutches
+# 9. Paternity frequency within the season 
+# 10. Paternity frequency between years
 
 # Packages
 sapply( c('data.table', 'magrittr', 'sdb', 'ggplot2', 'sf', 'auksRuak', 'arm'),
@@ -434,8 +435,57 @@ d[parentage == TRUE & study_site == TRUE & female_field == 1] %>% nrow / d[paren
 #------------------------------------------------------------------------------------------------------------------------
 # 5. Paternity between study site and external
 #------------------------------------------------------------------------------------------------------------------------
+ 
+# subset nests with parentage study site
+ds = d[parentage == TRUE & study_site == TRUE]
 
-# subset nests with parentage
+# by nests
+fm = glm(anyEPY ~ 1, data = ds, family = binomial)
+summary(fm)
+
+# calculate credibility intervals
+nd = data.frame(study_site = c(TRUE, FALSE))
+nd = droplevels(nd)
+xmat = model.matrix(~1, data = nd)
+nd$fit = plogis(xmat %*% coef(fm))
+nsim = 5000
+bsim = sim(fm, n.sim = nsim)
+
+fitmat = matrix(ncol = nsim, nrow = nrow(nd))
+
+for(i in 1:nsim) fitmat[, i] = plogis(xmat %*% bsim@coef[i, ])
+nd$lower = apply(fitmat, 1, quantile, probs = 0.025)
+nd$upper = apply(fitmat, 1, quantile, probs = 0.975)
+
+# study site 
+quantile(fitmat[, ] , probs = c(0.025, 0.5, 0.975)) %>% round(., 3) * 100
+
+# subset nests with parentage external
+ds = d[parentage == TRUE & study_site == FALSE]
+
+# by nests
+fm = glm(anyEPY ~ 1, data = ds, family = binomial)
+summary(fm)
+
+# calculate credibility intervals
+nd = data.frame(study_site = c(TRUE, FALSE))
+nd = droplevels(nd)
+xmat = model.matrix(~1, data = nd)
+nd$fit = plogis(xmat %*% coef(fm))
+nsim = 5000
+bsim = sim(fm, n.sim = nsim)
+
+fitmat = matrix(ncol = nsim, nrow = nrow(nd))
+
+for(i in 1:nsim) fitmat[, i] = plogis(xmat %*% bsim@coef[i, ])
+nd$lower = apply(fitmat, 1, quantile, probs = 0.025)
+nd$upper = apply(fitmat, 1, quantile, probs = 0.975)
+
+# external
+quantile(fitmat[, ] , probs = c(0.025, 0.5, 0.975)) %>% round(., 3) * 100
+
+
+# parentage between study site and external
 ds = d[parentage == TRUE]
 
 # by nests
@@ -763,7 +813,77 @@ ds[, c('N_nests', 'EPY_1nest', 'EPY_2nest') := NULL]
 ds
 
 #------------------------------------------------------------------------------------------------------------------------
-# 8. Paternity frequency within the season 
+# 8. Timing of second and third clutches
+#------------------------------------------------------------------------------------------------------------------------
+
+# assign clutch identity
+d[female_clutch == 3, clutch_identity := 'third']
+d[female_clutch == 2, clutch_identity := 'second']
+d[female_clutch == 1 & N_female_clutch > 1, clutch_identity := 'first']
+d[female_clutch == 1 & N_female_clutch < 2, clutch_identity := 'one']
+d[clutch_identity == 'one' & anyEPY == FALSE, clutch_identity := 'one_noEPY']
+d[clutch_identity == 'one' & anyEPY == TRUE, clutch_identity := 'one_EPY']
+d[is.na(clutch_identity)]
+d[, .N, by = clutch_identity]
+
+# factor order
+d[, clutch_identity := factor(clutch_identity, levels = c('one_noEPY', 'one_EPY', 'first', 'second', 'third'))]
+
+ds1 = d[study_site == TRUE]
+ds2 = d[study_site == FALSE & clutch_identity %in% c('first', 'second', 'third')]
+ds = rbind(ds1, ds2)
+ds = ds[!is.na(initiation)]
+ds = ds[!is.na(anyEPY)]
+ds[, anyEPY := as.character(anyEPY)]
+
+
+ds[, mean_initiation := mean(initiation, na.rm = TRUE), by = year_]
+ds[, initiation_st := difftime(initiation, mean_initiation, units = 'days') %>% as.numeric]
+
+
+ggplot(data = ds) +
+  geom_boxplot(aes(clutch_identity, initiation_st), fill = 'grey85', outlier.alpha = 0) +
+  geom_jitter(aes(clutch_identity, initiation_st, fill = anyEPY), width = 0.3, height = 0, shape = 21) +
+  scale_fill_manual(values = c('white', 'black')) +
+  theme_classic(base_size = 18)
+
+# timing of polyandrous females
+ds1 = d[study_site == TRUE]
+ds2 = d[study_site == FALSE & clutch_identity %in% c('first', 'second', 'third')]
+dst = rbind(ds1, ds2)
+dst = dst[!is.na(initiation)]
+dst[clutch_identity == 'one_noEPY', clutch_identity := 'one']
+dst[clutch_identity == 'one_EPY', clutch_identity := 'one']
+dst[, mean_initiation := mean(initiation, na.rm = TRUE), by = year_]
+dst[, initiation_st := difftime(initiation, mean_initiation, units = 'days') %>% as.numeric]
+
+
+fm = aov(initiation_st ~ clutch_identity, data = dst)
+summary(fm)
+
+TukeyHSD(fm)
+
+
+#------------------------------------------------------------------------------------------------------------------------
+# all from 2017-2019
+ds = d[year_ > 2016]
+ds = ds[!is.na(initiation)]
+ds = ds[!is.na(anyEPY)]
+ds[, anyEPY := as.character(anyEPY)]
+
+
+ds[, mean_initiation := mean(initiation, na.rm = TRUE), by = year_]
+ds[, initiation_st := difftime(initiation, mean_initiation, units = 'days') %>% as.numeric]
+
+
+ggplot(data = ds) +
+  geom_boxplot(aes(clutch_identity, initiation_st), fill = 'grey85', outlier.alpha = 0) +
+  geom_jitter(aes(clutch_identity, initiation_st, fill = anyEPY), width = 0.3, height = 0, shape = 21) +
+  scale_fill_manual(values = c('white', 'black')) +
+  theme_classic(base_size = 18)
+  
+#------------------------------------------------------------------------------------------------------------------------
+# 9. Paternity frequency within the season 
 #------------------------------------------------------------------------------------------------------------------------
 
 # subset nests with parentage, exclude year without any EPY
@@ -896,7 +1016,7 @@ ggplot(dsAll) +
 
 
 #------------------------------------------------------------------------------------------------------------------------
-# 9. Paternity frequency between years
+# 10. Paternity frequency between years
 #------------------------------------------------------------------------------------------------------------------------
 
 require(effects)
