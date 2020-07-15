@@ -165,7 +165,7 @@ dss = merge(dss, ds1, by = 'study_site')
 dss[, social_female_before := paste0(round(social_female_before / N_EPY_eggs * 100, 0), '% (', social_female_before, '/', N_EPY_eggs, ')')]
 
 # timing of EPY nest
-ds = ds[nestID_social != 'R320_19'] # second nest of the male (irrelevant for this analysis)
+ds = ds[!(nestID_social == 'R320_19' & IDfather_year == '270170938_19' )] # second nest of the male (irrelevant for this analysis)
 ds[, while_initiation := initiation > initiation_soc & initiation < complete_soc]
 ds[, while_incubation := initiation > complete_soc & initiation < nest_state_date_soc]
 ds[, while_breeding   := initiation > initiation_soc & initiation < nest_state_date_soc]
@@ -174,6 +174,8 @@ ds[, diff_EPY_to_social_nest_complete := difftime(complete_soc, initiation, unit
 
 ds[, .(IDfather_year, initiation_soc, nest_state_date_soc, nest_state_soc, initiation, diff_EPY_to_social_nest, 
        same_female, while_initiation, while_incubation)]
+
+setorder(ds, year_, initiation)
 
 ggplot(data = ds) +
   geom_histogram(aes(x = round(diff_EPY_to_social_nest, 0))) +
@@ -242,36 +244,78 @@ IDs = dpu$IDfather_year
 IDs = dr[ID_year %in% IDs]$ID_year %>% unique # subset only males that where seen in the year of EPY
 # i = IDs[2]
 
-foreach(i = IDs) %do% {
-  
-  dm = dr[ID_year == i]
-  dmn = d[male_id_year == i]
-  dpf = dp[IDfather_year == i & EPY == 1]$IDmother_year
-  dpfn = d[female_id_year == dpf & anyEPY == TRUE]
-  df = dr[ID_year == dpf]
-  
-  dextent_r = rbind(dm, df)
-  dextent_n = rbind(dmn, dpfn)
-  dextent = rbind(dextent_r[, .(lat, lon)], dextent_n[, .(lat, lon)])
-  
-  bm = create_bm(dextent, buffer = 200)
-  
-  p =
-    bm +
-    geom_point(data = dmn, aes(lon, lat), color = 'dodgerblue4', size = 6, alpha = 0.5) +
-    geom_point(data = dpfn, aes(lon, lat), color = 'firebrick2', size = 4, alpha = 0.5) +
-    geom_point(data = dm, aes(lon, lat), color = 'dodgerblue4', size = 2, alpha = 0.5) +
-    geom_point(data = df, aes(lon, lat), color = 'firebrick2', size = 2, alpha = 0.5) +
-    ggtitle(paste('EPY father ', i, ' and female ', dpf))
-  
-  png(paste0('./REPORTS/EPY_nest_maps/', i,'.png'), width = 600, height = 600)
-  print(p)
-  dev.off()
-  
-}
+# foreach(i = IDs) %do% {
+#   
+#   dm = dr[ID_year == i]
+#   dmn = d[male_id_year == i]
+#   dpf = dp[IDfather_year == i & EPY == 1]$IDmother_year
+#   dpfn = d[female_id_year == dpf & anyEPY == TRUE]
+#   df = dr[ID_year == dpf]
+#   
+#   dextent_r = rbind(dm, df)
+#   dextent_n = rbind(dmn, dpfn)
+#   dextent = rbind(dextent_r[, .(lat, lon)], dextent_n[, .(lat, lon)])
+#   
+#   bm = create_bm(dextent, buffer = 200)
+#   
+#   p =
+#     bm +
+#     geom_point(data = dmn, aes(lon, lat), color = 'dodgerblue4', size = 6, alpha = 0.5) +
+#     geom_point(data = dpfn, aes(lon, lat), color = 'firebrick2', size = 4, alpha = 0.5) +
+#     geom_point(data = dm, aes(lon, lat), color = 'dodgerblue4', size = 2, alpha = 0.5) +
+#     geom_point(data = df, aes(lon, lat), color = 'firebrick2', size = 2, alpha = 0.5) +
+#     ggtitle(paste('EPY father ', i, ' and female ', dpf))
+#   
+#   png(paste0('./REPORTS/EPY_nest_maps/', i,'.png'), width = 600, height = 600)
+#   print(p)
+#   dev.off()
+#   
+# }
 
 
+#------------------------------------------------------------------------------------------------------------------------
+# 4. Summary table & tarsus and bill length extra-pair fathers
+#------------------------------------------------------------------------------------------------------------------------
 
+
+dsd = ds[, .(year = year_, IDfather, cuckold_male, same_female, nest_initiation = as.Date(initiation),
+             diff_EPY_to_social_nest = round(diff_EPY_to_social_nest, 0)*-1, while_breeding, dist_nests = round(dist_nests, 0))]
+dsd
+
+dcu = dc[, .(tarsus = mean(tarsus, na.rm = TRUE), culmen = mean(culmen, na.rm = TRUE), 
+             weight = mean(weight, na.rm = TRUE), min_year = min(year_, na.rm = TRUE)), by = ID]
+dcu[tarsus > 25, tarsus := NA]
+
+dsd = merge(dsd, dcu[, .(ID, tarsus, culmen, weight, min_year)], by.x = 'cuckold_male', by.y = 'ID', all.x = TRUE)
+dsd = merge(dsd, dcu[, .(ID, tarsus_EPY_father = tarsus, culmen_EPY_father = culmen, weight_EPY_father = weight, 
+                         min_year_EPY_father = min_year)], by.x = 'IDfather', by.y = 'ID', all.x = TRUE)
+
+
+dsd[, diff_tarsus := tarsus_EPY_father - tarsus]
+dsd[, diff_culmen := culmen_EPY_father - culmen]
+dsd[, diff_age := min_year - min_year_EPY_father]
+ds = copy(dsd)
+
+dsd = dsd[, .(IDfather, same_female, diff_EPY_to_social_nest, while_breeding, dist_nests, diff_tarsus, 
+              diff_culmen, diff_age)]
+
+setorder(dsd, -same_female, -while_breeding, na.last = TRUE)
+dsd
+
+# openxlsx::write.xlsx(dsd, './REPORTS/EPY_frequency/EPY_fathers_table.xlsx')
+
+dsd$diff_EPY_to_social_nest %>% mean(., na.rm = TRUE)
+dsd$dist_nests %>% median(., na.rm = TRUE)
+dsd$diff_tarsus %>% mean(., na.rm = TRUE)
+dsd$diff_culmen %>% mean(., na.rm = TRUE)
+dsd$diff_age %>% mean(., na.rm = TRUE)
+
+
+# t-tests
+ds = ds[!is.na(tarsus) & !is.na(!culmen)]
+t.test(ds$tarsus, ds$tarsus_EPY_father, paired = TRUE)
+t.test(ds$culmen, ds$culmen_EPY_father, paired = TRUE)
+t.test(ds$min_year, ds$min_year_EPY_father, paired = TRUE)
 
 
 
