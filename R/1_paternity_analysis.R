@@ -13,7 +13,6 @@
 # 7. Paternity polyandrous clutches & renesting 
 # 8. Timing of second and third clutches
 # 9. Paternity frequency within the season 
-# 10. Paternity frequency between years
 
 # Packages
 sapply( c('data.table', 'magrittr', 'sdb', 'ggplot2', 'sf', 'auksRuak', 'arm'),
@@ -443,22 +442,14 @@ ds = d[parentage == TRUE & study_site == TRUE]
 fm = glm(anyEPY ~ 1, data = ds, family = binomial)
 summary(fm)
 
-# calculate credibility intervals
-nd = data.frame(study_site = c(TRUE, FALSE))
-nd = droplevels(nd)
-xmat = model.matrix(~1, data = nd)
-nd$fit = plogis(xmat %*% coef(fm))
-nsim = 5000
-bsim = sim(fm, n.sim = nsim)
+confint(fm) %>% binomial()$linkinv()
 
-fitmat = matrix(ncol = nsim, nrow = nrow(nd))
+# by eggs
+fm = glm(cbind(N_EPY, N_parentage) ~ study_site, data = ds, family = binomial)
+summary(fm)
 
-for(i in 1:nsim) fitmat[, i] = plogis(xmat %*% bsim@coef[i, ])
-nd$lower = apply(fitmat, 1, quantile, probs = 0.025)
-nd$upper = apply(fitmat, 1, quantile, probs = 0.975)
+confint(fm) %>% binomial()$linkinv()
 
-# study site 
-quantile(fitmat[, ] , probs = c(0.025, 0.5, 0.975)) %>% round(., 3) * 100
 
 # subset nests with parentage external
 ds = d[parentage == TRUE & study_site == FALSE]
@@ -467,23 +458,13 @@ ds = d[parentage == TRUE & study_site == FALSE]
 fm = glm(anyEPY ~ 1, data = ds, family = binomial)
 summary(fm)
 
-# calculate credibility intervals
-nd = data.frame(study_site = c(TRUE, FALSE))
-nd = droplevels(nd)
-xmat = model.matrix(~1, data = nd)
-nd$fit = plogis(xmat %*% coef(fm))
-nsim = 5000
-bsim = sim(fm, n.sim = nsim)
+confint(fm) %>% binomial()$linkinv()
 
-fitmat = matrix(ncol = nsim, nrow = nrow(nd))
+# by eggs
+fm = glm(cbind(N_EPY, N_parentage) ~ study_site, data = ds, family = binomial)
+summary(fm)
 
-for(i in 1:nsim) fitmat[, i] = plogis(xmat %*% bsim@coef[i, ])
-nd$lower = apply(fitmat, 1, quantile, probs = 0.025)
-nd$upper = apply(fitmat, 1, quantile, probs = 0.975)
-
-# external
-quantile(fitmat[, ] , probs = c(0.025, 0.5, 0.975)) %>% round(., 3) * 100
-
+confint(fm) %>% binomial()$linkinv()
 
 # parentage between study site and external
 ds = d[parentage == TRUE]
@@ -491,68 +472,12 @@ ds = d[parentage == TRUE]
 # by nests
 fm = glm(anyEPY ~ study_site, data = ds, family = binomial)
 summary(fm)
-
-# calculate credibility intervals
-nd = data.frame(study_site = c(TRUE, FALSE))
-nd = droplevels(nd)
-xmat = model.matrix(~study_site, data = nd)
-nd$fit = plogis(xmat %*% coef(fm))
-nsim = 5000
-bsim = sim(fm, n.sim = nsim)
-
-fitmat = matrix(ncol = nsim, nrow = nrow(nd))
-
-for(i in 1:nsim) fitmat[, i] = plogis(xmat %*% bsim@coef[i, ])
-nd$lower = apply(fitmat, 1, quantile, probs = 0.025)
-nd$upper = apply(fitmat, 1, quantile, probs = 0.975)
-
-# plot 
-ggplot(data = nd) +
-  geom_point(aes(x = study_site, y = fit*100)) +
-  geom_errorbar(aes(x = study_site, ymin = lower*100, ymax = upper*100), width = .1, position = position_dodge(width = 0.5)) +
-  labs(y = 'Percent nests with EPY', x = 'Study site') +
-  ylim(min = 0, max = 20) +
-  theme_classic(base_size = 16)
-
-# intervals study site vs. external
-fit_mean = fitmat[nd$study_site == TRUE, ] 
-quantile(fit_mean, probs = c(0.025, 0.5, 0.975)) %>% round(., 3) * 100
-
-fit_mean = fitmat[nd$study_site == FALSE, ] 
-quantile(fit_mean, probs = c(0.025, 0.5, 0.975)) %>% round(., 3) * 100
+Anova(fm)
 
 # by eggs
 fm = glm(cbind(N_EPY, N_parentage) ~ study_site, data = ds, family = binomial)
 summary(fm)
-
-# calculate credibility intervals
-nd = data.frame(study_site = c(TRUE, FALSE))
-nd = droplevels(nd)
-xmat = model.matrix(~study_site, data = nd)
-nd$fit = plogis(xmat %*% coef(fm))
-nsim = 5000
-bsim = sim(fm, n.sim = nsim)
-
-fitmat = matrix(ncol = nsim, nrow = nrow(nd))
-
-for(i in 1:nsim) fitmat[, i] = plogis(xmat %*% bsim@coef[i, ])
-nd$lower = apply(fitmat, 1, quantile, probs = 0.025)
-nd$upper = apply(fitmat, 1, quantile, probs = 0.975)
-
-# plot 
-ggplot(data = nd) +
-  geom_point(aes(x = study_site, y = fit*100)) +
-  geom_errorbar(aes(x = study_site, ymin = lower*100, ymax = upper*100), width = .1, position = position_dodge(width = 0.5)) +
-  labs(y = 'Percent nests with EPY', x = 'Study site') +
-  ylim(min = 0, max = 20) +
-  theme_classic(base_size = 16)
-
-# intervals study site vs. external
-fit_mean = fitmat[nd$study_site == TRUE, ] 
-quantile(fit_mean, probs = c(0.025, 0.5, 0.975)) %>% round(., 3) * 100
-
-fit_mean = fitmat[nd$study_site == FALSE, ] 
-quantile(fit_mean, probs = c(0.025, 0.5, 0.975)) %>% round(., 3) * 100
+Anova(fm)
 
 
 #------------------------------------------------------------------------------------------------------------------------
@@ -565,147 +490,9 @@ ds = d[parentage == TRUE]
 # reverse factor, otherwise intercept 2003 (no EPY)
 ds[, YEAR_ := factor(YEAR_, levels = rev(sort(unique(ds$YEAR_))))]
 
-fm = glm(anyEPY ~ YEAR_ + study_site, data = ds, family = binomial)
-summary(fm)
-
-# calculate credibility intervals
-nd0 = data.frame(YEAR_ = rep(unique(ds[study_site == TRUE]$YEAR_)), study_site = TRUE)
-nd1 = data.frame(YEAR_ = rep(unique(ds[study_site == FALSE]$YEAR_)), study_site = FALSE)
-nd = (rbind(nd0, nd1))
-xmat = model.matrix(~YEAR_ + study_site, data = nd)
-nd$fit = plogis(xmat %*% coef(fm))
-nsim = 5000
-bsim = sim(fm, n.sim = nsim)
-
-fitmat = matrix(ncol = nsim, nrow = nrow(nd))
-
-for(i in 1:nsim) fitmat[, i] = plogis(xmat %*% bsim@coef[i, ])
-nd$lower = apply(fitmat, 1, quantile, probs = 0.025)
-nd$upper = apply(fitmat, 1, quantile, probs = 0.975)
-
-# correct year with 0 EPY in sample
-qb2003 = qbeta(p = c(0.025, 0.5, 0.975), 1, 13)
-nd$fit[nd$YEAR_ == 2003] = qb2003[2]
-nd$lower[nd$YEAR_ == 2003] = qb2003[1]
-nd$upper[nd$YEAR_ == 2003] = qb2003[3]
-
-nd = data.table(nd)
-nd[, YEAR_ := factor(YEAR_, levels = sort(unique(ds$YEAR_)))]
-
-
-ggplot(data = nd) +
-  geom_point(aes(x = YEAR_, y = fit*100, group = as.factor(study_site), color = as.factor(study_site)), 
-             position = position_dodge(width = 0.5), size = 4) +
-  geom_errorbar(aes(x = YEAR_, ymin = lower*100, ymax = upper*100, group = as.factor(study_site)), 
-                width = .1, position = position_dodge(width = 0.5)) +
-  scale_color_manual(name = 'Study site', values = c('firebrick3', 'dodgerblue2')) +
-  theme_classic(base_size = 24) + labs(x = 'Year', y = 'Percent nests with EPY')
-
-# calculate estimate mean year
-fit_mean = fitmat[nd$study_site == TRUE, ] %>% colMeans
-quantile(fit_mean, probs = c(0.025, 0.5, 0.975))
-mean(fit_mean)
-
-fit_mean = fitmat[nd$study_site == FALSE, ] %>% colMeans
-quantile(fit_mean, probs = c(0.025, 0.5, 0.975))
-mean(fit_mean)
-
-### differences if in seperate models?
-#------------------------------------------------------------------------------------------------------------------------
-
-# subset nests with parentage and study site
-ds = d[parentage == TRUE & study_site == TRUE]
-
 fm = glm(anyEPY ~ YEAR_, data = ds, family = binomial)
 summary(fm)
-
-# calculate credibility intervals
-nd = data.frame(YEAR_ = rep(unique(ds$YEAR_)))
-nd = droplevels(nd)
-xmat = model.matrix(~YEAR_, data = nd)
-nd$fit = plogis(xmat %*% coef(fm))
-nsim = 5000
-bsim = sim(fm, n.sim = nsim)
-
-fitmat = matrix(ncol = nsim, nrow = nrow(nd))
-
-for(i in 1:nsim) fitmat[, i] = plogis(xmat %*% bsim@coef[i, ])
-nd$lower = apply(fitmat, 1, quantile, probs = 0.025)
-nd$upper = apply(fitmat, 1, quantile, probs = 0.975)
-
-# plot 
-ggplot(data = nd) +
-  geom_point(aes(x = YEAR_, y = fit*100)) +
-  geom_errorbar(aes(x = YEAR_, ymin = lower*100, ymax = upper*100), width = .1, position = position_dodge(width = 0.5)) +
-  labs(y = 'Percent nests with EPY', x = 'Years') +
-  theme_classic(base_size = 16)
-
-# intervals external
-quantile(fitmat, probs = c(0.025, 0.5, 0.975))
-
-# copy for plot
-nd_on = copy(data.table(nd))
-
-# subset nests with parentage and external
-ds = d[parentage == TRUE & study_site == FALSE]
-
-fm = glm(anyEPY ~ YEAR_, data = ds, family = binomial)
-summary(fm)
-
-# calculate credibility intervals
-nd = data.frame(YEAR_ = rep(unique(ds$YEAR_)))
-nd = droplevels(nd)
-xmat = model.matrix(~YEAR_, data = nd)
-nd$fit = plogis(xmat %*% coef(fm))
-nsim = 5000
-bsim = sim(fm, n.sim = nsim)
-
-fitmat = matrix(ncol = nsim, nrow = nrow(nd))
-
-for(i in 1:nsim) fitmat[, i] = plogis(xmat %*% bsim@coef[i, ])
-nd$lower = apply(fitmat, 1, quantile, probs = 0.025)
-nd$upper = apply(fitmat, 1, quantile, probs = 0.975)
-
-# correct year with 0 EPY in sample
-qb2003 = qbeta(p = c(0.025, 0.5, 0.975), 1, 13)
-nd$fit[nd$YEAR_ == 2003] = qb2003[2]
-nd$lower[nd$YEAR_ == 2003] = qb2003[1]
-nd$upper[nd$YEAR_ == 2003] = qb2003[3]
-
-# plot 
-ggplot(data = nd) +
-  geom_point(aes(x = YEAR_, y = fit*100)) +
-  geom_errorbar(aes(x = YEAR_, ymin = lower*100, ymax = upper*100), width = .1, position = position_dodge(width = 0.5)) +
-  labs(y = 'Percent nests with EPY', x = 'Years') +
-  theme_classic(base_size = 16)
-
-# intervals external
-quantile(fitmat, probs = c(0.025, 0.5, 0.975))
-
-# copy for plot
-nd_off = copy(data.table(nd))
-
-# merge
-nd_on[, study_site := TRUE]
-nd_off[, study_site := FALSE]
-nd = rbind(nd_on, nd_off)
-nd[, YEAR_ := factor(YEAR_, levels = sort(unique(ds$YEAR_)))]
-
-# plot for both seperated models
-p = 
-ggplot(data = nd) +
-  geom_point(aes(x = YEAR_, y = fit*100, group = as.factor(study_site), color = as.factor(study_site)), 
-             position = position_dodge(width = 0.5), size = 4) +
-  geom_errorbar(aes(x = YEAR_, ymin = lower*100, ymax = upper*100, group = as.factor(study_site)), 
-                width = .1, position = position_dodge(width = 0.5)) +
-  scale_color_manual(name = 'Study site', values = c('firebrick3', 'dodgerblue2')) +
-  theme_classic(base_size = 24) + labs(x = 'Year', y = 'Percent nests with EPY')
-p
-
-# png(paste0('./REPORTS/FIGURES/EPY_frequency_years.png'), width = 1200, height = 800)
-# p
-# dev.off()
-
+Anova(fm)
 
 #------------------------------------------------------------------------------------------------------------------------
 # 7. Paternity polyandrous clutches & renesting 
@@ -743,6 +530,10 @@ dr[sperm_storage == FALSE]$diff_initiation
 
 
 dsp = dr[, .(type = 'polyandrous', N_nests = nrow(dr), EPY_1nest = sum(anyEPY1), EPY_2nest = sum(anyEPY2))]
+
+
+# fisher test to see if EPY in polyandrous clutches different to known first clutches
+matrix(c(3, 0, 11, 18), ncol= 2) %>% fisher.test()
 
 # sperm storage?
 ds = dr[anyEPY2 == TRUE]
@@ -871,7 +662,9 @@ dst[, initiation_st := difftime(initiation, mean_initiation, units = 'days') %>%
 fm = aov(initiation_st ~ clutch_identity, data = dst)
 summary(fm)
 
-TukeyHSD(fm)
+glht(fm, linfct = mcp(clutch_identity = c('one - first = 0'))) %>% summary()
+glht(fm, linfct = mcp(clutch_identity = c('one - second = 0'))) %>% summary()
+
 
 
 #------------------------------------------------------------------------------------------------------------------------
@@ -910,34 +703,11 @@ ds = d[parentage == TRUE & YEAR_ != '2003']
 ds[, YEAR_ := factor(YEAR_)]
 
 fm = glm(anyEPY ~ initiation_doy * YEAR_, data = ds, family = binomial)
-summary(fm)
+Anova(fm)
 
-rs = seq(min(ds$initiation_doy, na.rm = TRUE), 
-         max(ds$initiation_doy, na.rm = TRUE), 1)
-years = unique(ds$YEAR_)
-nd = data.table(YEAR_ = rep(years, each = length(rs)),
-                initiation_doy = rep(rs, length(years)))
-dx = ds[, .(min_year_ = min(initiation_doy, na.rm = TRUE), max_year = max(initiation_doy, na.rm = TRUE)), by = YEAR_]
-nd = merge(nd, dx, all.x = TRUE, by = 'YEAR_')
-nd[, initiation_in_year := initiation_doy > min_year_ & initiation_doy < max_year]
-nd = nd[initiation_in_year == TRUE]
-xmat = model.matrix(~initiation_doy * YEAR_, data = nd)
-nd$fit = plogis(xmat %*% coef(fm))
-nsim = 5000
-bsim = sim(fm, n.sim = nsim)
+fm = glm(anyEPY ~ initiation_doy, data = ds, family = binomial)
+Anova(fm)
 
-fitmat = matrix(ncol = nsim, nrow = nrow(nd))
-
-for(i in 1:nsim) fitmat[, i] = plogis(xmat %*% bsim@coef[i, ])
-nd$lower = apply(fitmat, 1, quantile, probs = 0.025)
-nd$upper = apply(fitmat, 1, quantile, probs = 0.975)
-
-ggplot(data = nd) +
-  geom_line(aes(x = initiation_doy, y = fit*100, group = YEAR_, color = YEAR_)) +
-  geom_ribbon(aes(x = initiation_doy, ymin = lower*100, ymax = upper*100, fill = YEAR_, color = NULL), alpha = .15) +
-  theme_classic(base_size = 24) + labs(x = 'Day of the year', y = 'Percent nests with EPY')
-
-nd1 = copy(data.table(nd))
 
 # load Dale et al. data
 dale = read.csv2('./DATA/Dale_EPP.csv') %>% data.table
@@ -948,138 +718,4 @@ dale[, initiation_doy := initiation_doy - diff_to_Dale]
 
 fm = glm(anyEPY ~ initiation_doy, data = dale, family = binomial)
 summary(fm)
-
-# calculate credibility intervals
-rs = seq(min(dale$initiation_doy, na.rm = TRUE), 
-         max(dale$initiation_doy, na.rm = TRUE), 1)
-nd = data.table(initiation_doy = rs)
-xmat = model.matrix(~initiation_doy, data = nd)
-nd$fit = plogis(xmat %*% coef(fm))
-nsim = 5000
-bsim = sim(fm, n.sim = nsim)
-
-fitmat = matrix(ncol = nsim, nrow = nrow(nd))
-
-for(i in 1:nsim) fitmat[, i] = plogis(xmat %*% bsim@coef[i, ])
-nd$lower = apply(fitmat, 1, quantile, probs = 0.025)
-nd$upper = apply(fitmat, 1, quantile, probs = 0.975)
-
-# plot of Dale data
-plot(nd$initiation_doy, nd$fit)
-ggplot(data = nd) +
-  geom_line(aes(x = initiation_doy, y = fit*100)) +
-  geom_ribbon(aes(x = initiation_doy, ymin = lower*100, ymax = upper*100), alpha = .15) +
-  theme_classic(base_size = 24) + labs(x = 'Year', y = 'Percent nests with EPY')
-
-nd2 = copy(data.table(nd))
-
-# merge data
-nd2[, YEAR_ := '1993 (Dale et al.)']
-
-nd = rbind(nd2[, .(YEAR_, initiation_doy, fit, lower, upper)], nd1[, .(YEAR_, initiation_doy, fit, lower, upper)])
-
-# ggplot colors
-gg_color_hue <- function(n) {
-  hues = seq(15, 375, length = n + 1)
-  hcl(h = hues, l = 65, c = 100)[1:n]
-}
-
-cols = gg_color_hue(7)
-
-# plot of our data and Dale et al. together
-p = 
-ggplot(data = nd) +
-  geom_line(aes(x = initiation_doy, y = fit*100, group = YEAR_, color = YEAR_)) +
-  geom_ribbon(aes(x = initiation_doy, ymin = lower*100, ymax = upper*100, fill = YEAR_, color = NULL), alpha = .15) +
-  scale_color_manual(values = c('black', cols), name = 'Year') +
-  scale_fill_manual(values = c('black', cols), name = 'Year') + 
-  theme_classic(base_size = 24) + labs(x = 'Day of the year', y = 'Percent nests with EPY')
-p
-
-png(paste0('./REPORTS/FIGURES/EPY_frequency_nest_initiation.png'), width = 1200, height = 800)
-p
-dev.off()
-
-
-#------------------------------------------------------------------------------------------------------------------------
-### Sample timing and EPY frequency
-ds = d[!is.na(initiation_y)]
-ds[, anyEPY_year := any(parentage == TRUE), by = year_]
-
-dsAll = ds[anyEPY_year == TRUE]
-dsAll[, type := 'all nests']
-
-dsEPY = ds[parentage == TRUE]
-dsEPY[, type := ifelse(anyEPY == 1, 'with EPY', 'without EPY')]
-
-ds = rbind(dsAll, dsEPY)
-ds[, type := factor(type, levels = c('with EPY','without EPY', 'all nests'))]
-
-ggplot(ds[year_ > 2016]) +
-  geom_boxplot(aes(type, initiation_y, color = type)) +
-  labs(x = '', y = 'Initiation date') +
-  coord_flip() + facet_grid(year_ ~ .) +
-  theme_classic(base_size = 24)
-
-ggplot(ds) +
-  geom_boxplot(aes(type, initiation_y, color = type)) +
-  labs(x = '', y = 'Initiation date') +
-  coord_flip() + facet_grid(year_ ~ .) +
-  theme_classic(base_size = 24)
-
-ggplot(dsAll) +
-  geom_boxplot(aes(parentage, initiation_y, color = parentage)) +
-  labs(x = '', y = 'Initiation date') +
-  coord_flip() + facet_grid(year_ ~ .) +
-  theme_classic(base_size = 24)
-
-
-#------------------------------------------------------------------------------------------------------------------------
-# 10. Paternity frequency between years
-#------------------------------------------------------------------------------------------------------------------------
-
-require(effects)
-
-# seson length and number of nests based on 3 plots monitored in each year
-dss = d[plot %in% c('brw1', 'brw2', 'brw3'), .(mean_year_initiation = mean(initiation_doy, na.rm = TRUE),
-                                               q25_initiation = quantile(initiation_doy, probs = 0.25, na.rm = TRUE),
-                                               q75_initiation = quantile(initiation_doy, probs = 0.75, na.rm = TRUE),
-                                               N = .N), by = YEAR_]
-dss[, season_length := q75_initiation - q25_initiation]
-
-# merge to all data
-d = merge(d, dss, by = 'YEAR_', all.x = TRUE)
-
-# Effect of seson lenght or number of nests, only using Rick's data for season lenght and N nests, but EPY from all
-dx = d[!is.na(anyEPY)]
-setkey(dx, anyEPY, YEAR_)
-dx = dx[CJ(anyEPY, YEAR_, unique = TRUE), .(N_anyEPY = .N, N_nests = N[c(1)], season_length = season_length[c(1)]), by = .EACHI]
-
-dx = merge(dx[anyEPY == 1, .(YEAR_, N_anyEPY1 = N_anyEPY)], dx[anyEPY == 0, .(YEAR_, N_anyEPY0 = N_anyEPY, N_nests, season_length)], by = 'YEAR_')
-dx[, percentEPY := N_anyEPY1 / N_anyEPY0 * 100]
-
-# Higher EPY frequency in longer seasons?
-ggplot(data = dx) +
-  geom_point(aes(x = season_length, y = percentEPY)) +
-  geom_smooth(aes(x = season_length, y = percentEPY), method = 'lm', color = 'black') + 
-  theme_classic()
-
-fm = glm(cbind(N_anyEPY1, N_anyEPY0) ~ season_length, data = dx, family = binomial)
-
-summary(fm)
-plot(allEffects(fm))
-
-
-# Higher frequency of EPY depending on amount of nests?
-ggplot(data = dx) +
-  geom_point(aes(x = N_nests, y = percentEPY)) +
-  geom_smooth(aes(x = N_nests, y = percentEPY), method = 'lm', color = 'black') + 
-  theme_classic()
-
-fm = glm(cbind(N_anyEPY1, N_anyEPY0) ~ N_nests, data = dx, family = binomial)
-
-summary(fm)
-plot(allEffects(fm))
-
-
-
+Anova(fm)
