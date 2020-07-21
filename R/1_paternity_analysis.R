@@ -15,7 +15,7 @@
 # 9. Paternity frequency within the season 
 
 # Packages
-sapply( c('data.table', 'magrittr', 'sdb', 'ggplot2', 'sf', 'auksRuak', 'arm'),
+sapply( c('data.table', 'magrittr', 'sdb', 'ggplot2', 'sf', 'auksRuak', 'arm', 'patchwork'),
         require, character.only = TRUE)
 
 # Projection
@@ -714,17 +714,21 @@ ds = ds[!is.na(initiation)]
 ds = ds[!is.na(anyEPY)]
 ds[, anyEPY := as.character(anyEPY)]
 
-
 ds[, mean_initiation := mean(initiation, na.rm = TRUE), by = year_]
 ds[, initiation_st := difftime(initiation, mean_initiation, units = 'days') %>% as.numeric]
 
+ds[, .N, by = anyEPY]
+dss = data.table(anyEPY = c('0', '1'),
+                 sample_size = c('295', '37'))
+
 p = 
   ggplot(data = ds) +
-  geom_boxplot(aes(clutch_identity, initiation_st), fill = 'grey85', outlier.alpha = 0) +
-  geom_jitter(aes(clutch_identity, initiation_st, fill = anyEPY), width = 0.3, height = 0, shape = 21, size = 3) +
-  scale_fill_manual(values = c('white', 'black'), name = 'any EPY', labels = c('no', 'yes')) +
-  scale_x_discrete(labels = c('without EPY', 'with EPY', 'first', 'second', 'third')) +
-  xlab('one known clutch          multiple known clutches    ') + ylab('clutch initiation standardized') +
+  geom_boxplot(aes(anyEPY, initiation_st), fill = 'grey85', outlier.alpha = 0) +
+  geom_jitter(aes(anyEPY, initiation_st, fill = anyEPY), width = 0.3, height = 0, shape = 21, size = 3, show.legend = FALSE) +
+  scale_fill_manual(values = c('white', 'black')) +
+  scale_x_discrete(labels = c('without EPY', 'with EPY')) +
+  xlab('clutches') + ylab('') +
+  geom_text(data = dss, aes(anyEPY, Inf, label = sample_size), vjust = 1, size = 6) +
   theme_classic(base_size = 24)
 p
 
@@ -732,6 +736,60 @@ p
 # png(paste0('./REPORTS/FIGURES/EPY_timing_multiple_clutches_all.png'), width = 800, height = 800)
 # p
 # dev.off()
+
+ds = ds[clutch_identity %in% c('first', 'second', 'third')]
+ds[is.na(renesting_male), renesting_male := FALSE]
+
+ds[, any_renesting := any(renesting_male == TRUE), by = female_id_year_NA]
+ds[any_renesting == FALSE, next_clutch := 'polyandrous']
+ds[any_renesting == TRUE, next_clutch := 'renesting']
+
+# add first and second clutch of females with three clutches again (otherwise linetype does not work)
+ds[clutch_identity == 'third']
+dss = ds[clutch_identity %in% c('first', 'second') & female_id %in% c(270170935, 19222)]
+dss[, female_id_year_NA := paste0(female_id_year_NA, '2')]
+
+ds = rbind(ds, dss)
+
+
+theme_classic_edit = function (base_size = 11, base_family = "", base_line_size = base_size/22, 
+                               base_rect_size = base_size/22, lp = c(0.8, 0.2)) 
+{
+  theme_bw(base_size = base_size, base_family = base_family, 
+           base_line_size = base_line_size, base_rect_size = base_rect_size) %+replace% 
+    theme(panel.border = element_blank(), panel.grid.major = element_blank(), 
+          panel.grid.minor = element_blank(), 
+          axis.line = element_line(colour = "black", size = rel(1)), legend.key = element_blank(), 
+          strip.background = element_rect(fill = "white", colour = "black", size = rel(2)), complete = TRUE,
+          legend.position = lp)
+}
+
+dss = data.table(clutch_identity = c('first', 'second', 'third'),
+                 sample_size = c('0/15', '3/15', '0/2'))
+
+
+
+p1 = 
+  ggplot(data = ds) +
+  geom_boxplot(aes(clutch_identity, initiation_st), fill = 'grey85', outlier.alpha = 0) +
+  geom_line(aes(clutch_identity, initiation_st, group = female_id_year_NA, linetype = next_clutch)) +
+  geom_point(aes(clutch_identity, initiation_st, fill = anyEPY), shape = 21, size = 3) +
+  scale_fill_manual(values = c('white', 'black'), name = 'any EPY', labels = c('no', 'yes')) +
+  scale_linetype_manual(values = c('solid', 'dotted'), name = 'next clutch') +
+  scale_x_discrete(labels = c('first', 'second', 'third')) +
+  xlab('clutch') + ylab('clutch initiation standardized') +
+  geom_text(data = dss, aes(clutch_identity, Inf, label = sample_size), vjust = 1, size = 6) +
+  theme_classic_edit(base_size = 24, lp = c(0.85, 0.2))
+p1
+
+
+p1 + p
+
+
+png(paste0('./REPORTS/FIGURES/EPY_timing.png'), width = 1000, height = 800)
+p1 + p + plot_layout(ncol = 2, widths = c(2 , 1))
+dev.off()
+
 
 #------------------------------------------------------------------------------------------------------------------------
 # 9. Paternity frequency within the season 
