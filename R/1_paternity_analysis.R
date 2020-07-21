@@ -494,6 +494,11 @@ fm = glm(anyEPY ~ YEAR_, data = ds, family = binomial)
 summary(fm)
 Anova(fm)
 
+# correlation between EPP and polyandry?
+cor.test(x = c(3, 5, 9), y = c(3, 6, 14)) # just study site
+cor.test(x = c(3, 5, 9), y = c(6, 8, 13)) # all data
+
+
 #------------------------------------------------------------------------------------------------------------------------
 # 7. Paternity polyandrous clutches & renesting 
 #------------------------------------------------------------------------------------------------------------------------
@@ -513,6 +518,16 @@ dr[is.na(same_male), same_male := FALSE]
 dr[, both_study_site := ss1 == ss2]
 dr[, diff_initiation := difftime(initiation2, initiation1, units = 'days') %>% as.numeric]
 setorder(dr, female_id_year)
+
+dr[, mean(diff_initiation)]
+dr[, min(diff_initiation)]
+dr[, max(diff_initiation)]
+
+dr[anyEPY2 == 1]
+dr[anyEPY2 == 1, mean(diff_initiation)]
+dr[anyEPY2 == 1, min(diff_initiation)]
+dr[anyEPY2 == 1, max(diff_initiation)]
+
 dr = dr[same_male == FALSE]
 dr[, sperm_storage := m1 == EPY_father2]
 
@@ -533,7 +548,7 @@ dsp = dr[, .(type = 'polyandrous', N_nests = nrow(dr), EPY_1nest = sum(anyEPY1),
 
 
 # fisher test to see if EPY in polyandrous clutches different to known first clutches
-matrix(c(3, 0, 11, 18), ncol= 2) %>% fisher.test()
+matrix(c(3, 0, 11, 18), ncol = 2) %>% fisher.test()
 
 # sperm storage?
 ds = dr[anyEPY2 == TRUE]
@@ -568,13 +583,13 @@ ggplot(data = dr) +
   geom_boxplot(aes(x = factor(same_female), y = diff_nest_state))
 
 # difference in initiation dates
-dr[anyEPY2 == 1]$diff_nest_state
+dr$diff_nest_state %>% length
+dr$diff_nest_state
+dr$diff_nest_state %>% median
+dr$diff_nest_state %>% min
+dr$diff_nest_state %>% max
 
-dr[anyEPY2 == 0]$diff_nest_state %>% length
-dr[anyEPY2 == 0]$diff_nest_state
-dr[anyEPY2 == 0]$diff_nest_state %>% median
-dr[anyEPY2 == 0]$diff_nest_state %>% min
-dr[anyEPY2 == 0]$diff_nest_state %>% max
+dr[anyEPY2 == 1]$diff_nest_state
 
 dr[same_female == TRUE]$diff_nest_state %>% length
 dr[same_female == TRUE]$diff_nest_state
@@ -665,8 +680,6 @@ summary(fm)
 glht(fm, linfct = mcp(clutch_identity = c('one - first = 0'))) %>% summary()
 glht(fm, linfct = mcp(clutch_identity = c('one - second = 0'))) %>% summary()
 
-
-
 #------------------------------------------------------------------------------------------------------------------------
 # all from 2017-2019
 ds = d[year_ > 2016]
@@ -693,13 +706,40 @@ p
 # p
 # dev.off()
 
-  
+
+#------------------------------------------------------------------------------------------------------------------------
+# all 
+ds = d
+ds = ds[!is.na(initiation)]
+ds = ds[!is.na(anyEPY)]
+ds[, anyEPY := as.character(anyEPY)]
+
+
+ds[, mean_initiation := mean(initiation, na.rm = TRUE), by = year_]
+ds[, initiation_st := difftime(initiation, mean_initiation, units = 'days') %>% as.numeric]
+
+p = 
+  ggplot(data = ds) +
+  geom_boxplot(aes(clutch_identity, initiation_st), fill = 'grey85', outlier.alpha = 0) +
+  geom_jitter(aes(clutch_identity, initiation_st, fill = anyEPY), width = 0.3, height = 0, shape = 21, size = 3) +
+  scale_fill_manual(values = c('white', 'black'), name = 'any EPY', labels = c('no', 'yes')) +
+  scale_x_discrete(labels = c('without EPY', 'with EPY', 'first', 'second', 'third')) +
+  xlab('one known clutch          multiple known clutches    ') + ylab('clutch initiation standardized') +
+  theme_classic(base_size = 24)
+p
+
+
+# png(paste0('./REPORTS/FIGURES/EPY_timing_multiple_clutches_all.png'), width = 800, height = 800)
+# p
+# dev.off()
+
 #------------------------------------------------------------------------------------------------------------------------
 # 9. Paternity frequency within the season 
 #------------------------------------------------------------------------------------------------------------------------
 
 # subset nests with parentage, exclude year without any EPY
 ds = d[parentage == TRUE & YEAR_ != '2003']
+ds = d[parentage == TRUE & !is.na(initiation_doy)]
 ds[, YEAR_ := factor(YEAR_)]
 
 fm = glm(anyEPY ~ initiation_doy * YEAR_, data = ds, family = binomial)
