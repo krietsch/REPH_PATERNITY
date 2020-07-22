@@ -10,7 +10,8 @@
 # 4. Copulations
 
 # Packages
-sapply( c('data.table', 'magrittr', 'sdb', 'ggplot2', 'anytime', 'sf', 'foreach', 'auksRuak', 'viridis', 'asnipe', 'igraph'),
+sapply( c('data.table', 'magrittr', 'sdb', 'ggplot2', 'anytime', 'sf', 'foreach', 'auksRuak', 'viridis', 'asnipe', 
+          'igraph', 'patchwork'),
         require, character.only = TRUE)
 
 # Projection
@@ -80,6 +81,9 @@ dnID = dnID[!is.na(ID_year) & year_ > 2000]
 dnID[, any_nest := TRUE]
 dnID[, any_nest_study_site := any(study_site == TRUE), by = ID_year]
 dnID[!is.na(ID_year) & !is.na(initiation), first_initiation := min(initiation, na.rm = TRUE), by = ID_year]
+dnID[!is.na(ID_year) & !is.na(initiation) & initiation != first_initiation, 
+     second_initiation := min(initiation, na.rm = TRUE), by = ID_year]
+dnID[, second_initiation := min(second_initiation, na.rm = TRUE), by = ID_year]
 dnID[, N_clutches := .N, by = ID_year]
 dnID = unique(dnID, by = 'ID_year')
 
@@ -188,7 +192,8 @@ di = merge(di, d[, .(obs_id, ID_year, ID1sex = sex, ID1copAS = copAS, author, ye
            by.x = c('obs_id', 'ID1'), by.y = c('obs_id', 'ID_year'), all.x = TRUE)
 
 # any nest? 
-di = merge(di, dnID[, .(ID_year, any_nest, any_nest_study_site, first_initiation, N_clutches)], by.x = 'ID1', by.y = 'ID_year', all.x = TRUE)
+di = merge(di, dnID[, .(ID_year, any_nest, any_nest_study_site, first_initiation, second_initiation, N_clutches)], 
+           by.x = 'ID1', by.y = 'ID_year', all.x = TRUE)
 di[is.na(any_nest), any_nest := FALSE]
 di[is.na(any_nest_study_site), any_nest_study_site := FALSE]
 
@@ -263,11 +268,12 @@ di[, contact_other_than_1st_partner_while_paired := paired_1st_partner == TRUE &
 di[, copulation_other_than_1st_partner_while_paired := paired_1st_partner == TRUE & not_1st_partner_opp_sex == TRUE & ID1copAS == 1]
 
 di[contact_other_than_1st_partner_while_paired == TRUE, .N, by = ID1]
-di[copulation_other_than_1st_partner_while_paired == TRUE, .N, by = ID1]
+di[copulation_other_than_1st_partner_while_paired == TRUE, .N, by = .(ID1, ID1sex)]
 
 # copulation with other than first partner? 
 di[ID1copAS == 1 & ID2copAS == 1 & ID2 != ID1_1st_partner, copAS_not_1st_partner := TRUE]
 di[ID1copAS == 1 & ID2copAS == 1 & ID2 == ID1_2nd_partner, copAS_2nd_partner := TRUE]
+di[ID1copAS == 1 & ID2copAS == 1 & ID2 != ID1_2nd_partner, copAS_not_2nd_partner := TRUE]
 
 # timing of this copulation
 di[copAS_not_1st_partner == TRUE, copEPC_timing := difftime(datetime_, first_initiation, units = 'days') %>% as.numeric]
@@ -281,11 +287,127 @@ unique(di[copAS_not_1st_partner == TRUE, .(ID1, ID2, copAS_2nd_partner)], by = '
 di[ID2 != ID1_1st_partner & same_sex == 0, seen_with_other_than_1st_partner := TRUE]
 di[ID2 == ID1_2nd_partner, seen_with_2nd_partner := TRUE]
 
+di[ID2 != ID1_2nd_partner & same_sex == 0, seen_with_other_than_2nd_partner := TRUE]
 
 unique(di[seen_with_other_than_1st_partner == TRUE, .(ID1, ID2, seen_with_2nd_partner)], by = c('ID1', 'ID2'))
 
+di[, diff_obs_1st_initiation := difftime(datetime_, first_initiation, units = 'days') %>% as.numeric %>% round(., 0)]
+di[, diff_obs_2nd_initiation := difftime(datetime_, second_initiation, units = 'days') %>% as.numeric %>% round(., 0)]
+
+di[seen_with_other_than_1st_partner == TRUE, .(ID1, ID2, datetime_, first_initiation, initiation, diff_obs_initiation)]
 
 
+# turn inf values in NA
+invisible(lapply(names(di),function(.name) set(di, which(is.infinite(di[[.name]])), j = .name,value = NA)))
+
+# unique by day
+ds = unique(di, by = c('ID1', 'ID2', 'date_'))
+
+### interactions
+
+# within pair
+ds1 = ds[ID2 == ID1_1st_partner & ID1sex == 'M', .(ID1, diff_obs_initiation = diff_obs_1st_initiation, type = '1st')]
+ds2 = ds[ID2 == ID1_2nd_partner & ID1sex == 'M', .(ID1, diff_obs_initiation = diff_obs_2nd_initiation, type = '2nd')]
+dss = rbind(ds1, ds2)
+
+p1 = 
+  ggplot(data = dss) +
+  geom_bar(aes(diff_obs_initiation)) +
+  scale_x_continuous(limits = c(-13, 23)) +
+  scale_y_continuous(limits = c(0, 54), labels = c('0', '','20', '','40', ''), expand = c(0, 0)) +
+  xlab('') + ylab('') +
+  theme_classic(base_size = 24)
+p1 
+
+# female 
+ds1 = ds[seen_with_other_than_1st_partner == TRUE & same_sex == 0 & ID1sex == 'F', 
+         .(ID1, diff_obs_initiation = diff_obs_1st_initiation, type = '1st')]
+ds2 = ds[seen_with_other_than_2nd_partner == TRUE & same_sex == 0 & ID1sex == 'F', 
+         .(ID1, diff_obs_initiation = diff_obs_2nd_initiation, type = '2nd')]
+dss = rbind(ds1, ds2)
+
+p2 = 
+ggplot(data = dss) +
+  geom_bar(aes(diff_obs_initiation)) +
+  scale_x_continuous(limits = c(-13, 23)) +
+  scale_y_continuous(limits = c(0, 21), labels = c('0', '','10', '','20'), expand = c(0, 0)) +
+  xlab('') + ylab('N interactions') +
+  theme_classic(base_size = 24)
+p2
+
+# male 
+ds1 = ds[seen_with_other_than_1st_partner == TRUE & same_sex == 0 & ID1sex == 'M', 
+         .(ID1, diff_obs_initiation = diff_obs_1st_initiation, type = '1st')]
+ds2 = ds[seen_with_other_than_2nd_partner == TRUE & same_sex == 0 & ID1sex == 'M', 
+         .(ID1, diff_obs_initiation = diff_obs_2nd_initiation, type = '2nd')]
+dss = rbind(ds1, ds2)
+
+p3 = 
+ggplot(data = dss) +
+  geom_bar(aes(diff_obs_initiation)) +
+  scale_x_continuous(limits = c(-13, 23)) +
+  scale_y_continuous(limits = c(0, 21), labels = c('0', '','10', '','20'), expand = c(0, 0)) +
+  xlab('') + ylab('') +
+  theme_classic(base_size = 24)
+p3
+
+
+### copulations
+
+# within pair
+ds1 = ds[ID2 == ID1_1st_partner & ID1copAS == 1 & ID1sex == 'M', .(ID1, diff_obs_initiation = diff_obs_1st_initiation, type = '1st')]
+ds2 = ds[ID2 == ID1_2nd_partner & ID1copAS == 1 & ID1sex == 'M', .(ID1, diff_obs_initiation = diff_obs_2nd_initiation, type = '2nd')]
+dss = rbind(ds1, ds2)
+
+p4 = 
+  ggplot(data = dss) +
+  geom_bar(aes(diff_obs_initiation)) +
+  scale_x_continuous(limits = c(-13, 23)) +
+  scale_y_continuous(limits = c(0, 4.5), labels = c('0', '','2', '','4'), expand = c(0, 0)) +
+  xlab('') + ylab('') +
+  theme_classic(base_size = 24)
+p4 
+
+# female 
+ds1 = ds[copAS_not_1st_partner == TRUE & ID1sex == 'F', 
+         .(ID1, diff_obs_initiation = diff_obs_1st_initiation, type = '1st')]
+ds2 = ds[copAS_not_2nd_partner == TRUE & ID1sex == 'F', 
+         .(ID1, diff_obs_initiation = diff_obs_2nd_initiation, type = '2nd')]
+dss = rbind(ds1, ds2)
+
+
+p5 = 
+  ggplot(data = dss) +
+  geom_bar(aes(diff_obs_initiation)) +
+  scale_x_continuous(limits = c(-13, 23)) +
+  scale_y_continuous(limits = c(0, 4.5), labels = c('0', '','2', '','4'), expand = c(0, 0)) +
+  xlab('') + ylab('N copulations') +
+  theme_classic(base_size = 24)
+p5
+
+# male 
+ds1 = ds[copAS_not_1st_partner == TRUE & ID1sex == 'M', 
+         .(ID1, diff_obs_initiation = diff_obs_1st_initiation, type = '1st')]
+ds2 = ds[copAS_not_2nd_partner == TRUE & ID1sex == 'M', 
+         .(ID1, diff_obs_initiation = diff_obs_2nd_initiation, type = '2nd')]
+dss = rbind(ds1, ds2)
+
+p6 = 
+  ggplot(data = dss) +
+  geom_bar(aes(diff_obs_initiation)) +
+  scale_x_continuous(limits = c(-13, 23)) +
+  scale_y_continuous(limits = c(0, 4.5), labels = c('0', '','2', '','4'), expand = c(0, 0)) +
+  xlab('day relative to clutch initiation') + ylab('') +
+  theme_classic(base_size = 24)
+p6
+
+
+
+
+png(paste0('./REPORTS/FIGURES/interactions_copulations.png'), width = 600, height = 1200)
+p1 + p2 + p3 + p4 + p5 + p6 + plot_layout(ncol = 1, nrow = 6, heights = c(4, 2, 2, 1, 1, 1)) +
+  plot_annotation(tag_levels = c('a', '1'))
+dev.off()
 
 
 
