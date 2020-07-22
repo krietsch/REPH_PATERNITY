@@ -795,16 +795,46 @@ dev.off()
 # 9. Paternity frequency within the season 
 #------------------------------------------------------------------------------------------------------------------------
 
-# subset nests with parentage, exclude year without any EPY
-ds = d[parentage == TRUE & YEAR_ != '2003']
-ds = d[parentage == TRUE & !is.na(initiation_doy)]
-ds[, YEAR_ := factor(YEAR_)]
+# all 
+ds = d
+ds = ds[!is.na(initiation)]
+ds = ds[!is.na(anyEPY)]
 
-fm = glm(anyEPY ~ initiation_doy * YEAR_, data = ds, family = binomial)
+ds[, mean_initiation := mean(initiation, na.rm = TRUE), by = year_]
+ds[, initiation_st := difftime(initiation, mean_initiation, units = 'days') %>% as.numeric]
+
+fm = glm(anyEPY ~ initiation_st, data = ds, family = binomial)
+summary(fm)
 Anova(fm)
 
-fm = glm(anyEPY ~ initiation_doy, data = ds, family = binomial)
-Anova(fm)
+# for each year single
+ds$year_ %>% unique
+
+ds[, .N, year_]
+
+dss = ds[year_ == 2004]
+fm = glm(anyEPY ~ initiation_st, data = dss, family = binomial)
+summary(fm)
+
+dss = ds[year_ == 2005]
+fm = glm(anyEPY ~ initiation_st, data = dss, family = binomial)
+summary(fm)
+
+dss = ds[year_ == 2014]
+fm = glm(anyEPY ~ initiation_st, data = dss, family = binomial)
+summary(fm)
+
+dss = ds[year_ == 2017]
+fm = glm(anyEPY ~ initiation_st, data = dss, family = binomial)
+summary(fm)
+
+dss = ds[year_ == 2018]
+fm = glm(anyEPY ~ initiation_st, data = dss, family = binomial)
+summary(fm)
+
+dss = ds[year_ == 2019]
+fm = glm(anyEPY ~ initiation_st, data = dss, family = binomial)
+summary(fm)
 
 
 # load Dale et al. data
