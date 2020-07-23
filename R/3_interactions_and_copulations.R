@@ -509,7 +509,8 @@ dm %>% nrow
 dm %>% nrow / dss[ID1sex == 'M'] %>% nrow * 100
 
 ### unique copulations
-di[ID1copAS == 1 & ID2copAS == 1 & !is.na(ID2)] %>% nrow # total observed copulations
+t_cop = di[ID1copAS == 1 & ID2copAS == 1 & !is.na(ID2)] %>% nrow # total observed copulations
+t_cop
 
 ds = unique(di[ID1copAS == 1 & ID2copAS == 1 & !is.na(ID2)], by = c('ID1', 'ID2'))
 ds %>% nrow
@@ -523,7 +524,7 @@ df = rbind(ds1, ds2)
 df %>% nrow / ds[ID1sex == 'F'] %>% nrow * 100
 
 # in fertile period -2 days 3 days after
-df[diff_obs_initiation %between% c(-2, 3)]
+df[diff_obs_initiation %between% c(-2, 3)] %>% nrow
 
 # male 
 ds1 = ds[copAS_not_1st_partner == TRUE & ID1sex == 'M', 
@@ -534,12 +535,14 @@ dm = rbind(ds1, ds2)
 dm %>% nrow / ds[ID1sex == 'M'] %>% nrow * 100
 
 # in fertile period -2 days 3 days after
-dm[diff_obs_initiation %between% c(-2, 3)]
+dm[diff_obs_initiation %between% c(-2, 3)] %>% nrow 
 
-ds = unique(di, by = c('ID1', 'ID2', 'date_'))
+# total extra-pair copulations
+14 / t_cop * 100
 
-ds = unique(di[ID1copAS == 1 & ID2copAS == 1 & !is.na(ID2)], by = c('ID1', 'ID2'))
-ds = unique(di[ID1copAS == 1 & ID2copAS == 1 & !is.na(ID2)], by = c('ID1', 'ID2', 'date_'))
+
+
+
 
 
 
