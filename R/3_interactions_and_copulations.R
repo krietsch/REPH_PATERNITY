@@ -303,9 +303,9 @@ invisible(lapply(names(di),function(.name) set(di, which(is.infinite(di[[.name]]
 # unique by day
 ds = unique(di, by = c('ID1', 'ID2', 'date_'))
 
-### interactions
-
 t_margin = -20
+
+### interactions
 
 # within pair
 ds1 = ds[ID2 == ID1_1st_partner & ID1sex == 'M', .(ID1, diff_obs_initiation = diff_obs_1st_initiation, type = '1st')]
@@ -381,6 +381,7 @@ ggplot(data = dss) +
 p3
 
 ### copulations
+ds = unique(di[ID1copAS == 1 & ID2copAS == 1 & !is.na(ID2)], by = c('ID1', 'ID2', 'date_'))
 
 # within pair
 ds1 = ds[ID2 == ID1_1st_partner & ID1copAS == 1 & ID1sex == 'M', .(ID1, diff_obs_initiation = diff_obs_1st_initiation, type = '1st')]
@@ -393,7 +394,7 @@ ggplot(data = dss) +
   geom_bar(aes(diff_obs_initiation)) +
   geom_vline(aes(xintercept = 3), linetype = 'dotted', size = 1.2) + 
   scale_x_continuous(limits = c(-13, 23), expand = c(0.02, 0.02)) +
-  scale_y_continuous(limits = c(0, 4.5), labels = c('0', '','2', '','4'), expand = c(0, 0)) +
+  scale_y_continuous(limits = c(0, 12.5), labels = c('0', '', '5', '', '10', ''), expand = c(0, 0)) +
   xlab('') + ylab('') +
   geom_text(aes(-10, Inf, label = sample_size4), vjust = 1, size = 6) +
   geom_text(aes(17, Inf, label = 'within-pair'), vjust = 1, size = 6) +
@@ -416,7 +417,7 @@ ggplot(data = dss) +
   geom_bar(aes(diff_obs_initiation)) +
   geom_vline(aes(xintercept = 3), linetype = 'dotted', size = 1.2) + 
   scale_x_continuous(limits = c(-13, 23), expand = c(0.02, 0.02)) +
-  scale_y_continuous(limits = c(0, 4.5), labels = c('0', '','2', '','4'), expand = c(0, 0)) +
+  scale_y_continuous(limits = c(0, 5.5), labels = c('0', '', '2', '', '4', ''), expand = c(0, 0)) +
   xlab('') + ylab('N copulations') +
   geom_text(aes(-10, Inf, label = sample_size5), vjust = 1, size = 6) +
   geom_text(aes(17, Inf, label = 'females with\nextra-pair males'), vjust = 1, size = 6) +
@@ -438,7 +439,7 @@ ggplot(data = dss) +
   geom_bar(aes(diff_obs_initiation)) +
   geom_vline(aes(xintercept = 3), linetype = 'dotted', size = 1.2) + 
   scale_x_continuous(limits = c(-13, 23), expand = c(0.02, 0.02)) +
-  scale_y_continuous(limits = c(0, 4.5), labels = c('0', '','2', '','4'), expand = c(0, 0)) +
+  scale_y_continuous(limits = c(0, 5.5), labels = c('0', '', '2', '', '4', ''), expand = c(0, 0)) +
   xlab('day relative to clutch initiation') + ylab('') +
   geom_text(aes(-10, Inf, label = sample_size6), vjust = 1, size = 6) +
   geom_text(aes(17, Inf, label = 'males with\nextra-pair females'), vjust = 1, size = 6) +
@@ -448,26 +449,27 @@ p6
 
 
 png(paste0('./REPORTS/FIGURES/interactions_copulations.png'), width = 600, height = 1200)
-p1 + p2 + p3 + p4 + p5 + p6 + plot_layout(ncol = 1, nrow = 6, heights = c(4, 2, 2, 1, 1, 1)) +
+p1 + p2 + p3 + p4 + p5 + p6 + plot_layout(ncol = 1, nrow = 6, heights = c(4, 2, 2, 1.5, 1, 1)) +
   plot_annotation(tag_levels = c('a', '1'), theme = theme(plot.margin = margin(0, 5, 0, 5)))
 dev.off()
 
 
 #------------------------------------------------------------------------------------------------------------------------
-# 2. Interactions summary
+# 2. Interactions and copulations summary
 #------------------------------------------------------------------------------------------------------------------------
 
 # unique ID's by year
-ds = unique(di[N_obs_days > 1], by = 'ID1')
+ds = unique(di, by = 'ID1')
 ds[, .N, by = year_]
 
 ### unique interactions
-ds = unique(di[!is.na(ID2) & N_obs_days > 1], by = c('ID1', 'ID2'))
+ds = unique(di[!is.na(ID2)], by = c('ID1', 'ID2'))
+ds %>% nrow
 dss = ds[, .N, by = .(ID1sex, ID1)]
 dss = dss[, .(N_int = .N), by = .(ID1sex, N)]
 
 # no opposite interactions
-dso = unique(di[any_interaction == FALSE & N_obs_days > 1], by = 'ID1')
+dso = unique(di[any_interaction == FALSE], by = 'ID1')
 dso = dso[, .N, by = .(ID1sex, ID1)]
 dso = dso[, .(N_int = .N), by = .(ID1sex, N)]
 dso[, N := 0]
@@ -477,18 +479,73 @@ setorder(dn1, N)
 
 # unique opposite sex interactions
 dss = ds[same_sex == 0, .N, by = .(ID1sex, ID1)]
-
 dss %>% nrow
 
-dss[N > 2]$N %>% length
-dss[ID1sex == 'F' & N > 2]$N %>% length
-dss[ID1sex == 'M' & N > 2]$N %>% length
+dss[ID1sex == 'F'] %>% nrow
+dss[ID1sex == 'M'] %>% nrow
 
 dss[ID1sex == 'F']$N %>% mean
 dss[ID1sex == 'F']$N %>% max
 
 dss[ID1sex == 'M']$N %>% mean
 dss[ID1sex == 'M']$N %>% max
+
+# female 
+ds1 = ds[seen_with_other_than_1st_partner == TRUE & same_sex == 0 & ID1sex == 'F', 
+         .(ID1, type = '1st')]
+ds2 = ds[seen_with_other_than_2nd_partner == TRUE & same_sex == 0 & ID1sex == 'F', 
+         .(ID1, type = '2nd')]
+df = rbind(ds1, ds2)
+df %>% nrow
+df %>% nrow / dss[ID1sex == 'F'] %>% nrow * 100
+
+# male 
+ds1 = ds[seen_with_other_than_1st_partner == TRUE & same_sex == 0 & ID1sex == 'M', 
+         .(ID1, type = '1st')]
+ds2 = ds[seen_with_other_than_2nd_partner == TRUE & same_sex == 0 & ID1sex == 'M', 
+         .(ID1, type = '2nd')]
+dm = rbind(ds1, ds2)
+dm %>% nrow
+dm %>% nrow / dss[ID1sex == 'M'] %>% nrow * 100
+
+### unique copulations
+di[ID1copAS == 1 & ID2copAS == 1 & !is.na(ID2)] %>% nrow # total observed copulations
+
+ds = unique(di[ID1copAS == 1 & ID2copAS == 1 & !is.na(ID2)], by = c('ID1', 'ID2'))
+ds %>% nrow
+
+# female 
+ds1 = ds[copAS_not_1st_partner == TRUE & ID1sex == 'F', 
+         .(ID1, diff_obs_initiation = diff_obs_1st_initiation, type = '1st')]
+ds2 = ds[copAS_not_2nd_partner == TRUE & ID1sex == 'F', 
+         .(ID1, diff_obs_initiation = diff_obs_2nd_initiation, type = '2nd')]
+df = rbind(ds1, ds2)
+df %>% nrow / ds[ID1sex == 'F'] %>% nrow * 100
+
+# in fertile period -2 days 3 days after
+df[diff_obs_initiation %between% c(-2, 3)]
+
+# male 
+ds1 = ds[copAS_not_1st_partner == TRUE & ID1sex == 'M', 
+         .(ID1, diff_obs_initiation = diff_obs_1st_initiation, type = '1st')]
+ds2 = ds[copAS_not_2nd_partner == TRUE & ID1sex == 'M', 
+         .(ID1, diff_obs_initiation = diff_obs_2nd_initiation, type = '2nd')]
+dm = rbind(ds1, ds2)
+dm %>% nrow / ds[ID1sex == 'M'] %>% nrow * 100
+
+# in fertile period -2 days 3 days after
+dm[diff_obs_initiation %between% c(-2, 3)]
+
+ds = unique(di, by = c('ID1', 'ID2', 'date_'))
+
+ds = unique(di[ID1copAS == 1 & ID2copAS == 1 & !is.na(ID2)], by = c('ID1', 'ID2'))
+ds = unique(di[ID1copAS == 1 & ID2copAS == 1 & !is.na(ID2)], by = c('ID1', 'ID2', 'date_'))
+
+
+
+
+
+
 
 dn2 = dss[, .(N_oppo_sex_int = .N), by = .(ID1sex, N)]
 setorder(dn2, N)
