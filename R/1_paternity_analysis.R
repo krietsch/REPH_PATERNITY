@@ -15,7 +15,7 @@
 # 9. Paternity frequency within the season 
 
 # Packages
-sapply( c('data.table', 'magrittr', 'sdb', 'ggplot2', 'sf', 'auksRuak', 'patchwork'),
+sapply( c('data.table', 'magrittr', 'sdb', 'ggplot2', 'sf', 'auksRuak', 'patchwork', 'multcomp'),
         require, character.only = TRUE)
 
 # Projection

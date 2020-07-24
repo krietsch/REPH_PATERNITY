@@ -91,6 +91,14 @@ d = merge(d, dps[, .(nestID, N_parentage = N, N_EPY = EPY, anyEPY, EPY_father)],
 d[, parentage := ifelse(!is.na(N_parentage), TRUE, FALSE)]
 d[, any_parentage_year := any(parentage == TRUE), by = year_]
 
+# first and second clutches by females
+d[, female_id_year := paste0(female_id, '_', substr(year_, 3,4 ))]
+d[, N_female_clutch := .N, by = female_id]
+d[, female_clutch := seq_len(.N), by = .(female_id, year_)]
+d[is.na(female_id), female_clutch := 1]
+d[!is.na(female_id), N_female_clutch := max(female_clutch), by = .(female_id, year_)]
+d[is.na(female_id), N_female_clutch := 1]
+
 #------------------------------------------------------------------------------------------------------------------------
 # 1. Known EPY fathers
 #------------------------------------------------------------------------------------------------------------------------
@@ -316,6 +324,34 @@ ds = ds[!is.na(tarsus) & !is.na(!culmen)]
 t.test(ds$tarsus, ds$tarsus_EPY_father, paired = TRUE)
 t.test(ds$culmen, ds$culmen_EPY_father, paired = TRUE)
 t.test(ds$min_year, ds$min_year_EPY_father, paired = TRUE)
+
+#------------------------------------------------------------------------------------------------------------------------
+# 5. Distance betweem female nests
+#------------------------------------------------------------------------------------------------------------------------
+
+
+# polyandrous clutches (second clutch with different partner)
+ID2c = d[female_clutch == 2]$female_id_year
+dx = d[female_id_year %in% ID2c]
+
+dr = merge(dx[female_clutch == 1, .(year1 = year_, nestID1 = nestID, female_id_year, m1 = male_id, anyEPY1 = anyEPY, 
+                                    ss1 = study_site, initiation1 = initiation, lat, lon)], 
+           dx[female_clutch == 2, .(year2 = year_, nestID2 = nestID, female_id_year, m2 = male_id, anyEPY2 = anyEPY, 
+                                    EPY_father2 = EPY_father, ss2 = study_site, initiation2 = initiation, lat2 = lat, lon2 = lon)], 
+           by = 'female_id_year', all = TRUE)
+
+dr[, same_male := m1 == m2]
+dr[is.na(same_male), same_male := FALSE]
+dr[, both_study_site := ss1 == ss2]
+dr[, diff_initiation := difftime(initiation2, initiation1, units = 'days') %>% as.numeric]
+setorder(dr, female_id_year)
+
+# distance between nests
+dr[, dist_nests := sqrt(sum((c(lat, lon) - c(lat2, lon2))^2)) , by = 1:nrow(dr)]
+
+
+
+
 
 
 
