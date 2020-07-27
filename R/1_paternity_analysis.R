@@ -550,6 +550,9 @@ dsp = dr[, .(type = 'polyandrous', N_nests = nrow(dr), EPY_1nest = sum(anyEPY1),
 # fisher test to see if EPY in polyandrous clutches different to known first clutches
 matrix(c(3, 0, 11, 18), ncol = 2) %>% fisher.test()
 
+# fisher test to see if EPY in polyandrous clutches different to known first clutches & monogamous renesting
+matrix(c(3, 0, 11, 24), ncol = 2) %>% fisher.test() 
+
 # sperm storage?
 ds = dr[anyEPY2 == TRUE]
 ds[, .N, sperm_storage]
