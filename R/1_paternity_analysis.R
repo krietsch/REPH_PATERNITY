@@ -789,9 +789,9 @@ p1
 p1 + p
 
 
-png(paste0('./REPORTS/FIGURES/EPY_timing.png'), width = 1000, height = 800)
-p1 + p + plot_layout(ncol = 2, widths = c(2 , 1))
-dev.off()
+# png(paste0('./REPORTS/FIGURES/EPY_timing.png'), width = 1000, height = 800)
+# p1 + p + plot_layout(ncol = 2, widths = c(2 , 1))
+# dev.off()
 
 
 #------------------------------------------------------------------------------------------------------------------------
