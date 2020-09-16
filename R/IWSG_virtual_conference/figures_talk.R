@@ -270,10 +270,12 @@ dss = data.table(anyEPY = c('0', '1'),
 
 p1 = 
   ggplot(data = ds) +
+  geom_hline(yintercept = 0, color = 'grey70') +
   geom_boxplot(aes(anyEPY, initiation_st), fill = 'grey85', outlier.alpha = 0) +
   geom_jitter(aes(anyEPY, initiation_st, fill = anyEPY), width = 0.3, height = 0, shape = 21, size = 2, show.legend = FALSE) +
   scale_fill_manual(values = c('white', 'black')) +
   scale_x_discrete(labels = c('without EPP', 'with EPP')) +
+  scale_y_continuous(breaks=seq(-15, 15, 5), limits = c(-14.4, 14.4)) + 
   xlab('clutches') + ylab('') +
   geom_text(data = dss, aes(anyEPY, Inf, label = sample_size), vjust = 1, size = 6) +
   theme_classic(base_size = 20)
@@ -314,12 +316,14 @@ dss = data.table(clutch_identity = c('first', 'second', 'third'),
 
 p2 = 
   ggplot(data = ds) +
+  geom_hline(yintercept = 0, color = 'grey70') +
   geom_boxplot(aes(clutch_identity, initiation_st), fill = 'grey85', outlier.alpha = 0) +
   geom_line(aes(clutch_identity, initiation_st, group = female_id_year_NA, linetype = next_clutch)) +
   geom_point(aes(clutch_identity, initiation_st, fill = anyEPY), shape = 21, size = 2) +
   scale_fill_manual(values = c('white', 'black'), name = 'any EPP', labels = c('no', 'yes')) +
   scale_linetype_manual(values = c('solid', 'dotted'), name = 'next clutch') +
   scale_x_discrete(labels = c('first', 'second', 'third')) +
+  scale_y_continuous(breaks=seq(-15, 15, 5), limits = c(-14.4, 14.4)) + 
   xlab('known clutch identity') + ylab('') +
   geom_text(data = dss, aes(clutch_identity, Inf, label = sample_size), vjust = 1, size = 6) +
   theme_classic_edit(base_size = 20, lp = c(0.85, 0.25))
@@ -339,10 +343,12 @@ dss = data.table(anyEPY = c('0', '1'),
 
 p3 = 
   ggplot(data = dale) +
+  geom_hline(yintercept = 0, color = 'grey70') +
   geom_boxplot(aes(anyEPY, initiation_st), fill = 'grey85', outlier.alpha = 0) +
   geom_jitter(aes(anyEPY, initiation_st, fill = anyEPY), width = 0.3, height = 0, shape = 21, size = 2, show.legend = FALSE) +
   scale_fill_manual(values = c('white', 'black')) +
   scale_x_discrete(labels = c('without EPP', 'with EPP')) +
+  scale_y_continuous(breaks=seq(-15, 15, 5), limits = c(-14.4, 14.4)) + 
   xlab('clutches')+ ylab('clutch initiation standardized') +
   geom_text(data = dss, aes(anyEPY, Inf, label = sample_size), vjust = 1, size = 6) +
   theme_classic(base_size = 20)
