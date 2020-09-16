@@ -4,15 +4,9 @@
 
 # Summary
 # 0. Prepare data for analysis
-# 1. Captures on and off plot
-# 2. Incubation length & initiation date method
-# 3. Rate of polyandry & renesting on plot
-# 4. Paternity data
-# 5. Paternity between study site and external
-# 6. Paternity between years 
-# 7. Paternity polyandrous clutches & renesting 
-# 8. Timing of second and third clutches
-# 9. Paternity frequency within the season 
+# 1. EPP between species
+# 2. EPP & Polyandry
+# 3. Timing of second and third clutches
 
 # Packages
 sapply( c('data.table', 'magrittr', 'sdb', 'ggplot2', 'sf', 'auksRuak', 'patchwork', 'multcomp'),
