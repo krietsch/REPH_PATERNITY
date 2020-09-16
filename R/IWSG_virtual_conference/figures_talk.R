@@ -167,6 +167,8 @@ p
 # 3. Timing of second and third clutches
 #------------------------------------------------------------------------------------------------------------------------
 
+setorder(d, year_, initiation)
+
 # first and second clutches by females
 d[, female_id_year := paste0(female_id, '_', substr(year_, 3,4 ))]
 d[, N_female_clutch := .N, by = female_id]
@@ -174,6 +176,29 @@ d[, female_clutch := seq_len(.N), by = .(female_id, year_)]
 d[is.na(female_id), female_clutch := 1]
 d[!is.na(female_id), N_female_clutch := max(female_clutch), by = .(female_id, year_)]
 d[is.na(female_id), N_female_clutch := 1]
+
+# polyandrous clutches (second clutch with different partner)
+ID2c = d[female_clutch == 2]$female_id_year
+dx = d[female_id_year %in% ID2c]
+
+dr = merge(dx[female_clutch == 1, .(year1 = year_, nestID1 = nestID, female_id_year, m1 = male_id, anyEPY1 = anyEPY, 
+                                    ss1 = study_site, initiation1 = initiation)], 
+           dx[female_clutch == 2, .(year2 = year_, nestID2 = nestID, female_id_year, m2 = male_id, anyEPY2 = anyEPY, 
+                                    ss2 = study_site, initiation2 = initiation)],  
+           by = 'female_id_year', all = TRUE)
+
+dr[, same_male := m1 == m2]
+dr[is.na(same_male), same_male := FALSE]
+dr[, both_study_site := ss1 == ss2]
+dr[, diff_initiation := difftime(initiation2, initiation1, units = 'days') %>% as.numeric]
+setorder(dr, female_id_year)
+dr
+
+# polyandrous females
+dr = dr[same_male == FALSE, .(female_id_year, polyandrous = TRUE, polyandry_study_site = both_study_site)]
+d = merge(d, dr, by = 'female_id_year', all.x = TRUE)
+
+setorder(d, year_, initiation)
 
 # males renesting
 d[, male_id_year := paste0(male_id, '_', substr(year_, 3,4 ))]
@@ -184,6 +209,36 @@ d[!is.na(male_id), N_male_clutch := max(male_clutch), by = male_id_year]
 d[is.na(male_id), N_male_clutch := 1]
 d[, .N, by = .(year_, male_clutch)]
 d[, .N, by = .(male_clutch, external)]
+
+# males renesting with same or different partner
+ID2c = d[male_clutch == 2]$male_id_year
+dx = d[male_id_year %in% ID2c]
+
+dr = merge(dx[male_clutch == 1, .(year1 = year_, nestID1 = nestID, male_id_year, f1 = female_id, anyEPY1 = anyEPY, 
+                                  mfc1 = male_clutch, ss1 = study_site, initiation1 = initiation)], 
+           dx[male_clutch == 2, .(year2 = year_, nestID2 = nestID, male_id_year, f2 = female_id, anyEPY2 = anyEPY, 
+                                  fc2 = male_clutch, ss2 = study_site, initiation2= initiation)],  
+           by = 'male_id_year', all = TRUE)
+
+dr[, same_female := f1 == f2]
+dr[is.na(same_female), same_female := FALSE]
+dr[, both_study_site := ss1 == ss2]
+dr[, diff_initiation := difftime(initiation2, initiation1, units = 'days') %>% as.numeric]
+setorder(dr, male_id_year)
+dr
+
+# renesting males
+dr = dr[, .(male_id_year, renesting_male = TRUE, same_female, renesting_study_site = both_study_site)]
+d = merge(d, dr, by = 'male_id_year', all.x = TRUE)
+
+### unique ID's
+d[is.na(male_id), male_id_year := NA]
+d[, male_id_year_NA := male_id_year]
+d[is.na(male_id), male_id_year_NA := paste0(seq_len(.N), '_', substr(year_, 3,4)), by = male_id_year_NA]
+
+d[is.na(female_id), female_id_year := NA]
+d[, female_id_year_NA := female_id_year]
+d[is.na(female_id), female_id_year_NA := paste0(seq_len(.N), '_', substr(year_, 3,4)), by = female_id_year_NA]
 
 # assign clutch identity
 d[female_clutch == 3, clutch_identity := 'third']
@@ -198,72 +253,8 @@ d[, .N, by = clutch_identity]
 # factor order
 d[, clutch_identity := factor(clutch_identity, levels = c('one_noEPY', 'one_EPY', 'first', 'second', 'third'))]
 
-ds1 = d[study_site == TRUE]
-ds2 = d[study_site == FALSE & clutch_identity %in% c('first', 'second', 'third')]
-ds = rbind(ds1, ds2)
-ds = ds[!is.na(initiation)]
-ds = ds[!is.na(anyEPY)]
-ds[, anyEPY := as.character(anyEPY)]
-
-
-ds[, mean_initiation := mean(initiation, na.rm = TRUE), by = year_]
-ds[, initiation_st := difftime(initiation, mean_initiation, units = 'days') %>% as.numeric]
-
-
-p = 
-  ggplot(data = ds) +
-  geom_boxplot(aes(clutch_identity, initiation_st), fill = 'grey85', outlier.alpha = 0) +
-  geom_jitter(aes(clutch_identity, initiation_st, fill = anyEPY), width = 0.3, height = 0, shape = 21, size = 3) +
-  scale_fill_manual(values = c('white', 'black'), name = 'any EPY', labels = c('no', 'yes')) +
-  scale_x_discrete(labels = c('without EPY', 'with EPY', 'first', 'second', 'third')) +
-  xlab('one known clutch          multiple known clutches    ') + ylab('clutch initiation standardized') +
-  theme_classic(base_size = 24)
-p
-
-
-# png(paste0('./REPORTS/FIGURES/EPY_timing_multiple_clutches_study_site.png'), width = 800, height = 800)
-# p
-# dev.off()
-
-
-# timing of polyandrous females
-ds1 = d[study_site == TRUE]
-ds2 = d[study_site == FALSE & clutch_identity %in% c('first', 'second', 'third')]
-dst = rbind(ds1, ds2)
-dst = dst[!is.na(initiation)]
-dst[clutch_identity == 'one_noEPY', clutch_identity := 'one']
-dst[clutch_identity == 'one_EPY', clutch_identity := 'one']
-dst[, mean_initiation := mean(initiation, na.rm = TRUE), by = year_]
-dst[, initiation_st := difftime(initiation, mean_initiation, units = 'days') %>% as.numeric]
-
 #------------------------------------------------------------------------------------------------------------------------
-# all from 2017-2019
-ds = d[year_ > 2016]
-ds = ds[!is.na(initiation)]
-ds = ds[!is.na(anyEPY)]
-ds[, anyEPY := as.character(anyEPY)]
 
-
-ds[, mean_initiation := mean(initiation, na.rm = TRUE), by = year_]
-ds[, initiation_st := difftime(initiation, mean_initiation, units = 'days') %>% as.numeric]
-
-p = 
-  ggplot(data = ds) +
-  geom_boxplot(aes(clutch_identity, initiation_st), fill = 'grey85', outlier.alpha = 0) +
-  geom_jitter(aes(clutch_identity, initiation_st, fill = anyEPY), width = 0.3, height = 0, shape = 21, size = 3) +
-  scale_fill_manual(values = c('white', 'black'), name = 'any EPY', labels = c('no', 'yes')) +
-  scale_x_discrete(labels = c('without EPY', 'with EPY', 'first', 'second', 'third')) +
-  xlab('one known clutch          multiple known clutches    ') + ylab('clutch initiation standardized') +
-  theme_classic(base_size = 24)
-p
-
-
-# png(paste0('./REPORTS/FIGURES/EPY_timing_multiple_clutches_all.png'), width = 800, height = 800)
-# p
-# dev.off()
-
-
-#------------------------------------------------------------------------------------------------------------------------
 # all 
 ds = copy(d)
 ds = ds[!is.na(initiation)]
@@ -277,21 +268,17 @@ ds[, .N, by = anyEPY]
 dss = data.table(anyEPY = c('0', '1'),
                  sample_size = c('295', '37'))
 
-p = 
+p1 = 
   ggplot(data = ds) +
   geom_boxplot(aes(anyEPY, initiation_st), fill = 'grey85', outlier.alpha = 0) +
-  geom_jitter(aes(anyEPY, initiation_st, fill = anyEPY), width = 0.3, height = 0, shape = 21, size = 3, show.legend = FALSE) +
+  geom_jitter(aes(anyEPY, initiation_st, fill = anyEPY), width = 0.3, height = 0, shape = 21, size = 2, show.legend = FALSE) +
   scale_fill_manual(values = c('white', 'black')) +
-  scale_x_discrete(labels = c('without EPY', 'with EPY')) +
+  scale_x_discrete(labels = c('without EPP', 'with EPP')) +
   xlab('clutches') + ylab('') +
   geom_text(data = dss, aes(anyEPY, Inf, label = sample_size), vjust = 1, size = 6) +
-  theme_classic(base_size = 24)
-p
+  theme_classic(base_size = 20)
+p1
 
-
-# png(paste0('./REPORTS/FIGURES/EPY_timing_multiple_clutches_all.png'), width = 800, height = 800)
-# p
-# dev.off()
 
 ds = ds[clutch_identity %in% c('first', 'second', 'third')]
 ds[is.na(renesting_male), renesting_male := FALSE]
@@ -325,23 +312,50 @@ dss = data.table(clutch_identity = c('first', 'second', 'third'),
 
 
 
-p1 = 
+p2 = 
   ggplot(data = ds) +
   geom_boxplot(aes(clutch_identity, initiation_st), fill = 'grey85', outlier.alpha = 0) +
   geom_line(aes(clutch_identity, initiation_st, group = female_id_year_NA, linetype = next_clutch)) +
-  geom_point(aes(clutch_identity, initiation_st, fill = anyEPY), shape = 21, size = 3) +
-  scale_fill_manual(values = c('white', 'black'), name = 'any EPY', labels = c('no', 'yes')) +
+  geom_point(aes(clutch_identity, initiation_st, fill = anyEPY), shape = 21, size = 2) +
+  scale_fill_manual(values = c('white', 'black'), name = 'any EPP', labels = c('no', 'yes')) +
   scale_linetype_manual(values = c('solid', 'dotted'), name = 'next clutch') +
   scale_x_discrete(labels = c('first', 'second', 'third')) +
-  xlab('clutch') + ylab('clutch initiation standardized') +
+  xlab('known clutch identity') + ylab('') +
   geom_text(data = dss, aes(clutch_identity, Inf, label = sample_size), vjust = 1, size = 6) +
-  theme_classic_edit(base_size = 24, lp = c(0.85, 0.2))
-p1
+  theme_classic_edit(base_size = 20, lp = c(0.85, 0.25))
+p2
 
 
-p1 + p
+# load Dale et al. data
+dale = read.csv2('./DATA/Dale_EPP.csv') %>% data.table
+
+dale[, mean_initiation := mean(initiation_doy, na.rm = TRUE)]
+dale[, initiation_st := initiation_doy - mean_initiation]
+dale[, anyEPY := as.factor(anyEPY)]
+
+dale[, .N, by = anyEPY]
+dss = data.table(anyEPY = c('0', '1'),
+                 sample_size = c('12', '6'))
+
+p3 = 
+  ggplot(data = dale) +
+  geom_boxplot(aes(anyEPY, initiation_st), fill = 'grey85', outlier.alpha = 0) +
+  geom_jitter(aes(anyEPY, initiation_st, fill = anyEPY), width = 0.3, height = 0, shape = 21, size = 2, show.legend = FALSE) +
+  scale_fill_manual(values = c('white', 'black')) +
+  scale_x_discrete(labels = c('without EPP', 'with EPP')) +
+  xlab('clutches')+ ylab('clutch initiation standardized') +
+  geom_text(data = dss, aes(anyEPY, Inf, label = sample_size), vjust = 1, size = 6) +
+  theme_classic(base_size = 20)
+p3
+
+p1 + p2+ p3
 
 
-# png(paste0('./REPORTS/FIGURES/EPY_timing.png'), width = 1000, height = 800)
-# p1 + p + plot_layout(ncol = 2, widths = c(2 , 1))
-# dev.off()
+pn = ggplot() + theme_void()
+
+png(paste0('./REPORTS/FIGURES/EPY_timing_talk.png'), width = 1200, height = 500)
+p3 + pn + p2 + pn + p1 + plot_layout(nrow = 1, widths = c(1, 0.2, 2, 0.2, 1))
+dev.off()
+
+
+# p1 + facet_grid(~year_)
