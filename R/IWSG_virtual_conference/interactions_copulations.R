@@ -308,8 +308,8 @@ t_margin = -20
 ### interactions
 
 # within pair
-ds1 = ds[ID2 == ID1_1st_partner & ID1sex == 'M', .(ID1, diff_obs_initiation = diff_obs_1st_initiation, type = '1st')]
-ds2 = ds[ID2 == ID1_2nd_partner & ID1sex == 'M', .(ID1, diff_obs_initiation = diff_obs_2nd_initiation, type = '2nd')]
+ds1 = ds[ID2 == ID1_1st_partner & ID1sex == 'M', .(ID1, ID2, diff_obs_initiation = diff_obs_1st_initiation, type = '1st')]
+ds2 = ds[ID2 == ID1_2nd_partner & ID1sex == 'M', .(ID1, ID2, diff_obs_initiation = diff_obs_2nd_initiation, type = '2nd')]
 dss = rbind(ds1, ds2)
 sample_size1 = paste0('N = ', nrow(dss))
 
@@ -324,7 +324,31 @@ sample_size1 = paste0('N = ', nrow(dss))
 
 p1 = 
   ggplot(data = dss) +
-  geom_bar(aes(diff_obs_initiation)) +
+  geom_bar(aes(diff_obs_initiation), fill = 'grey50') +
+  geom_vline(aes(xintercept = 3), linetype = 'dotted', size = 1.2) + 
+  scale_x_continuous(limits = c(-13, 23), expand = c(0.02, 0.02)) +
+  scale_y_continuous(limits = c(0, 54), labels = c('0', '','20', '','40', ''), expand = c(0, 0)) +
+  xlab('') + ylab('') +
+  geom_text(aes(-10, Inf, label = sample_size1), vjust = 1, size = 6) +
+  geom_text(aes(17, Inf, label = 'within-pair'), vjust = 1, size = 6) +
+  theme_classic(base_size = 20) +
+  theme(panel.spacing = unit(0, "cm"), plot.margin = margin(t_margin, 0, -5, 5, "pt"),
+        axis.title.x=element_blank())
+p1 
+
+# color for birds with more than one clutch 
+dss = merge(dss, dnID[, .(ID_year, N_clutches)], by.x = 'ID1', by.y = 'ID_year', all.x = TRUE)
+dnpu = unique(dnp, by = 'ID1')
+
+dss = merge(dss, dnpu[, .(ID1, ID1_1st_partner)], by = 'ID1', all.x = TRUE)
+
+
+dss[N_clutches == 2 & ID1_1st_partner == ID2, int_with_first := TRUE]
+dss[int_with_first == TRUE, type := '2nd_same']
+
+p1 = 
+  ggplot(data = dss) +
+  geom_bar(aes(diff_obs_initiation, fill = type)) +
   geom_vline(aes(xintercept = 3), linetype = 'dotted', size = 1.2) + 
   scale_x_continuous(limits = c(-13, 23), expand = c(0.02, 0.02)) +
   scale_y_continuous(limits = c(0, 54), labels = c('0', '','20', '','40', ''), expand = c(0, 0)) +
@@ -338,15 +362,40 @@ p1
 
 # female 
 ds1 = ds[seen_with_other_than_1st_partner == TRUE & same_sex == 0 & ID1sex == 'F', 
-         .(ID1, diff_obs_initiation = diff_obs_1st_initiation, type = '1st')]
+         .(ID1, ID2, diff_obs_initiation = diff_obs_1st_initiation, type = '1st')]
 ds2 = ds[seen_with_other_than_2nd_partner == TRUE & same_sex == 0 & ID1sex == 'F', 
-         .(ID1, diff_obs_initiation = diff_obs_2nd_initiation, type = '2nd')]
+         .(ID1, ID2, diff_obs_initiation = diff_obs_2nd_initiation, type = '2nd')]
 dss = rbind(ds1, ds2)
 sample_size2 = paste0('N = ', nrow(dss))
 
+
 p2 = 
   ggplot(data = dss) +
-  geom_bar(aes(diff_obs_initiation)) +
+  geom_bar(aes(diff_obs_initiation), fill = 'grey50') +
+  geom_vline(aes(xintercept = 3), linetype = 'dotted', size = 1.2) + 
+  scale_x_continuous(limits = c(-13, 23), expand = c(0.02, 0.02)) +
+  scale_y_continuous(limits = c(0, 21), labels = c('0', '','10', '','20'), expand = c(0, 0)) +
+  xlab('') + ylab('N interactions') +
+  geom_text(aes(-10, Inf, label = sample_size2), vjust = 1, size = 6) +
+  geom_text(aes(17, Inf, label = 'females with\nextra-pair males'), vjust = 1, size = 6) +
+  theme_classic(base_size = 20) +
+  theme(panel.spacing = unit(0, "cm"), plot.margin = margin(t_margin, 0, -5, 5, "pt"),
+        axis.title.x = element_blank())
+p2
+
+# 1st interacting with second partner
+dnpu = unique(dnp, by = 'ID1')
+dss = merge(dss, dnpu[, .(ID1, ID1_1st_partner, ID1_2nd_partner)], by = 'ID1', all.x = TRUE)
+
+dss[type == '1st' & ID2 == ID1_2nd_partner, type := 'next_partner']
+
+# interaction with previous partner
+dss[type == '2nd' & ID2 == ID1_1st_partner, type := 'previous_partner']
+
+
+p2 = 
+  ggplot(data = dss) +
+  geom_bar(aes(diff_obs_initiation, fill = type)) +
   geom_vline(aes(xintercept = 3), linetype = 'dotted', size = 1.2) + 
   scale_x_continuous(limits = c(-13, 23), expand = c(0.02, 0.02)) +
   scale_y_continuous(limits = c(0, 21), labels = c('0', '','10', '','20'), expand = c(0, 0)) +
@@ -360,19 +409,44 @@ p2
 
 # male 
 ds1 = ds[seen_with_other_than_1st_partner == TRUE & same_sex == 0 & ID1sex == 'M', 
-         .(ID1, diff_obs_initiation = diff_obs_1st_initiation, type = '1st')]
+         .(ID1, ID2, diff_obs_initiation = diff_obs_1st_initiation, type = '1st')]
 ds2 = ds[seen_with_other_than_2nd_partner == TRUE & same_sex == 0 & ID1sex == 'M', 
-         .(ID1, diff_obs_initiation = diff_obs_2nd_initiation, type = '2nd')]
+         .(ID1, ID2, diff_obs_initiation = diff_obs_2nd_initiation, type = '2nd')]
 dss = rbind(ds1, ds2)
 sample_size3 = paste0('N = ', nrow(dss))
 
 p3 = 
   ggplot(data = dss) +
-  geom_bar(aes(diff_obs_initiation)) +
+  geom_bar(aes(diff_obs_initiation), fill = 'grey50') +
   geom_vline(aes(xintercept = 3), linetype = 'dotted', size = 1.2) + 
   scale_x_continuous(limits = c(-13, 23), expand = c(0.02, 0.02)) +
   scale_y_continuous(limits = c(0, 21), labels = c('0', '','10', '','20'), expand = c(0, 0)) +
-  xlab('') + ylab('') + 
+  xlab('day relative to clutch initiation') + ylab('') + 
+  geom_text(aes(-10, Inf, label = sample_size3), vjust = 1, size = 6) +
+  geom_text(aes(17, Inf, label = 'males with\nextra-pair females'), vjust = 1, size = 6) +
+  theme_classic(base_size = 20) +
+  theme(panel.spacing = unit(0, "cm"), plot.margin = margin(t_margin, 0, -5, 5, "pt"),
+        axis.title.x=element_blank())
+p3
+
+
+# 1st interacting with second partner
+dnpu = unique(dnp, by = 'ID1')
+dss = merge(dss, dnpu[, .(ID1, ID1_1st_partner, ID1_2nd_partner)], by = 'ID1', all.x = TRUE)
+
+dss[type == '1st' & ID2 == ID1_2nd_partner, type := 'next_partner']
+
+# interaction with previous partner
+dss[type == '2nd' & ID2 == ID1_1st_partner, type := 'previous_partner']
+
+
+p3 = 
+  ggplot(data = dss) +
+  geom_bar(aes(diff_obs_initiation, fill = type)) +
+  geom_vline(aes(xintercept = 3), linetype = 'dotted', size = 1.2) + 
+  scale_x_continuous(limits = c(-13, 23), expand = c(0.02, 0.02)) +
+  scale_y_continuous(limits = c(0, 21), labels = c('0', '','10', '','20'), expand = c(0, 0)) +
+  xlab('day relative to clutch initiation') + ylab('') + 
   geom_text(aes(-10, Inf, label = sample_size3), vjust = 1, size = 6) +
   geom_text(aes(17, Inf, label = 'males with\nextra-pair females'), vjust = 1, size = 6) +
   theme_classic(base_size = 20) +
@@ -402,7 +476,7 @@ sample_size4 = paste0('N = ', nrow(dss))
 
 p4 = 
   ggplot(data = dss) +
-  geom_bar(aes(diff_obs_initiation)) +
+  geom_bar(aes(diff_obs_initiation, fill = type)) +
   geom_vline(aes(xintercept = 3), linetype = 'dotted', size = 1.2) + 
   scale_x_continuous(limits = c(-13, 23), expand = c(0.02, 0.02)) +
   scale_y_continuous(limits = c(0, 12.5), labels = c('0', '', '5', '', '10', ''), expand = c(0, 0)) +
@@ -414,18 +488,49 @@ p4 =
         axis.title.x=element_blank())
 p4 
 
+
+dss = merge(dss, dnID[, .(ID_year, N_clutches)], by.x = 'ID1', by.y = 'ID_year', all.x = TRUE)
+
+
+dnpu = unique(dnp, by = 'ID1')
+
+dss = merge(dss, dnpu[, .(ID1, ID1_1st_partner)], by = 'ID1', all.x = TRUE)
+
+
+dss[N_clutches == 2 & ID1_1st_partner == ID2, int_with_first := TRUE]
+dss[int_with_first == TRUE, type := '2nd_same']
+
+p4 = 
+  ggplot(data = dss) +
+  geom_bar(aes(diff_obs_initiation, fill = type)) +
+  geom_vline(aes(xintercept = 3), linetype = 'dotted', size = 1.2) + 
+  scale_x_continuous(limits = c(-13, 23), expand = c(0.02, 0.02)) +
+  scale_y_continuous(limits = c(0, 12.5), labels = c('0', '', '5', '', '10', ''), expand = c(0, 0)) +
+  xlab('') + ylab('') +
+  geom_text(aes(-10, Inf, label = sample_size4), vjust = 1, size = 6) +
+  geom_text(aes(17, Inf, label = 'within-pair'), vjust = 1, size = 6) +
+  theme_classic(base_size = 20) +
+  theme(panel.spacing = unit(0, "cm"), plot.margin = margin(t_margin, 0, -5, 5, "pt"),
+        axis.title.x=element_blank())
+p4 
+
+
+
+
+
+
 # female 
 ds1 = ds[copAS_not_1st_partner == TRUE & ID1sex == 'F', 
-         .(ID1, diff_obs_initiation = diff_obs_1st_initiation, type = '1st')]
+         .(ID1, ID2, diff_obs_initiation = diff_obs_1st_initiation, type = '1st')]
 ds2 = ds[copAS_not_2nd_partner == TRUE & ID1sex == 'F', 
-         .(ID1, diff_obs_initiation = diff_obs_2nd_initiation, type = '2nd')]
+         .(ID1, ID2, diff_obs_initiation = diff_obs_2nd_initiation, type = '2nd')]
 dss = rbind(ds1, ds2)
 sample_size5 = paste0('N = ', nrow(dss))
 
 
 p5 = 
   ggplot(data = dss) +
-  geom_bar(aes(diff_obs_initiation)) +
+  geom_bar(aes(diff_obs_initiation, fill = type)) +
   geom_vline(aes(xintercept = 3), linetype = 'dotted', size = 1.2) + 
   scale_x_continuous(limits = c(-13, 23), expand = c(0.02, 0.02)) +
   scale_y_continuous(limits = c(0, 5.5), labels = c('0', '', '2', '', '4', ''), expand = c(0, 0)) +
@@ -437,17 +542,44 @@ p5 =
         axis.title.x = element_blank())
 p5
 
+
+# 1st interacting with second partner
+dnpu = unique(dnp, by = 'ID1')
+dss = merge(dss, dnpu[, .(ID1, ID1_1st_partner, ID1_2nd_partner)], by = 'ID1', all.x = TRUE)
+
+dss[type == '1st' & ID2 == ID1_2nd_partner, type := 'next_partner']
+
+# interaction with previous partner
+dss[type == '2nd' & ID2 == ID1_1st_partner, type := 'previous_partner']
+
+
+p5 = 
+  ggplot(data = dss) +
+  geom_bar(aes(diff_obs_initiation, fill = type)) +
+  geom_vline(aes(xintercept = 3), linetype = 'dotted', size = 1.2) + 
+  scale_x_continuous(limits = c(-13, 23), expand = c(0.02, 0.02)) +
+  scale_y_continuous(limits = c(0, 5.5), labels = c('0', '', '2', '', '4', ''), expand = c(0, 0)) +
+  xlab('') + ylab('N copulations') +
+  geom_text(aes(-10, Inf, label = sample_size5), vjust = 1, size = 6) +
+  geom_text(aes(17, Inf, label = 'females with\nextra-pair males'), vjust = 1, size = 6) +
+  theme_classic(base_size = 20) +
+  theme(panel.spacing = unit(0, "cm"), plot.margin = margin(t_margin, 0, -5, 5, "pt"),
+        axis.title.x = element_blank())
+p5
+
+
+
 # male 
 ds1 = ds[copAS_not_1st_partner == TRUE & ID1sex == 'M', 
-         .(ID1, diff_obs_initiation = diff_obs_1st_initiation, type = '1st')]
+         .(ID1, ID2, diff_obs_initiation = diff_obs_1st_initiation, type = '1st')]
 ds2 = ds[copAS_not_2nd_partner == TRUE & ID1sex == 'M', 
-         .(ID1, diff_obs_initiation = diff_obs_2nd_initiation, type = '2nd')]
+         .(ID1, ID2, diff_obs_initiation = diff_obs_2nd_initiation, type = '2nd')]
 dss = rbind(ds1, ds2)
 sample_size6 = paste0('N = ', nrow(dss))
 
 p6 = 
   ggplot(data = dss) +
-  geom_bar(aes(diff_obs_initiation)) +
+  geom_bar(aes(diff_obs_initiation), fill = 'grey50') +
   geom_vline(aes(xintercept = 3), linetype = 'dotted', size = 1.2) + 
   scale_x_continuous(limits = c(-13, 23), expand = c(0.02, 0.02)) +
   scale_y_continuous(limits = c(0, 5.5), labels = c('0', '', '2', '', '4', ''), expand = c(0, 0)) +
@@ -459,9 +591,33 @@ p6 =
 p6
 
 
-png(paste0('./REPORTS/FIGURES/copulations_talk.png'), width = 600, height = 1200)
-p1 + p2 + p3 + p4 + p5 + p6 + plot_layout(ncol = 1, nrow = 6, heights = c(4, 2, 2, 1.5, 1, 1)) +
-  plot_annotation(tag_levels = c('a', '1'), theme = theme(plot.margin = margin(0, 5, 0, 5)))
+
+# 1st interacting with second partner
+dnpu = unique(dnp, by = 'ID1')
+dss = merge(dss, dnpu[, .(ID1, ID1_1st_partner, ID1_2nd_partner)], by = 'ID1', all.x = TRUE)
+
+dss[type == '1st' & ID2 == ID1_2nd_partner, type := 'next_partner']
+
+# interaction with previous partner
+dss[type == '2nd' & ID2 == ID1_1st_partner, type := 'previous_partner']
+
+p6 = 
+  ggplot(data = dss) +
+  geom_bar(aes(diff_obs_initiation, fill = type)) +
+  geom_vline(aes(xintercept = 3), linetype = 'dotted', size = 1.2) + 
+  scale_x_continuous(limits = c(-13, 23), expand = c(0.02, 0.02)) +
+  scale_y_continuous(limits = c(0, 5.5), labels = c('0', '', '2', '', '4', ''), expand = c(0, 0)) +
+  xlab('day relative to clutch initiation') + ylab('') +
+  geom_text(aes(-10, Inf, label = sample_size6), vjust = 1, size = 6) +
+  geom_text(aes(17, Inf, label = 'males with\nextra-pair females'), vjust = 1, size = 6) +
+  theme_classic(base_size = 20) +
+  theme(panel.spacing = unit(0, "cm"), plot.margin = margin(t_margin, 0, -5, 5, "pt"))
+p6
+
+
+
+png(paste0('./REPORTS/FIGURES/copulations_talk.png'), width = 500, height = 500)
+p4 + p5 + p6 + plot_layout(ncol = 1, nrow = 3, heights = c(4, 2, 2)) 
 dev.off()
 
 
