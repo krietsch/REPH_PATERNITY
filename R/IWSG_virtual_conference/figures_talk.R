@@ -270,7 +270,7 @@ p1 =
   scale_fill_manual(values = c('white', 'black')) +
   scale_x_discrete(labels = c('without EPP', 'with EPP')) +
   scale_y_continuous(breaks=seq(-15, 15, 5), limits = c(-14.4, 14.4)) + 
-  xlab('clutches') + ylab('') +
+  xlab('All clutches') + ylab('') +
   geom_text(data = dss, aes(anyEPY, Inf, label = sample_size), vjust = 1, size = 6) +
   theme_classic(base_size = 20)
 p1
@@ -293,6 +293,27 @@ ds[any_renesting == TRUE, next_clutch := 'renesting']
 # N
 ds[, .N, .(anyEPY, clutch_identity)]
 
+# add plot with only single clutches in study site
+dss = data.table(anyEPY = c('0', '1'),
+                 sample_size = c('138', '14'))
+
+p1b = 
+  ggplot(data = ds) +
+  geom_hline(yintercept = 0, color = 'grey70') +
+  geom_boxplot(aes(anyEPY, initiation_st), fill = 'grey85', outlier.alpha = 0) +
+  geom_jitter(aes(anyEPY, initiation_st, fill = anyEPY), width = 0.3, height = 0, shape = 21, size = 2, show.legend = FALSE) +
+  scale_fill_manual(values = c('white', 'black')) +
+  scale_x_discrete(labels = c('without EPP', 'with EPP')) +
+  scale_y_continuous(breaks=seq(-15, 15, 5), limits = c(-14.4, 14.4)) + 
+  xlab('Unknown clutch order') + ylab('') +
+  geom_text(data = dss, aes(anyEPY, Inf, label = sample_size), vjust = 1, size = 6) +
+  theme_classic(base_size = 20)
+p1b
+
+
+
+
+
 # add first and second clutch of females with three clutches again (otherwise linetype does not work)
 ds[clutch_identity == 'third']
 dss = ds[clutch_identity %in% c('first', 'second') & female_id %in% c(270170935, 19222)]
@@ -314,10 +335,33 @@ theme_classic_edit = function (base_size = 11, base_family = "", base_line_size 
 }
 
 
-dss = data.table(clutch_identity = c('single', 'first', 'second', 'third'),
-                 sample_size = c('14/138', '0/15', '3/15', '0/2'))
+# # with single clutches
+# dss = data.table(clutch_identity = c('single', 'first', 'second', 'third'),
+#                  sample_size = c('14/138', '0/15', '3/15', '0/2'))
+# 
+# p2 = 
+#   ggplot(data = ds) +
+#   geom_hline(yintercept = 0, color = 'grey70') +
+#   geom_boxplot(aes(clutch_identity, initiation_st), fill = 'grey85', outlier.alpha = 0) +
+#   geom_line(aes(clutch_identity, initiation_st, group = female_id_year_NA, linetype = next_clutch)) +
+#   geom_point(aes(clutch_identity, initiation_st, fill = anyEPY), shape = 21, size = 2) +
+#   # geom_jitter(data = ds[clutch_identity == 'single'], aes(anyEPY, initiation_st, fill = anyEPY), 
+#   #             width = 0.3, height = 0, shape = 21, size = 2, show.legend = FALSE) +
+#   scale_fill_manual(values = c('white', 'black'), name = 'any EPP', labels = c('no', 'yes')) +
+#   scale_linetype_manual(values = c('solid', 'dotted'), name = 'next clutch') +
+#   scale_x_discrete(labels = c('single', 'first', 'second', 'third')) +
+#   scale_y_continuous(breaks=seq(-15, 15, 5), limits = c(-14.4, 14.4)) + 
+#   xlab('known clutch identity') + ylab('') +
+#   geom_text(data = dss, aes(clutch_identity, Inf, label = sample_size), vjust = 1, size = 6) +
+#   theme_classic_edit(base_size = 20, lp = c(0.85, 0.25))
+# p2
 
 
+# without single clutches
+dss = data.table(clutch_identity = c('first', 'second', 'third'),
+                 sample_size = c('0/15', '3/15', '0/2'))
+
+ds = ds[clutch_identity != 'single']
 
 p2 = 
   ggplot(data = ds) +
@@ -327,14 +371,16 @@ p2 =
   geom_point(aes(clutch_identity, initiation_st, fill = anyEPY), shape = 21, size = 2) +
   # geom_jitter(data = ds[clutch_identity == 'single'], aes(anyEPY, initiation_st, fill = anyEPY), 
   #             width = 0.3, height = 0, shape = 21, size = 2, show.legend = FALSE) +
-  scale_fill_manual(values = c('white', 'black'), name = 'any EPP', labels = c('no', 'yes')) +
-  scale_linetype_manual(values = c('solid', 'dotted'), name = 'next clutch') +
-  scale_x_discrete(labels = c('single', 'first', 'second', 'third')) +
+  scale_fill_manual(values = c('white', 'black'), name = NULL, labels = c('no EPP', 'EPP')) +
+  scale_linetype_manual(values = c('solid', 'dotted'), name = NULL) +
+  scale_x_discrete(labels = c('first', 'second', 'third')) +
   scale_y_continuous(breaks=seq(-15, 15, 5), limits = c(-14.4, 14.4)) + 
-  xlab('known clutch identity') + ylab('') +
+  xlab('Known clutch order') + ylab('') +
   geom_text(data = dss, aes(clutch_identity, Inf, label = sample_size), vjust = 1, size = 6) +
-  theme_classic_edit(base_size = 20, lp = c(0.85, 0.25))
+  theme_classic_edit(base_size = 20, lp = c(0.85, 0.20))
 p2
+
+
 
 
 # load Dale et al. data
@@ -356,7 +402,7 @@ p3 =
   scale_fill_manual(values = c('white', 'black')) +
   scale_x_discrete(labels = c('without EPP', 'with EPP')) +
   scale_y_continuous(breaks=seq(-15, 15, 5), limits = c(-14.4, 14.4)) + 
-  xlab('clutches')+ ylab('clutch initiation standardized') +
+  xlab('Unknown clutch order')+ ylab('Clutch initiation date (standardized)') +
   geom_text(data = dss, aes(anyEPY, Inf, label = sample_size), vjust = 1, size = 6) +
   theme_classic(base_size = 20)
 p3
@@ -372,3 +418,7 @@ dev.off()
 
 
 # p1 + facet_grid(~year_)
+
+png(paste0('./REPORTS/FIGURES/EPY_timing_talk_single.png'), width = 1200, height = 500)
+p3 + pn + p2 + pn + p1b + plot_layout(nrow = 1, widths = c(1, 0.2, 2, 0.2, 1))
+dev.off()
