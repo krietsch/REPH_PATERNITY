@@ -275,13 +275,23 @@ p1 =
   theme_classic(base_size = 20)
 p1
 
+# add single clutches
+ds1 = ds[study_site == TRUE & clutch_identity %in% c('one_noEPY', 'one_EPY')]
+ds1[, clutch_identity := 'single']
 
 ds = ds[clutch_identity %in% c('first', 'second', 'third')]
+
+ds = rbind(ds1, ds)
+# factor order
+ds[, clutch_identity := factor(clutch_identity, levels = c('single', 'first', 'second', 'third'))]
 ds[is.na(renesting_male), renesting_male := FALSE]
 
 ds[, any_renesting := any(renesting_male == TRUE), by = female_id_year_NA]
 ds[any_renesting == FALSE, next_clutch := 'polyandrous']
 ds[any_renesting == TRUE, next_clutch := 'renesting']
+
+# N
+ds[, .N, .(anyEPY, clutch_identity)]
 
 # add first and second clutch of females with three clutches again (otherwise linetype does not work)
 ds[clutch_identity == 'third']
@@ -303,8 +313,9 @@ theme_classic_edit = function (base_size = 11, base_family = "", base_line_size 
           legend.position = lp)
 }
 
-dss = data.table(clutch_identity = c('first', 'second', 'third'),
-                 sample_size = c('0/15', '3/15', '0/2'))
+
+dss = data.table(clutch_identity = c('single', 'first', 'second', 'third'),
+                 sample_size = c('14/138', '0/15', '3/15', '0/2'))
 
 
 
@@ -314,9 +325,11 @@ p2 =
   geom_boxplot(aes(clutch_identity, initiation_st), fill = 'grey85', outlier.alpha = 0) +
   geom_line(aes(clutch_identity, initiation_st, group = female_id_year_NA, linetype = next_clutch)) +
   geom_point(aes(clutch_identity, initiation_st, fill = anyEPY), shape = 21, size = 2) +
+  # geom_jitter(data = ds[clutch_identity == 'single'], aes(anyEPY, initiation_st, fill = anyEPY), 
+  #             width = 0.3, height = 0, shape = 21, size = 2, show.legend = FALSE) +
   scale_fill_manual(values = c('white', 'black'), name = 'any EPP', labels = c('no', 'yes')) +
   scale_linetype_manual(values = c('solid', 'dotted'), name = 'next clutch') +
-  scale_x_discrete(labels = c('first', 'second', 'third')) +
+  scale_x_discrete(labels = c('single', 'first', 'second', 'third')) +
   scale_y_continuous(breaks=seq(-15, 15, 5), limits = c(-14.4, 14.4)) + 
   xlab('known clutch identity') + ylab('') +
   geom_text(data = dss, aes(clutch_identity, Inf, label = sample_size), vjust = 1, size = 6) +
