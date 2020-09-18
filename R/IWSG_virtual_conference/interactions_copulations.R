@@ -308,8 +308,8 @@ t_margin = -20
 ### interactions
 
 # within pair
-ds1 = ds[ID2 == ID1_1st_partner & ID1sex == 'M', .(ID1, ID2, diff_obs_initiation = diff_obs_1st_initiation, type = '1st')]
-ds2 = ds[ID2 == ID1_2nd_partner & ID1sex == 'M', .(ID1, ID2, diff_obs_initiation = diff_obs_2nd_initiation, type = '2nd')]
+ds1 = ds[ID2 == ID1_1st_partner & ID1sex == 'M', .(ID1, ID2, diff_obs_initiation = diff_obs_1st_initiation, type = '1st', datetime_)]
+ds2 = ds[ID2 == ID1_2nd_partner & ID1sex == 'M', .(ID1, ID2, diff_obs_initiation = diff_obs_2nd_initiation, type = '2nd', datetime_)]
 dss = rbind(ds1, ds2)
 sample_size1 = paste0('N = ', nrow(dss))
 
@@ -346,12 +346,27 @@ dss = merge(dss, dnpu[, .(ID1, ID1_1st_partner)], by = 'ID1', all.x = TRUE)
 dss[N_clutches == 2 & ID1_1st_partner == ID2, int_with_first := TRUE]
 dss[int_with_first == TRUE, type := '2nd_same']
 
+# within pair interactions while clutch active?
+da = dss[diff_obs_initiation > 3 & type != '2nd_same']
+
+da = merge(da, dn[, .(male_id_year, female_id_year, nest_state_date)], 
+           by.x = c('ID1', 'ID2'), by.y = c('male_id_year', 'female_id_year'), all.x = TRUE)
+
+da[, nest_still_active := difftime(nest_state_date, datetime_, units = 'days') %>% as.numeric]
+
+dss = merge(dss, da[, .(ID1, ID2, datetime_, nest_still_active)], by = c('ID1', 'ID2', 'datetime_'), all.x = TRUE)
+
+dss[diff_obs_initiation > 3 & type != '2nd_same', type2 := 'renesting']
+dss[diff_obs_initiation > 3 & type == '2nd_same', type2 := 'active nest']
+dss[is.na(type2), type2 := 'paired']
+
 p1 = 
   ggplot(data = dss) +
-  geom_bar(aes(diff_obs_initiation, fill = type)) +
+  geom_bar(aes(diff_obs_initiation, fill = type2)) +
   geom_vline(aes(xintercept = 3), linetype = 'dotted', size = 1.2) + 
   scale_x_continuous(limits = c(-13, 23), expand = c(0.02, 0.02)) +
   scale_y_continuous(limits = c(0, 54), labels = c('0', '','20', '','40', ''), expand = c(0, 0)) +
+  scale_fill_manual(values = c('firebrick4', 'grey50', 'darkorange')) +
   xlab('') + ylab('') +
   geom_text(aes(-10, Inf, label = sample_size1), vjust = 1, size = 6) +
   geom_text(aes(17, Inf, label = 'within-pair'), vjust = 1, size = 6) +
@@ -362,9 +377,9 @@ p1
 
 # female 
 ds1 = ds[seen_with_other_than_1st_partner == TRUE & same_sex == 0 & ID1sex == 'F', 
-         .(ID1, ID2, diff_obs_initiation = diff_obs_1st_initiation, type = '1st')]
+         .(ID1, ID2, diff_obs_initiation = diff_obs_1st_initiation, type = '1st', datetime_)]
 ds2 = ds[seen_with_other_than_2nd_partner == TRUE & same_sex == 0 & ID1sex == 'F', 
-         .(ID1, ID2, diff_obs_initiation = diff_obs_2nd_initiation, type = '2nd')]
+         .(ID1, ID2, diff_obs_initiation = diff_obs_2nd_initiation, type = '2nd', datetime_)]
 dss = rbind(ds1, ds2)
 sample_size2 = paste0('N = ', nrow(dss))
 
@@ -392,6 +407,9 @@ dss[type == '1st' & ID2 == ID1_2nd_partner, type := 'next_partner']
 # interaction with previous partner
 dss[type == '2nd' & ID2 == ID1_1st_partner, type := 'previous_partner']
 
+# factor order
+dss[, type := factor(type, levels = c('1st', '2nd', 'previous_partner', 'next_partner'))]
+
 
 p2 = 
   ggplot(data = dss) +
@@ -399,6 +417,8 @@ p2 =
   geom_vline(aes(xintercept = 3), linetype = 'dotted', size = 1.2) + 
   scale_x_continuous(limits = c(-13, 23), expand = c(0.02, 0.02)) +
   scale_y_continuous(limits = c(0, 21), labels = c('0', '','10', '','20'), expand = c(0, 0)) +
+  # scale_fill_viridis_d() +
+  scale_fill_manual(values = c('grey50', 'dodgerblue3', 'darkorange', 'firebrick4')) +
   xlab('') + ylab('N interactions') +
   geom_text(aes(-10, Inf, label = sample_size2), vjust = 1, size = 6) +
   geom_text(aes(17, Inf, label = 'females with\nextra-pair males'), vjust = 1, size = 6) +
@@ -439,6 +459,9 @@ dss[type == '1st' & ID2 == ID1_2nd_partner, type := 'next_partner']
 # interaction with previous partner
 dss[type == '2nd' & ID2 == ID1_1st_partner, type := 'previous_partner']
 
+# factor order
+dss[, type := factor(type, levels = c('1st', '2nd', 'previous_partner', 'next_partner'))]
+
 
 p3 = 
   ggplot(data = dss) +
@@ -446,6 +469,7 @@ p3 =
   geom_vline(aes(xintercept = 3), linetype = 'dotted', size = 1.2) + 
   scale_x_continuous(limits = c(-13, 23), expand = c(0.02, 0.02)) +
   scale_y_continuous(limits = c(0, 21), labels = c('0', '','10', '','20'), expand = c(0, 0)) +
+  scale_fill_viridis_d() +
   xlab('day relative to clutch initiation') + ylab('') + 
   geom_text(aes(-10, Inf, label = sample_size3), vjust = 1, size = 6) +
   geom_text(aes(17, Inf, label = 'males with\nextra-pair females'), vjust = 1, size = 6) +
@@ -469,8 +493,10 @@ dev.off()
 ds = unique(di[ID1copAS == 1 & ID2copAS == 1 & !is.na(ID2)], by = c('ID1', 'ID2', 'date_'))
 
 # within pair
-ds1 = ds[ID2 == ID1_1st_partner & ID1copAS == 1 & ID1sex == 'M', .(ID1, diff_obs_initiation = diff_obs_1st_initiation, type = '1st')]
-ds2 = ds[ID2 == ID1_2nd_partner & ID1copAS == 1 & ID1sex == 'M', .(ID1, diff_obs_initiation = diff_obs_2nd_initiation, type = '2nd')]
+ds1 = ds[ID2 == ID1_1st_partner & ID1copAS == 1 & ID1sex == 'M', 
+         .(ID1, diff_obs_initiation = diff_obs_1st_initiation, type = '1st', datetime_)]
+ds2 = ds[ID2 == ID1_2nd_partner & ID1copAS == 1 & ID1sex == 'M', 
+         .(ID1, diff_obs_initiation = diff_obs_2nd_initiation, type = '2nd'), datetime_]
 dss = rbind(ds1, ds2)
 sample_size4 = paste0('N = ', nrow(dss))
 
@@ -499,6 +525,8 @@ dss = merge(dss, dnpu[, .(ID1, ID1_1st_partner)], by = 'ID1', all.x = TRUE)
 
 dss[N_clutches == 2 & ID1_1st_partner == ID2, int_with_first := TRUE]
 dss[int_with_first == TRUE, type := '2nd_same']
+
+dss[diff_obs_initiation > 4 & type != '2nd_same']
 
 p4 = 
   ggplot(data = dss) +
