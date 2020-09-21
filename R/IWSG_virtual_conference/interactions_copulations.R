@@ -294,9 +294,6 @@ unique(di[seen_with_other_than_1st_partner == TRUE, .(ID1, ID2, seen_with_2nd_pa
 di[, diff_obs_1st_initiation := difftime(datetime_, first_initiation, units = 'days') %>% as.numeric %>% round(., 0)]
 di[, diff_obs_2nd_initiation := difftime(datetime_, second_initiation, units = 'days') %>% as.numeric %>% round(., 0)]
 
-di[seen_with_other_than_1st_partner == TRUE, .(ID1, ID2, datetime_, first_initiation, initiation, diff_obs_initiation)]
-
-
 # turn inf values in NA
 invisible(lapply(names(di),function(.name) set(di, which(is.infinite(di[[.name]])), j = .name,value = NA)))
 
@@ -313,29 +310,6 @@ ds1 = ds[ID2 == ID1_1st_partner & ID1sex == 'M', .(ID1, ID2, diff_obs_initiation
 ds2 = ds[ID2 == ID1_2nd_partner & ID1sex == 'M', .(ID1, ID2, diff_obs_initiation = diff_obs_2nd_initiation, type = '2nd', datetime_)]
 dss = rbind(ds1, ds2)
 sample_size1 = paste0('N = ', nrow(dss))
-
-# dss[diff_obs_initiation %between% c(-1, 3), ini_cat := 'before']
-# dss[diff_obs_initiation %between% c(4, 7), ini_cat := 'after']
-# x = dss[, .N, by = .(diff_obs_initiation, ini_cat)]
-# 
-# fm = glm(N ~ ini_cat, data = x)
-# summary(fm)
-# plot(allEffects(fm))
-
-
-p1 = 
-  ggplot(data = dss) +
-  geom_bar(aes(diff_obs_initiation), fill = 'grey50', width = 0.9) +
-  geom_vline(aes(xintercept = 3), linetype = 'dotted', size = 1.2) + 
-  scale_x_continuous(limits = c(-13, 23), expand = c(0.02, 0.02)) +
-  scale_y_continuous(limits = c(0, 54), labels = c('0', '','20', '','40', ''), expand = c(0, 0)) +
-  xlab('') + ylab('') +
-  geom_text(aes(-10, Inf, label = sample_size1), vjust = 1, size = 6) +
-  geom_text(aes(17, Inf, label = 'within-pair'), vjust = 1, size = 6) +
-  theme_classic(base_size = 20) +
-  theme(panel.spacing = unit(0, "cm"), plot.margin = margin(t_margin, 0, -5, 5, "pt"),
-        axis.title.x=element_blank())
-p1 
 
 # color for birds with more than one clutch 
 dss = merge(dss, dnID[, .(ID_year, N_clutches)], by.x = 'ID1', by.y = 'ID_year', all.x = TRUE)
@@ -389,6 +363,23 @@ p1 =
 p1 
 
 
+p1grey = 
+  ggplot(data = dss) +
+  geom_bar(aes(diff_obs_initiation, fill = type2), width = 0.9) +
+  geom_vline(aes(xintercept = 3), linetype = 'dotted', size = 1.2) + 
+  scale_x_continuous(limits = c(-13, 23), labels = NULL, expand = c(0.02, 0.02)) +
+  scale_y_continuous(limits = c(0, 54), labels = c('0', '','20', '','40', ''), expand = c(0, 0)) +
+  scale_fill_manual(values = c('grey50', 'grey50', 'grey50')) +
+  xlab('') + ylab('') +
+  # geom_text(aes(-10, Inf, label = sample_size1), vjust = 1, size = 6) +
+  # geom_text(aes(17, Inf, label = 'within-pair'), vjust = 1, size = 6) +
+  theme_classic(base_size = 20) +
+  theme(panel.spacing = unit(0, "cm"), plot.margin = margin(t_margin, 0, -5, 5, "pt"),
+        axis.title.x=element_blank(), legend.position = 'none') # legend.position = c(0.9, 0.9), legend.title = element_blank()
+
+p1grey
+
+
 # male 
 ds1 = ds[seen_with_other_than_1st_partner == TRUE & same_sex == 0 & ID1sex == 'M', 
          .(ID1, ID2, diff_obs_initiation = diff_obs_1st_initiation, type = '1st', datetime_)]
@@ -396,21 +387,6 @@ ds2 = ds[seen_with_other_than_2nd_partner == TRUE & same_sex == 0 & ID1sex == 'M
          .(ID1, ID2, diff_obs_initiation = diff_obs_2nd_initiation, type = '2nd', datetime_)]
 dss = rbind(ds1, ds2)
 sample_size3 = paste0('N = ', nrow(dss))
-
-p2 = 
-  ggplot(data = dss) +
-  geom_bar(aes(diff_obs_initiation), fill = 'grey50', width = 0.9) +
-  geom_vline(aes(xintercept = 3), linetype = 'dotted', size = 1.2) + 
-  scale_x_continuous(limits = c(-13, 23), expand = c(0.02, 0.02)) +
-  scale_y_continuous(limits = c(0, 22), labels = c('0', '','10', '','20'), expand = c(0, 0)) +
-  xlab('day relative to clutch initiation') + ylab('') + 
-  geom_text(aes(-10, Inf, label = sample_size3), vjust = 1, size = 6) +
-  geom_text(aes(17, Inf, label = 'males with\nextra-pair females'), vjust = 1, size = 6) +
-  theme_classic(base_size = 20) +
-  theme(panel.spacing = unit(0, "cm"), plot.margin = margin(t_margin, 0, -5, 5, "pt"),
-        axis.title.x=element_blank())
-p2
-
 
 # 1st interacting with second partner
 dnpu = unique(dnp, by = 'ID1')
@@ -456,6 +432,21 @@ p2 =
         axis.title.x=element_blank(), legend.position = 'none')
 p2
 
+p2grey = 
+  ggplot(data = dss) +
+  geom_bar(aes(diff_obs_initiation, fill = type2, width = 0.9), width = 0.9) +
+  geom_vline(aes(xintercept = 3), linetype = 'dotted', size = 1.2) + 
+  scale_x_continuous(limits = c(-13, 23), labels = NULL, expand = c(0.02, 0.02)) +
+  scale_y_continuous(limits = c(0, 22), labels = c('0', '','10', '','20'), expand = c(0, 0)) +
+  scale_fill_manual(values = c('grey50', 'grey50', 'grey50')) +
+  xlab('day relative to clutch initiation') + ylab('') + 
+  # geom_text(aes(-10, Inf, label = sample_size3), vjust = 1, size = 6) +
+  # geom_text(aes(17, Inf, label = 'males with\nextra-pair females'), vjust = 1, size = 6) +
+  theme_classic(base_size = 20) +
+  theme(panel.spacing = unit(0, "cm"), plot.margin = margin(t_margin, 0, -5, 5, "pt"),
+        axis.title.x=element_blank(), legend.position = 'none')
+p2grey
+
 
 # female 
 ds1 = ds[seen_with_other_than_1st_partner == TRUE & same_sex == 0 & ID1sex == 'F', 
@@ -464,21 +455,6 @@ ds2 = ds[seen_with_other_than_2nd_partner == TRUE & same_sex == 0 & ID1sex == 'F
          .(ID1, ID2, diff_obs_initiation = diff_obs_2nd_initiation, type = '2nd', datetime_)]
 dss = rbind(ds1, ds2)
 sample_size2 = paste0('N = ', nrow(dss))
-
-
-p3 = 
-  ggplot(data = dss) +
-  geom_bar(aes(diff_obs_initiation), fill = 'grey50', width = 0.9) +
-  geom_vline(aes(xintercept = 3), linetype = 'dotted', size = 1.2) + 
-  scale_x_continuous(limits = c(-13, 23), expand = c(0.02, 0.02)) +
-  scale_y_continuous(limits = c(0, 22), labels = c('0', '','10', '','20'), expand = c(0, 0)) +
-  xlab('') + ylab('N interactions') +
-  geom_text(aes(-10, Inf, label = sample_size2), vjust = 1, size = 6) +
-  geom_text(aes(17, Inf, label = 'females with\nextra-pair males'), vjust = 1, size = 6) +
-  theme_classic(base_size = 20) +
-  theme(panel.spacing = unit(0, "cm"), plot.margin = margin(t_margin, 0, -5, 5, "pt"),
-        axis.title.x = element_blank())
-p3
 
 # 1st interacting with second partner
 dnpu = unique(dnp, by = 'ID1')
@@ -507,11 +483,28 @@ p3 =
         axis.title.x = element_blank(), legend.position = 'none') # legend.position = c(0.8, 0.9), legend.title = element_blank()
 p3
 
+p3grey = 
+  ggplot(data = dss) +
+  geom_bar(aes(diff_obs_initiation, fill = type), width = 0.9) +
+  geom_vline(aes(xintercept = 3), linetype = 'dotted', size = 1.2) + 
+  scale_x_continuous(limits = c(-13, 23), expand = c(0.02, 0.02)) +
+  scale_y_continuous(limits = c(0, 22), labels = c('0', '','10', '','20'), expand = c(0, 0)) +
+  scale_fill_manual(values = c('grey50', 'grey50', 'orange', 'orangered2')) + 
+  xlab('Day relative to clutch initiation') + ylab('') +
+  # geom_text(aes(-10, Inf, label = sample_size2), vjust = 1, size = 6) +
+  # geom_text(aes(17, Inf, label = 'females with\nextra-pair males'), vjust = 1, size = 6) +
+  theme_classic(base_size = 20) +
+  theme(panel.spacing = unit(0, "cm"), plot.margin = margin(t_margin, 0, -5, 5, "pt"),
+        axis.title.x = element_blank(), legend.position = 'none') # legend.position = c(0.8, 0.9), legend.title = element_blank()
+p3grey
 
 png(paste0('./REPORTS/FIGURES/interactions_talk.png'), width = 500, height = 500)
 p1 + p2 + p3 + plot_layout(ncol = 1, nrow = 3, heights = c(4, 2, 2)) 
 dev.off()
 
+png(paste0('./REPORTS/FIGURES/interactions_talk_grey.png'), width = 500, height = 500)
+p1grey + p2grey + p3grey + plot_layout(ncol = 1, nrow = 3, heights = c(4, 2, 2)) 
+dev.off()
 
 #------------------------------------------------------------------------------------------------------------------------
 ### copulations
