@@ -489,7 +489,7 @@ p3grey =
   geom_vline(aes(xintercept = 3), linetype = 'dotted', size = 1.2) + 
   scale_x_continuous(limits = c(-13, 23), expand = c(0.02, 0.02)) +
   scale_y_continuous(limits = c(0, 22), labels = c('0', '','10', '','20'), expand = c(0, 0)) +
-  scale_fill_manual(values = c('grey50', 'grey50', 'orange', 'orangered2')) + 
+  scale_fill_manual(values = c('grey50', 'grey50', 'grey50', 'grey50')) + 
   xlab('Day relative to clutch initiation') + ylab('') +
   # geom_text(aes(-10, Inf, label = sample_size2), vjust = 1, size = 6) +
   # geom_text(aes(17, Inf, label = 'females with\nextra-pair males'), vjust = 1, size = 6) +
