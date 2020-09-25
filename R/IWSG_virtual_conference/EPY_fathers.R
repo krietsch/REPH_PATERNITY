@@ -190,7 +190,7 @@ ggplot(data = ds) +
   theme_classic(base_size = 18)
 
 ddiff = ds[, .(IDfather_year, site_EPY_father, initiation, initiation_soc, diff_EPY_to_social_nest, same_female)]
-ddiff[, diff_EPY_to_social_nest := as.integer(diff_EPY_to_social_nest)]
+ddiff[, diff_EPY_to_social_nest := as.integer(round(diff_EPY_to_social_nest, 0))]
 
 ddiff = ddiff[!is.na(diff_EPY_to_social_nest)]
 ddiff[is.na(same_female), same_female2 := 'unknown']
