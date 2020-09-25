@@ -71,8 +71,8 @@ dp[!is.na(IDfather), IDfather_year := paste0(IDfather, '_', substr(year_, 3,4 ))
 dp[!is.na(IDmother), IDmother_year := paste0(IDmother, '_', substr(year_, 3,4 ))]
 
 # unique nest information by ID
-dm = dn[, .(year_, nestID, ID_year = male_id_year, study_site, initiation)]
-df = dn[, .(year_, nestID, ID_year = female_id_year, study_site, initiation)]
+dm = dn[, .(year_, nestID, ID_year = male_id_year, study_site, initiation, nest_state_date)]
+df = dn[, .(year_, nestID, ID_year = female_id_year, study_site, initiation, nest_state_date)]
 
 dnID = rbind(dm, df)
 dnID = dnID[!is.na(ID_year) & year_ > 2000]
@@ -84,6 +84,10 @@ dnID[!is.na(ID_year) & !is.na(initiation), first_initiation := min(initiation, n
 dnID[!is.na(ID_year) & !is.na(initiation) & initiation != first_initiation, 
      second_initiation := min(initiation, na.rm = TRUE), by = ID_year]
 dnID[, second_initiation := min(second_initiation, na.rm = TRUE), by = ID_year]
+dnID[!is.na(ID_year) & !is.na(nest_state_date), first_nest_state_date := min(nest_state_date, na.rm = TRUE), by = ID_year]
+dnID[!is.na(ID_year) & !is.na(nest_state_date) & nest_state_date != first_nest_state_date, 
+     second_nest_state_date := min(nest_state_date, na.rm = TRUE), by = ID_year]
+dnID[, second_nest_state_date := min(second_nest_state_date, na.rm = TRUE), by = ID_year]
 dnID[, N_clutches := .N, by = ID_year]
 dnID = unique(dnID, by = 'ID_year')
 
@@ -497,6 +501,45 @@ p3grey =
   theme(panel.spacing = unit(0, "cm"), plot.margin = margin(t_margin, 0, -5, 5, "pt"),
         axis.title.x = element_blank(), legend.position = 'none') # legend.position = c(0.8, 0.9), legend.title = element_blank()
 p3grey
+
+# additional ask which males had an active nest
+da = dss[diff_obs_initiation > 0]
+
+da = merge(da, dnID[, .(ID_year, first_initiation, second_initiation, first_nest_state_date, second_nest_state_date)], 
+           by.x = c('ID2'), by.y = c('ID_year'), all.x = TRUE)
+
+# nest active?
+da[, active_nest1 := datetime_%between% c(first_initiation, first_nest_state_date), by = 1:nrow(da)]
+da[is.na(second_initiation), active_nest1 := NA]
+da[, active_nest2 := datetime_%between% c(second_initiation, second_nest_state_date), by = 1:nrow(da)]
+da[is.na(second_initiation), active_nest2 := NA]
+da[, active_nest := any(active_nest1 == TRUE | active_nest2 == TRUE), by = 1:nrow(da)]
+da[is.na(first_initiation), no_nest := TRUE]
+
+dss = merge(dss, da[, .(ID1, ID2, datetime_, active_nest, no_nest)], by = c('ID1', 'ID2', 'datetime_'), all.x = TRUE)
+
+dss[diff_obs_initiation > 0 & type %in% c('1st', '2nd') & active_nest == TRUE, type := 'active nest']
+dss[diff_obs_initiation > 0 & type %in% c('1st', '2nd') & no_nest == TRUE, type := 'no nest']
+dss[diff_obs_initiation > 0 & type %in% c('1st', '2nd') & active_nest == FALSE, type := 'not active nest']
+
+
+p3b = 
+  ggplot(data = dss) +
+  geom_bar(aes(diff_obs_initiation, fill = type), width = 0.9) +
+  geom_vline(aes(xintercept = 3), linetype = 'dotted', size = 1.2) + 
+  scale_x_continuous(limits = c(-13, 23), expand = c(0.02, 0.02)) +
+  scale_y_continuous(limits = c(0, 22), labels = c('0', '','10', '','20'), expand = c(0, 0)) +
+  scale_fill_manual(values = c('grey50', 'black', 'orange', 'orangered2', 'green', 'blue', 'yellow')) + 
+  xlab('Day relative to clutch initiation') + ylab('') +
+  # geom_text(aes(-10, Inf, label = sample_size2), vjust = 1, size = 6) +
+  # geom_text(aes(17, Inf, label = 'females with\nextra-pair males'), vjust = 1, size = 6) +
+  theme_classic(base_size = 20) +
+  theme(panel.spacing = unit(0, "cm"), plot.margin = margin(t_margin, 0, -5, 5, "pt"),
+        axis.title.x = element_blank()) # legend.position = c(0.8, 0.9), legend.title = element_blank()
+p3b
+
+dss[type == '1st']
+
 
 png(paste0('./REPORTS/FIGURES/interactions_talk.png'), width = 500, height = 500)
 p1 + p2 + p3 + plot_layout(ncol = 1, nrow = 3, heights = c(4, 2, 2)) 
