@@ -644,8 +644,6 @@ p5 =
   theme(panel.spacing = unit(0, "cm"), plot.margin = margin(t_margin, 0, -5, 5, "pt"), legend.position = 'none')
 p5
 
-
-
 # 1st interacting with second partner
 dnpu = unique(dnp, by = 'ID1')
 dss = merge(dss, dnpu[, .(ID1, ID1_1st_partner, ID1_2nd_partner)], by = 'ID1', all.x = TRUE)
@@ -690,9 +688,9 @@ p5
 
 # female 
 ds1 = ds[copAS_not_1st_partner == TRUE & ID1sex == 'F', 
-         .(ID1, ID2, diff_obs_initiation = diff_obs_1st_initiation, type = '1st')]
+         .(ID1, ID2, diff_obs_initiation = diff_obs_1st_initiation, type = '1st', datetime_)]
 ds2 = ds[copAS_not_2nd_partner == TRUE & ID1sex == 'F', 
-         .(ID1, ID2, diff_obs_initiation = diff_obs_2nd_initiation, type = '2nd')]
+         .(ID1, ID2, diff_obs_initiation = diff_obs_2nd_initiation, type = '2nd', datetime_)]
 dss = rbind(ds1, ds2)
 sample_size5 = paste0('N = ', nrow(dss))
 
@@ -720,6 +718,8 @@ dss[type == '1st' & ID2 == ID1_2nd_partner, type := 'next_partner']
 
 # interaction with previous partner
 dss[type == '2nd' & ID2 == ID1_1st_partner, type := 'previous_partner']
+
+dss[diff_obs_initiation > 0 & type == 'previous_partner']
 
 
 p6 = 
