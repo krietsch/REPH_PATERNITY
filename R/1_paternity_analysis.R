@@ -181,6 +181,14 @@ ds[, N_nests := nrow(d[study_site == TRUE & parentage == TRUE])]
 ds[, initiation_method_percent := N / N_nests * 100]
 ds
 
+# age when found
+ds = d[study_site == TRUE]
+ds[, complete := initiation + clutch_size*86400]
+
+ds[, age_found := difftime(found_datetime, initiation, units = 'days') %>% as.numeric]
+ds[, age_found_complete := difftime(found_datetime, complete, units = 'days') %>% as.numeric]
+ds[age_found < 5] %>% nrow/ 174
+ds[age_found_complete < 3] %>%  nrow/ 174
 
 #------------------------------------------------------------------------------------------------------------------------
 # 3. Rate of polyandry & renesting
@@ -335,11 +343,21 @@ ds[, N_parentage := paste0(round(N_parentage / N_nests * 100, 0), '% (', N_paren
 ds
 
 # position of nests with parentage data
-# bm = create_bm(d)
-# bm + geom_point(data = d[parentage == TRUE], aes(lon, lat, color = study_site))
-# bm + geom_point(data = d[parentage == TRUE & !is.na(data_type)], aes(lon, lat, color = data_type))
-# bm + geom_point(data = d[parentage == TRUE], aes(lon, lat, color = YEAR_))
-# bm + geom_point(data = d[parentage == TRUE], aes(lon, lat, color = as.character(anyEPY)))
+bm = create_bm(d)
+bm + geom_point(data = d[parentage == TRUE], aes(lon, lat, color = study_site))
+bm + geom_point(data = d[parentage == TRUE & !is.na(data_type)], aes(lon, lat, color = data_type))
+bm + geom_point(data = d[parentage == TRUE], aes(lon, lat, color = YEAR_))
+bm + geom_point(data = d[parentage == TRUE], aes(lon, lat, color = as.character(anyEPY)))
+
+# split in four data types
+ds = d[parentage == TRUE, .(N_parentage = .N), by =  data_type]
+
+ds = d[data_type == 'clutch_removal_exp']
+
+ds = d[parentage == TRUE & year_ == 2018]
+ggplot(data = ds) +
+  geom_boxplot(aes(data_type, initiation))
+
 
 # split in NARL study site and everything else
 ds = d[, .(N_nests = .N), by =  study_site]
