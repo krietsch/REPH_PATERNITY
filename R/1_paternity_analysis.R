@@ -119,6 +119,14 @@ ds = dc[external == 0 & capture_id == 1 & year_ > 2016]
 
 ds[, .N, .(year_, study_site)]
 
+# capture after nest found?
+dc_first = dc[, .(first_caught = min(caught_time, na.rm = TRUE)), by = ID]
+ds = merge(d, dc_first, by.x = 'male_id', by.y = 'ID', all.x = TRUE)
+ds[, diff_found_caught := difftime(found_datetime, first_caught, units = 'hours') %>% as.numeric]
+ds = ds[study_site == TRUE]
+ds[, found_before_caught := diff_found_caught < 0]
+ds[, .N, found_before_caught]
+
 #------------------------------------------------------------------------------------------------------------------------
 # 2. Incubation length & initiation date method
 #------------------------------------------------------------------------------------------------------------------------
@@ -160,14 +168,16 @@ mean(ds[external == 1 & inc_period < 25]$inc_period, na.rm = TRUE) # excluding o
 d[found_incomplete == TRUE, initiation_method := 'found_incomplete']
 d[is.na(initiation_method) & !is.na(hatching_datetime), initiation_method := 'hatching_datetime']
 d[is.na(initiation_method) & !is.na(est_hatching_datetime), initiation_method := 'est_hatching_datetime']
+d[is.na(initiation_method) & !is.na(initiation), initiation_method := 'est_hatching_datetime']
+d[is.na(initiation_method), initiation_method := 'none']
 
 # check NA
-d[external == 0 & is.na(initiation_method), .(year_, nest, initiation_y)]
+d[study_site == TRUE & initiation_method == 'none', .(year_, nest, initiation_y)]
 
 # d[is.na(initiation_method) & !is.na(initiation), initiation_method := 'found_incomplete']
 
-ds = d[external == 1 & parentage == TRUE, .N, initiation_method]
-ds[, N_nests := nrow(d[external == 1 & parentage == TRUE])]
+ds = d[study_site == TRUE & parentage == TRUE, .N, initiation_method]
+ds[, N_nests := nrow(d[study_site == TRUE & parentage == TRUE])]
 ds[, initiation_method_percent := N / N_nests * 100]
 ds
 
