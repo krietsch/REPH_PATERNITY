@@ -250,6 +250,8 @@ dss[, not_social_female_before := paste0(round(not_social_female_before / N_EPY_
 dss[, N_EPY_eggs := NULL]
 dss
 
+# also check if all males still had their social clutch over the time of egg laying
+
 #------------------------------------------------------------------------------------------------------------------------
 # 3. Distance between EPY nest and social nest and maps
 #------------------------------------------------------------------------------------------------------------------------
