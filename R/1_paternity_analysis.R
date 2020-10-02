@@ -329,6 +329,7 @@ ds = rbindlist(list(dss[, .(year_, x = EPY_nests_per, n = N_anyEPY, N = N_parent
 
 ds[, year_ := as.factor(year_)]
 ds[, sample_size := paste0(n, '/', N)]
+ds[year_ != '2017' & type != 'EPP',sample_size := paste0(sample_size, '*')]
 
 p = 
 ggplot(data = ds[study_site == FALSE], aes(year_, x, fill = type, label = sample_size)) +
@@ -341,7 +342,7 @@ ggplot(data = ds[study_site == FALSE], aes(year_, x, fill = type, label = sample
   theme(legend.position = c(0.2, 0.9), legend.title = element_blank())
 p
 
-# png(paste0('./REPORTS/FIGURES/EPY_polyandry_renesting.png'), width = 600, height = 600)
+# png(paste0('./REPORTS/FIGURES/EPY_polyandry_renesting.png'), width = 700, height = 600)
 # p
 # dev.off()
 
@@ -393,6 +394,33 @@ ggplot(data = ds) +
 ds[, .N, data_type]
 
 
+
+
+# split in year only
+ds = d[, .(N_nests = .N), by = .(year_)]
+ds2 = d[parentage == TRUE, .(N_parentage = .N), by = .(year_)]
+ds3 = d[anyEPY == TRUE, .(N_EPY = .N), by = .(year_)]
+ds4 = d[, .(N_eggs = sum(N_parentage, na.rm = TRUE), N_eggs_EPY = sum(N_EPY, na.rm = TRUE)), by = .(year_)]
+ds = merge(ds, ds2, by = c('year_'), all.x = TRUE)
+ds = merge(ds, ds3, by = c('year_'), all.x = TRUE)
+ds = merge(ds, ds4, by = c('year_'), all.x = TRUE)
+ds[is.na(ds)] = 0
+ds = ds[N_parentage != 0]
+ds[, EPY_nests_ := round(N_EPY / N_parentage * 100, 1)]
+ds[, EPY_eggs_  := round(N_eggs_EPY / N_eggs * 100, 1)]
+ds[, EPY_nests := paste0(round(N_EPY / N_parentage * 100, 1), '% (', N_EPY, '/', N_parentage, ')')]
+ds[, EPY_eggs  := paste0(round(N_eggs_EPY / N_eggs * 100, 1), '% (', N_eggs_EPY, '/', N_eggs, ')')]
+
+# plot 
+ds[, sample_size := paste0(N_EPY, '/', N_parentage)]
+ds[, year_ := as.factor(year_)]
+
+ggplot(data = ds, aes(year_, EPY_nests_, label = sample_size)) +
+  geom_bar(stat = "identity", position = 'dodge', width = 0.7) +
+  geom_text(position = position_dodge(width = 0.7), size = 6, vjust = -0.5) 
+
+
+
 # split in intense study and other data types
 ds = d[, .(N_nests = .N), by = .(year_, data_type)]
 ds2 = d[parentage == TRUE, .(N_parentage = .N), by = .(year_, data_type)]
@@ -403,8 +431,31 @@ ds = merge(ds, ds3, by = c('year_', 'data_type'), all.x = TRUE)
 ds = merge(ds, ds4, by = c('year_', 'data_type'), all.x = TRUE)
 ds[is.na(ds)] = 0
 ds = ds[N_parentage != 0]
-ds[, EPY_nests := paste0(round(N_EPY / N_parentage * 100, 0), '% (', N_EPY, '/', N_parentage, ')')]
-ds[, EPY_eggs  := paste0(round(N_eggs_EPY / N_eggs * 100, 0), '% (', N_eggs_EPY, '/', N_eggs, ')')]
+ds[, EPY_nests_ := round(N_EPY / N_parentage * 100, 1)]
+ds[, EPY_eggs_  := round(N_eggs_EPY / N_eggs * 100, 1)]
+ds[, EPY_nests := paste0(round(N_EPY / N_parentage * 100, 1), '% (', N_EPY, '/', N_parentage, ')')]
+ds[, EPY_eggs  := paste0(round(N_eggs_EPY / N_eggs * 100, 1), '% (', N_eggs_EPY, '/', N_eggs, ')')]
+
+# plot 
+ds[, sample_size := paste0(N_EPY, '/', N_parentage)]
+ds[, year_ := as.factor(year_)]
+
+ggplot(data = ds, aes(year_, EPY_nests_, fill = data_type, label = sample_size)) +
+  geom_bar(stat = "identity", position = 'dodge', width = 0.7) 
+
+p = 
+  ggplot(data = ds[study_site == FALSE], aes(year_, x, fill = type, label = sample_size)) +
+  geom_bar(stat = "identity", position = 'dodge', width = 0.7) +
+  geom_text(position = position_dodge(width = 0.7), size = 6, vjust = -0.5) +
+  scale_fill_manual(values = c('grey50','#95D840FF', '#33638DFF'), labels = c('nests with EPP', 'polyandrous females', 'renesting males')) +
+  scale_y_continuous(limits = c(0, 15), expand = c(0, 0)) +
+  xlab('Year') + ylab('Percentage of') + 
+  theme_classic(base_size = 20) +
+  theme(legend.position = c(0.2, 0.9), legend.title = element_blank())
+p
+
+
+
 
 ds[, c('N_parentage', 'N_EPY', 'N_eggs', 'N_eggs_EPY') := NULL]
 setorder(ds, year_, -data_type)
