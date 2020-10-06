@@ -117,6 +117,7 @@ dc[, .N, capture_id]
 # banded each year on and off plot by us
 ds = dc[external == 0 & capture_id == 1 & year_ > 2016]
 
+ds[, .N, .(year_)]
 ds[, .N, .(year_, study_site)]
 
 # capture after nest found?
@@ -385,7 +386,6 @@ bm + geom_point(data = d[parentage == TRUE], aes(lon, lat, color = as.character(
 
 # split in four data types
 ds = d[parentage == TRUE, .(N_parentage = .N), by =  data_type]
-
 ds = d[data_type == 'clutch_removal_exp']
 
 ds = d[parentage == TRUE & year_ == 2018]

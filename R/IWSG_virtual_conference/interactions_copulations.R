@@ -53,7 +53,7 @@ d[, year_ := year(datetime_)]
 dn[, initiation := as.POSIXct(initiation)]
 
 # first REPH and first copulation
-d[, min(datetime_), by = year_]
+d[, min(datetime_), by = .(year_, study_site)]
 d[!is.na(cop), min(datetime_), by = year_]
 d[!is.na(cop), max(datetime_), by = year_]
 d[!is.na(cop)]
