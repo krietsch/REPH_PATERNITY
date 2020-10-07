@@ -413,13 +413,26 @@ ds[, EPY_eggs  := paste0(round(N_eggs_EPY / N_eggs * 100, 1), '% (', N_eggs_EPY,
 
 # plot 
 ds[, sample_size := paste0(N_EPY, '/', N_parentage)]
+ds[, sample_size_eggs := paste0(N_eggs_EPY, '/', N_eggs)]
 ds[, year_ := as.factor(year_)]
 
+p1 = 
 ggplot(data = ds, aes(year_, EPY_nests_, label = sample_size)) +
-  geom_bar(stat = "identity", position = 'dodge', width = 0.7) +
-  geom_text(position = position_dodge(width = 0.7), size = 6, vjust = -0.5) 
+  geom_bar(stat = "identity", position = 'dodge', width = 0.7, fill = 'grey50') +
+  geom_text(position = position_dodge(width = 0.7), size = 6, vjust = -0.5) +
+  scale_y_continuous(limits = c(0, 22), expand = c(0, 0)) +
+  xlab('Year') + ylab('Percentage of nests with EPY') + 
+  theme_classic(base_size = 20)
 
+p2 = 
+ggplot(data = ds, aes(year_, EPY_eggs_, label = sample_size_eggs)) +
+  geom_bar(stat = "identity", position = 'dodge', width = 0.7, fill = 'grey50') +
+  geom_text(position = position_dodge(width = 0.7), size = 6, vjust = -0.5) +
+  scale_y_continuous(limits = c(0, 11), expand = c(0, 0)) +
+  xlab('Year') + ylab('Percentage of EPY') + 
+  theme_classic(base_size = 20)
 
+p1 + p2 + plot_layout(nrow = 2)
 
 # split in intense study and other data types
 ds = d[, .(N_nests = .N), by = .(year_, data_type)]
