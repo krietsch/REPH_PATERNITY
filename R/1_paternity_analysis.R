@@ -470,9 +470,11 @@ p
 
 
 
-ds[, c('N_parentage', 'N_EPY', 'N_eggs', 'N_eggs_EPY') := NULL]
-setorder(ds, year_, -data_type)
+ds[, c('N_parentage', 'N_EPY', 'N_eggs', 'N_eggs_EPY', 'N_nests', 'EPY_nests_', 'EPY_eggs_', 'sample_size') := NULL]
+setorder(ds,  -year_, data_type)
 ds
+
+# openxlsx::write.xlsx(ds, './REPORTS/EPY_frequency/EPY_summary_table_all_data_types.xlsx')
 
 # split in NARL study site and everything else
 ds = d[, .(N_nests = .N), by =  study_site]
@@ -510,7 +512,7 @@ ds[study_site == TRUE, N_eggs_EPY / N_eggs * 100]  %>% mean %>% round(., 0)
 ds[study_site == FALSE, N_eggs_EPY / N_eggs * 100] %>% mean %>% round(., 0)
 
 ds[, c('N_parentage', 'N_EPY', 'N_eggs', 'N_eggs_EPY') := NULL]
-setorder(ds, -study_site, year_)
+setorder(ds,  -year_, -study_site)
 
 # bind with total
 ds[, year_ := as.character(year_)]
