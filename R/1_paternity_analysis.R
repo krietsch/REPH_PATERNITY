@@ -421,7 +421,7 @@ ggplot(data = ds, aes(year_, EPY_nests_, label = sample_size)) +
   geom_bar(stat = "identity", position = 'dodge', width = 0.7, fill = 'grey50') +
   geom_text(position = position_dodge(width = 0.7), size = 6, vjust = -0.5) +
   scale_y_continuous(limits = c(0, 22), expand = c(0, 0)) +
-  xlab('Year') + ylab('Percentage of nests with EPY') + 
+  xlab('Year') + ylab('% nests with EPY') + 
   theme_classic(base_size = 20)
 
 p2 = 
@@ -429,10 +429,39 @@ ggplot(data = ds, aes(year_, EPY_eggs_, label = sample_size_eggs)) +
   geom_bar(stat = "identity", position = 'dodge', width = 0.7, fill = 'grey50') +
   geom_text(position = position_dodge(width = 0.7), size = 6, vjust = -0.5) +
   scale_y_continuous(limits = c(0, 11), expand = c(0, 0)) +
-  xlab('Year') + ylab('Percentage of EPY') + 
+  xlab('Year') + ylab('% of EPY') + 
   theme_classic(base_size = 20)
 
 p1 + p2 + plot_layout(nrow = 2)
+
+# ds = d[year_ %in% c(2003, 2004, 2005, 2006, 2014, 2017, 2018, 2019)]
+ds2 = d[parentage == TRUE & year_ %in% c(2003, 2004, 2005, 2006, 2014, 2017, 2018, 2019)]
+
+ds2[, `:=` (q05 = quantile(initiation_doy, probs = c(0.05), na.rm = TRUE), 
+            q95 = quantile(initiation_doy, probs = c(0.95), na.rm = TRUE)), by = year_]
+
+ds2 = unique(ds2[, .(year_, q05, q95)], by = 'year_')
+ds2[, year_ := as.factor(year_)]
+
+ds = merge(ds, ds2, by = 'year_')
+ds[, q95_q05 := q95 - q05]
+
+ggplot(data = ds, aes(q95_q05, EPY_nests_, size = N_parentage, label = year_)) + 
+  geom_point() +
+  geom_text(aes(label=year_), hjust = 0.5, vjust = 1.7, size = 5)
+
+
+
+
+
+p3 = 
+ggplot(data = ds) +
+  geom_boxplot(aes(YEAR_, initiation_y)) + 
+  theme_classic(base_size = 20)
+p3
+
+p1 + p2 + p3 + plot_layout(nrow = 3)
+
 
 # split in intense study and other data types
 ds = d[, .(N_nests = .N), by = .(year_, data_type)]
