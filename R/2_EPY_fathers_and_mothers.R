@@ -197,8 +197,9 @@ ds$diff_EPY_to_social_nest %>% max
 
 ds$diff_EPY_to_social_nest_complete
 
-ds[, .(nestID, initiation, initiation_soc, diff_EPY_to_social_nest, complete_soc, diff_EPY_to_social_nest_complete, same_female)]
+ds[, .(nestID, nestID_social, initiation, initiation_soc, diff_EPY_to_social_nest, complete_soc, diff_EPY_to_social_nest_complete, same_female)]
 
+ds[, .(IDfather, nestID, initiation, nestID_social, initiation_soc, diff_EPY_to_social_nest, complete_soc, diff_EPY_to_social_nest_complete, same_female)]
 
 # female was not social female before?
 ds[is.na(same_female), same_female := FALSE] # can be excluded with initiation dates

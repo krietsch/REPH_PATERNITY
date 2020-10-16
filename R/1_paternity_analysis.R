@@ -26,6 +26,7 @@ con = dbcon('jkrietsch', db = 'REPHatBARROW')
 d = dbq(con, 'select * FROM NESTS')
 dc = dbq(con, 'select * FROM CAPTURES')
 dp = dbq(con, 'select * FROM PATERNITY')
+dw = dbq(con, 'select * FROM SNOW_SURVEY')
 DBI::dbDisconnect(con)
 
 #------------------------------------------------------------------------------------------------------------------------
@@ -434,13 +435,15 @@ ggplot(data = ds, aes(year_, EPY_eggs_, label = sample_size_eggs)) +
 
 p1 + p2 + plot_layout(nrow = 2)
 
-# ds = d[year_ %in% c(2003, 2004, 2005, 2006, 2014, 2017, 2018, 2019)]
-ds2 = d[parentage == TRUE & year_ %in% c(2003, 2004, 2005, 2006, 2014, 2017, 2018, 2019)]
+ds2 = d[year_ %in% c(2003, 2004, 2005, 2006, 2014, 2017, 2018, 2019)]
+# ds2 = d[parentage == TRUE & year_ %in% c(2003, 2004, 2005, 2006, 2014, 2017, 2018, 2019)]
 
 ds2[, `:=` (q05 = quantile(initiation_doy, probs = c(0.05), na.rm = TRUE), 
             q95 = quantile(initiation_doy, probs = c(0.95), na.rm = TRUE)), by = year_]
 
-ds2 = unique(ds2[, .(year_, q05, q95)], by = 'year_')
+ds2[, initiation_median := median(initiation_y, na.rm = TRUE), by = year_]
+
+ds2 = unique(ds2[, .(year_, q05, q95, initiation_median)], by = 'year_')
 ds2[, year_ := as.factor(year_)]
 
 ds = merge(ds, ds2, by = 'year_')
@@ -455,12 +458,80 @@ ggplot(data = ds, aes(q95_q05, EPY_nests_, size = N_parentage, label = year_)) +
 
 
 p3 = 
-ggplot(data = ds) +
+ggplot(data = ds2) +
   geom_boxplot(aes(YEAR_, initiation_y)) + 
+  xlab('Year') + ylab('Initiation date') + 
   theme_classic(base_size = 20)
 p3
 
 p1 + p2 + p3 + plot_layout(nrow = 3)
+
+
+# include snow cover
+
+dw = dw[, .(snow_cover = mean(snow_cover, na.rm = TRUE)), by = .(year_, date_)]
+
+# extract date
+dw[, date_ := as.POSIXct(date_)]
+dw[, date_y := as.POSIXct(format(date_, format = "%m-%d"), format = "%m-%d")]
+dw_20 = dw[snow_cover < 20, .(snow_cover_20 = min(date_y)), by = year_]
+dw_50 = dw[snow_cover < 50, .(snow_cover_50 = min(date_y)), by = year_]
+
+dw_20[, year_ := as.factor(year_)]
+dw_50[, year_ := as.factor(year_)]
+
+ds = merge(ds, dw_20, by = 'year_', all.x = TRUE)
+ds = merge(ds, dw_50, by = 'year_', all.x = TRUE)
+
+ggplot(data = ds) +
+  geom_point(aes(snow_cover_20, EPY_nests_), color = 'dodgerblue') +
+  geom_point(aes(snow_cover_50, EPY_nests_), color = 'firebrick')
+
+fm = lm(EPY_nests_ ~ yday(snow_cover_50), data = ds[year_ != '2003'])
+summary(fm)
+
+ggplot(data = ds, aes(snow_cover_20, EPY_nests_, label = year_)) +
+  geom_label() +
+  geom_point(color = 'dodgerblue') 
+
+ggplot(data = ds, aes(initiation_median, EPY_nests_, label = year_, size = N_parentage)) +
+  geom_label(size = 4, vjust = 1.5) +
+  geom_point(color = 'dodgerblue') + 
+  theme_bw(base_size = 20)
+
+
+ggplot() +
+  geom_line(data = dw, aes(date_y, snow_cover)) +
+  facet_grid(year_ ~ .)
+
+# subset Ricks plot data
+ds = d[plot %like% 'brw']
+ds = ds[, .(initiation_y = median(initiation_y, na.rm = TRUE), N_nests = .N), by = year_]
+
+ds = merge(ds, dw_20, by = 'year_')
+ds = merge(ds, dw_50, by = 'year_')
+
+ggplot() +
+  geom_point(data = ds, aes(initiation_y, snow_cover_20, color = year_)) +
+  scale_color_viridis(direction = -1) 
+
+ggplot() +
+  geom_point(data = ds[year_ > 2016], aes(snow_cover_20, N_nests, color = as.character(year_))) 
+
+fm = lm(yday(initiation_y) ~ yday(snow_cover_20), data = ds)
+summary(fm)
+
+fm = lm(N_nests ~ yday(snow_cover_20), data = ds)
+summary(fm)
+
+
+ggplot() +
+  geom_boxplot(data = d, aes(as.character(year_), initiation_y)) + 
+  geom_point(data = ds, aes(as.character(year_), snow_cover_20), color = 'dodgerblue') +
+  geom_point(data = ds, aes(as.character(year_), snow_cover_50), color = 'firebrick') 
+
+
+
 
 
 # split in intense study and other data types
