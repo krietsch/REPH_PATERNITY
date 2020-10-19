@@ -499,6 +499,10 @@ ggplot(data = ds, aes(initiation_median, EPY_nests_, label = year_, size = N_par
   geom_point(color = 'dodgerblue') + 
   theme_bw(base_size = 20)
 
+ggplot(data = ds, aes(initiation_median, EPY_nests_, label = year_, size = N_parentage)) +
+  geom_label(size = 4, vjust = 1.5) +
+  theme_bw(base_size = 20)
+
 
 ggplot() +
   geom_line(data = dw, aes(date_y, snow_cover)) +
