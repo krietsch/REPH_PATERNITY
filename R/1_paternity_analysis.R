@@ -15,7 +15,7 @@
 # 9. Paternity frequency within the season 
 
 # Packages
-sapply( c('data.table', 'magrittr', 'sdb', 'ggplot2', 'sf', 'auksRuak', 'patchwork', 'multcomp'),
+sapply( c('data.table', 'magrittr', 'sdb', 'ggplot2', 'sf', 'auksRuak', 'patchwork', 'multcomp', 'viridis', 'car'),
         require, character.only = TRUE)
 
 # Projection
@@ -379,11 +379,11 @@ ds[, N_parentage := paste0(round(N_parentage / N_nests * 100, 0), '% (', N_paren
 ds
 
 # position of nests with parentage data
-bm = create_bm(d)
-bm + geom_point(data = d[parentage == TRUE], aes(lon, lat, color = study_site))
-bm + geom_point(data = d[parentage == TRUE & !is.na(data_type)], aes(lon, lat, color = data_type))
-bm + geom_point(data = d[parentage == TRUE], aes(lon, lat, color = YEAR_))
-bm + geom_point(data = d[parentage == TRUE], aes(lon, lat, color = as.character(anyEPY)))
+# bm = create_bm(d)
+# bm + geom_point(data = d[parentage == TRUE], aes(lon, lat, color = study_site))
+# bm + geom_point(data = d[parentage == TRUE & !is.na(data_type)], aes(lon, lat, color = data_type))
+# bm + geom_point(data = d[parentage == TRUE], aes(lon, lat, color = YEAR_))
+# bm + geom_point(data = d[parentage == TRUE], aes(lon, lat, color = as.character(anyEPY)))
 
 # split in four data types
 ds = d[parentage == TRUE, .(N_parentage = .N), by =  data_type]
