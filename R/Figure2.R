@@ -187,6 +187,18 @@ p1 =
   theme_classic(base_size = 20)
 p1
 
+
+
+p1 = 
+  ggplot(data = ds) +
+  geom_boxplot(aes(as.character(year_), initiation_y), show.legend = FALSE, fill = 'grey70', color = 'grey50', outlier.alpha = 0) +
+  # geom_point(data = dss, aes(as.character(year_), median), size = 4) +
+  # geom_linerange(data = dss, aes(x = as.character(year_), ymin = q75, ymax = q25), size = 1.5) +
+  geom_jitter(aes(as.character(year_), initiation_y), show.legend = FALSE, color = 'black', width = 0.3, height = 0, size = 2) +
+  xlab('Year') + ylab('Date') + 
+  theme_classic(base_size = 20)
+p1
+
 #------------------------------------------------------------------------------------------------------------------------
 # 2. Timing of multiple clutches vs. single clutches
 #------------------------------------------------------------------------------------------------------------------------
@@ -250,7 +262,7 @@ p2 =
   scale_x_discrete(labels = c('single', 'first', 'second', 'third')) +
   xlab('Clutch type') + ylab('Clutch initiation date (standardized)') +
   geom_text(data = dss, aes(clutch_identity, Inf, label = sample_size), vjust = 1, size = 6) +
-  theme_classic_edit(base_size = 24, lp = c(0.85, 0.2))
+  theme_classic_edit(base_size = 20, lp = c(0.85, 0.2))
 p2
 
 
@@ -347,9 +359,10 @@ ds[, type := factor(type, levels = c('EPY', 'EPP', 'polyandry', 'renesting'))]
 p3 = 
   ggplot(data = ds[study_site == FALSE], aes(year_, x, fill = type, label = sample_size)) +
   geom_bar(stat = "identity", position = 'dodge', width = 0.7) +
-  geom_text(position = position_dodge(width = 0.7), size = 6, vjust = -0.5) +
+  # geom_text(position = position_dodge(width = 0.7), size = 6, vjust = -0.5) + # text horizontal
+  geom_text(position = position_dodge(width = 0.7), size = 6, hjust = -0.1, angle = 90) +
   scale_fill_manual(values = c('grey70', 'grey50','firebrick4', '#33638DFF'), labels = c('EPY', 'nests with EPY', 'polyandrous females', 'renesting males')) +
-  scale_y_continuous(limits = c(0, 15), expand = c(0, 0)) +
+  scale_y_continuous(limits = c(0, 16), expand = c(0, 0)) +
   xlab('Year') + ylab('Percentage of') + 
   theme_classic(base_size = 20) +
   theme(legend.position = c(0.2, 0.9), legend.title = element_blank())
@@ -362,14 +375,29 @@ p3
 
 # subset all multiple clutches or in study site
 ds = d[!is.na(initiation) & !is.na(anyEPY)]
+ds = ds[, .(year_, nestID, initiation_y, anyEPY, study_site = as.character(study_site))]
+ds[study_site == TRUE, study_site := 'Intensive study']
+ds[study_site == FALSE, study_site := 'Collection']
 
-ds[, mean_initiation := mean(initiation, na.rm = TRUE), by = year_]
-ds[, initiation_st := difftime(initiation, mean_initiation, units = 'days') %>% as.numeric]
+# load Dale et al. data
+dale = read.csv2('./DATA/Dale_EPP.csv') %>% data.table
+dale[, initiation_y := as.POSIXct(as.Date(initiation_doy, origin = '1993-01-01'))]
+
+ds = rbind(ds, dale[, .(year_ = YEAR_, nestID, initiation_y, anyEPY, study_site = 'Dale et al.')])
+
+
+ds[, mean_initiation := mean(initiation_y, na.rm = TRUE), by = year_]
+ds[, initiation_st := difftime(initiation_y, mean_initiation, units = 'days') %>% as.numeric]
 ds[, anyEPY := as.character(anyEPY)]
 ds[, study_site := as.character(study_site)]
 
 dss = ds[, .(median = median(initiation_st), q25 = quantile(initiation_st, probs = c(0.25)), 
              q75 = quantile(initiation_st, probs = c(0.75))), by = .(study_site, anyEPY)]
+
+# factor order
+ds[, study_site := factor(study_site, levels = c('Intensive study', 'Collection', 'Dale et al.'))]
+
+
 
 p4 = 
   ggplot(data = ds, aes(study_site, initiation_st, fill = anyEPY)) +
@@ -377,7 +405,17 @@ p4 =
   geom_point(data = dss, aes(study_site, median, group = anyEPY), position = position_dodge(width = 0.9)) +
   # geom_errorbar(data = dss, aes(study_site, ymax = q75, ymin = q25, group = anyEPY), position = position_dodge(width = 0.9)) +
   scale_fill_manual(values = c('grey70', 'grey50'), labels = c('0', '1')) +
-  xlab('Data origin') + ylab('Clutch initiation date (standardized)') + 
+  xlab('Data source') + ylab('Clutch initiation date (standardized)') + 
+  theme_classic(base_size = 20)
+
+p4
+
+p4 = 
+  ggplot(data = ds, aes(study_site, initiation_st, fill = anyEPY)) +
+  geom_boxplot(position = position_dodge(width = 0.9), outlier.alpha = 0) +
+  geom_point(position = position_jitterdodge(jitter.width = 0.3, jitter.height = 0, dodge.width = 0.9)) +
+  scale_fill_manual(values = c('grey70', 'grey50'), labels = c('0', '1')) +
+  xlab('Data source') + ylab('Clutch initiation date (standardized)') + 
   theme_classic(base_size = 20)
 
 p4
