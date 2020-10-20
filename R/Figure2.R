@@ -7,7 +7,8 @@
 
 
 # Packages
-sapply( c('data.table', 'magrittr', 'sdb', 'ggplot2', 'sf', 'auksRuak', 'patchwork', 'multcomp', 'viridis', 'car'),
+sapply( c('data.table', 'magrittr', 'sdb', 'ggplot2', 'sf', 'auksRuak', 'patchwork', 'multcomp', 'viridis', 'car', 
+          'scales', 'ggnewscale'),
         require, character.only = TRUE)
 
 # Projection
@@ -182,22 +183,23 @@ p1 =
   geom_violin(aes(as.character(year_), initiation_y), show.legend = FALSE, fill = 'grey70', color = 'grey50') +
   geom_point(data = dss, aes(as.character(year_), median), size = 4) +
   geom_linerange(data = dss, aes(x = as.character(year_), ymin = q75, ymax = q25), size = 1.5) +
-  # geom_jitter(aes(as.character(year_), initiation_y), show.legend = FALSE, color = 'black', width = 0.3, height = 0) +
+  geom_point(data = ds[year_ == 2017 & initiation_y < as.POSIXct('2020-06-16')], aes(as.character(year_), initiation_y), 
+             shape = 8, size = 2) +
   xlab('Year') + ylab('Date') + 
   theme_classic(base_size = 20)
 p1
 
 
 
-p1 = 
-  ggplot(data = ds) +
-  geom_boxplot(aes(as.character(year_), initiation_y), show.legend = FALSE, fill = 'grey70', color = 'grey50', outlier.alpha = 0) +
-  # geom_point(data = dss, aes(as.character(year_), median), size = 4) +
-  # geom_linerange(data = dss, aes(x = as.character(year_), ymin = q75, ymax = q25), size = 1.5) +
-  geom_jitter(aes(as.character(year_), initiation_y), show.legend = FALSE, color = 'black', width = 0.3, height = 0, size = 2) +
-  xlab('Year') + ylab('Date') + 
-  theme_classic(base_size = 20)
-p1
+# p1 = 
+#   ggplot(data = ds) +
+#   geom_boxplot(aes(as.character(year_), initiation_y), show.legend = FALSE, fill = 'grey70', color = 'grey50', outlier.alpha = 0) +
+#   # geom_point(data = dss, aes(as.character(year_), median), size = 4) +
+#   # geom_linerange(data = dss, aes(x = as.character(year_), ymin = q75, ymax = q25), size = 1.5) +
+#   geom_jitter(aes(as.character(year_), initiation_y), show.legend = FALSE, color = 'black', width = 0.3, height = 0, size = 2) +
+#   xlab('Year') + ylab('Date') + 
+#   theme_classic(base_size = 20)
+# p1
 
 #------------------------------------------------------------------------------------------------------------------------
 # 2. Timing of multiple clutches vs. single clutches
