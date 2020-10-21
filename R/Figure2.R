@@ -22,8 +22,8 @@ DBI::dbDisconnect(con)
 
 # plot settings
 bs = 11 # basesize
-ps = 1.5 # point size
-ls = 3.5 # label size
+ps = 1 # point size
+ls = 3 # label size
 
 
 #------------------------------------------------------------------------------------------------------------------------
@@ -179,15 +179,16 @@ d[, clutch_identity := factor(clutch_identity, levels = c('one_noEPY', 'one_EPY'
 ds = d[study_site == TRUE & !is.na(initiation_y)]
 
 dss = ds[, .(median = median(initiation_y), q25 = quantile(initiation_y, probs = c(0.25)), 
-             q75 = quantile(initiation_y, probs = c(0.75))), by = year_]
+             q75 = quantile(initiation_y, probs = c(0.75)), .N, max = max(initiation_y)), by = year_]
 
 p1 = 
   ggplot(data = ds) +
   geom_violin(aes(as.character(year_), initiation_y), show.legend = FALSE, fill = 'grey85') +
-  geom_point(data = dss, aes(as.character(year_), median), size = 3) +
-  geom_linerange(data = dss, aes(x = as.character(year_), ymin = q75, ymax = q25), size = 1) +
+  geom_point(data = dss, aes(as.character(year_), median), size = 2) +
+  geom_linerange(data = dss, aes(x = as.character(year_), ymin = q75, ymax = q25), size = 0.5) +
   geom_point(data = ds[year_ == 2017 & initiation_y < as.POSIXct('2020-06-16')], aes(as.character(year_), initiation_y), 
-             shape = 8, size = 2) +
+             shape = 8, size = 3) +
+  geom_text(data = dss, aes(as.character(year_), as.POSIXct('2020-07-02 11:03:00'), label = N), vjust = 0, size = ls) +
   scale_y_datetime(breaks = c(as.POSIXct(c('2020-06-07', '2020-06-14', '2020-06-21', '2020-06-28'))), date_labels = "%d") +
   xlab('Year') + ylab('Clutch initiation date (June)') + 
   theme_classic(base_size = bs)
@@ -234,6 +235,7 @@ ds[!(clutch_identity %in% c('first', 'second', 'third')), clutch_identity := 'si
 
 # factor order
 ds[, clutch_identity := factor(clutch_identity, levels = c('single', 'first', 'second', 'third'))]
+ds[, anyEPY := factor(anyEPY, levels = c('0', '1'))]
 
 
 
@@ -259,23 +261,29 @@ p2 =
   ggplot() +
   geom_boxplot(data = ds, aes(clutch_identity, initiation_st), fill = 'grey85', outlier.alpha = 0) +
   geom_line(data = ds, aes(clutch_identity, initiation_st, group = female_id_year, linetype = next_clutch)) +
-  geom_point(data = ds[clutch_identity != 'single'], aes(clutch_identity, initiation_st, fill = anyEPY), 
-             shape = 21, size = ps) +
+  # geom_point(data = ds[clutch_identity != 'single'], aes(clutch_identity, initiation_st, fill = anyEPY), 
+  #            shape = 21, size = ps) +
+  
+  geom_point(data = ds[clutch_identity != 'single' & anyEPY == '0'], aes(clutch_identity, initiation_st, fill = anyEPY),
+             shape = 21, size = 1.5) +
+  # geom_point(data = ds[clutch_identity != 'single' & next_clutch == 'polyandrous'], aes(clutch_identity, initiation_st, fill = anyEPY), 
+  #            shape = 21, size = ps) +
+  geom_point(data = ds[clutch_identity != 'single' & anyEPY == '1'], aes(clutch_identity, initiation_st, fill = anyEPY),
+             shape = 21, size = 1.5) +
+  
+  
   geom_jitter(data = ds[clutch_identity == 'single'], aes(clutch_identity, initiation_st, fill = anyEPY), 
               shape = 21, size = ps, height = 0, width = 0.3) +
-  scale_fill_manual(values = c('white', 'black'), name = NULL, labels = c('no EPY', 'EPY')) +
+  scale_fill_manual(values = c('white', 'black'), name = NULL, labels = c('no EPY', 'EPY'), guide = FALSE) +
   scale_linetype_manual(values = c('solid', 'dotted'), name = NULL) +
   scale_x_discrete(labels = c('single', 'first', 'second', 'third')) +
-  scale_y_continuous(breaks = c(-14, -7, 0, 7, 14), limits = c(-17, 17), expand = c(0, 0)) +
+  scale_y_continuous(breaks = c(-14, -7, 0, 7, 14), limits = c(-18, 18), expand = c(0, 0)) +
   xlab('Clutch type') + ylab('Clutch initiation date (standardized)') +
   geom_text(data = dss, aes(clutch_identity, Inf, label = sample_size), vjust = 1, size = ls) +
-  theme_classic_edit(base_size = bs, lp = c(0.85, 0.2))
+  theme_classic_edit(base_size = bs, lp = c(0.85, 0.08)) +
+  theme(legend.background = element_rect(fill = alpha('white', 0)),
+        legend.key.size = unit(0.5, 'lines'))
 p2
-
-
-
-
-p1 + p2
 
 
 #------------------------------------------------------------------------------------------------------------------------
@@ -365,14 +373,16 @@ ds[, type := factor(type, levels = c('EPY', 'EPP', 'polyandry', 'renesting'))]
 
 p3 = 
   ggplot(data = ds[study_site == FALSE], aes(year_, x, fill = type, label = sample_size)) +
-  geom_bar(stat = "identity", position = 'dodge', width = 0.7) +
+  geom_bar(stat = "identity", position = 'dodge', width = 0.9) +
   # geom_text(position = position_dodge(width = 0.7), size = 6, vjust = -0.5) + # text horizontal
-  geom_text(position = position_dodge(width = 0.7), size = ls, hjust = -0.1, angle = 90) +
-  scale_fill_manual(values = c('grey85', 'grey50','firebrick4', '#33638DFF'), labels = c('EPY', 'nests with EPY', 'polyandrous females', 'renesting males')) +
+  geom_text(position = position_dodge(width = 0.9), size = ls, hjust = -0.1, angle = 90) +
+  # scale_fill_manual(values = c('grey85', 'grey50','firebrick4', '#33638DFF'), 
+  #                   labels = c('EPY', 'nests with EPY', 'polyandrous females', 'renesting males')) +
+  scale_fill_grey(labels = c('EPY', 'nests with EPY', 'polyandrous females', 'renesting males')) +
   scale_y_continuous(breaks = c(0, 5, 10, 15), limits = c(0, 16), expand = c(0, 0)) +
   xlab('Year') + ylab('Percentage of') + 
   theme_classic(base_size = bs) +
-  theme(legend.position = c(0.32, 0.8), legend.title = element_blank())
+  theme(legend.position = c(0.3, 0.82), legend.title = element_blank())
 p3
 
 
@@ -399,10 +409,16 @@ ds[, anyEPY := as.character(anyEPY)]
 ds[, study_site := as.character(study_site)]
 
 dss = ds[, .(median = median(initiation_st), q25 = quantile(initiation_st, probs = c(0.25)), 
-             q75 = quantile(initiation_st, probs = c(0.75))), by = .(study_site, anyEPY)]
+             q75 = quantile(initiation_st, probs = c(0.75)), .N), by = .(study_site, anyEPY)]
+
+dss2 = data.table(study_site = c('Intensive study', 'Collection', 'Dale et al.'),
+                  sample_size = c('16/165', '21/167', '6/18'),
+                  anyEPY = c('1', '1', '1'))
 
 # factor order
 ds[, study_site := factor(study_site, levels = c('Intensive study', 'Collection', 'Dale et al.'))]
+ds[, anyEPY := factor(anyEPY, levels = c('1', '0'))]
+
 
 
 
@@ -425,13 +441,15 @@ p4 =
   scale_fill_manual(values = c('grey85', 'grey85'), labels = c('0', '1')) +
   new_scale_fill() +
   geom_point(data = ds, aes(study_site, initiation_st, fill = anyEPY), shape = 21, size = ps,
-             position = position_jitterdodge(jitter.width = 0.3, jitter.height = 0, dodge.width = 0.9)) +
-  scale_fill_manual(values = c('white', 'black'), name = NULL, labels = c('no EPY', 'EPY')) +
-  scale_y_continuous(breaks = c(-14, -7, 0, 7, 14), limits = c(-17, 17), expand = c(0, 0)) +
+             position = position_jitterdodge(jitter.width = 0.6, jitter.height = 0, dodge.width = 0.9)) +
+  scale_fill_manual(values = c('black', 'white'), name = NULL, labels = c('EPY', 'no EPY')) +
+  scale_y_continuous(breaks = c(-14, -7, 0, 7, 14), limits = c(-18, 18), expand = c(0, 0)) +
+  geom_text(data = dss2, aes(study_site, Inf, group = anyEPY, label = sample_size), vjust = 1, size = ls) +
   xlab('Data source') + ylab('Clutch initiation date (standardized)') + 
-  theme_classic_edit(base_size = bs, lp = c(0.85, 0.20)) +
-  theme(legend.background = element_rect(fill = alpha('white', 0)))
-
+  theme_classic_edit(base_size = bs, lp = c(0.89, 0.08)) +
+  theme(legend.background = element_rect(fill = alpha('white', 0)), 
+        legend.key.size = unit(0.5, 'lines'))
+ 
 
 p4
 
@@ -461,7 +479,7 @@ p4
 
 
 
-p1 + p2 + p3 + p4 + plot_layout(ncol = 2, nrow = 2) +
+p3 + p1 + p2 + p4 + plot_layout(ncol = 2, nrow = 2) +
   plot_annotation(tag_levels = 'a')
 
 ggsave('./REPORTS/FIGURES/Figure2.tiff', plot = last_plot(),  width = 177, height = 177, units = c('mm'), dpi = 'print')
