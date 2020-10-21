@@ -25,7 +25,6 @@ bs = 11 # basesize
 ps = 1 # point size
 ls = 3 # label size
 
-
 #------------------------------------------------------------------------------------------------------------------------
 # 0. Prepare data for analysis
 #------------------------------------------------------------------------------------------------------------------------
@@ -173,121 +172,7 @@ d[, clutch_identity := factor(clutch_identity, levels = c('one_noEPY', 'one_EPY'
 
 
 #------------------------------------------------------------------------------------------------------------------------
-# 1. Nests on plot
-#------------------------------------------------------------------------------------------------------------------------
-
-ds = d[study_site == TRUE & !is.na(initiation_y)]
-
-dss = ds[, .(median = median(initiation_y), q25 = quantile(initiation_y, probs = c(0.25)), 
-             q75 = quantile(initiation_y, probs = c(0.75)), .N, max = max(initiation_y)), by = year_]
-
-p1 = 
-  ggplot(data = ds) +
-  geom_violin(aes(as.character(year_), initiation_y), show.legend = FALSE, fill = 'grey85') +
-  geom_point(data = dss, aes(as.character(year_), median), size = 2) +
-  geom_linerange(data = dss, aes(x = as.character(year_), ymin = q75, ymax = q25), size = 0.5) +
-  geom_point(data = ds[year_ == 2017 & initiation_y < as.POSIXct('2020-06-16')], aes(as.character(year_), initiation_y), 
-             shape = 8, size = 3) +
-  geom_text(data = dss, aes(as.character(year_), as.POSIXct('2020-07-02 11:03:00'), label = N), vjust = 0, size = ls) +
-  scale_y_datetime(breaks = c(as.POSIXct(c('2020-06-07', '2020-06-14', '2020-06-21', '2020-06-28'))), date_labels = "%d") +
-  xlab('Year') + ylab('Clutch initiation date (June)') + 
-  theme_classic(base_size = bs)
-p1
-
-
-
-# p1 = 
-#   ggplot(data = ds) +
-#   geom_boxplot(aes(as.character(year_), initiation_y), show.legend = FALSE, fill = 'grey70', color = 'grey50', outlier.alpha = 0) +
-#   # geom_point(data = dss, aes(as.character(year_), median), size = 4) +
-#   # geom_linerange(data = dss, aes(x = as.character(year_), ymin = q75, ymax = q25), size = 1.5) +
-#   geom_jitter(aes(as.character(year_), initiation_y), show.legend = FALSE, color = 'black', width = 0.3, height = 0, size = 2) +
-#   xlab('Year') + ylab('Date') + 
-#   theme_classic(base_size = bs)
-# p1
-
-#------------------------------------------------------------------------------------------------------------------------
-# 2. Timing of multiple clutches vs. single clutches
-#------------------------------------------------------------------------------------------------------------------------
-
-# subset all multiple clutches or in study site
-ds = d[!is.na(initiation)]
-ds = ds[study_site == TRUE & !(clutch_identity %in% c('first', 'second', 'third')) | clutch_identity %in% c('first', 'second', 'third')]
-ds[, anyEPY := as.character(anyEPY)]
-
-ds[, mean_initiation := mean(initiation, na.rm = TRUE), by = year_]
-ds[, initiation_st := difftime(initiation, mean_initiation, units = 'days') %>% as.numeric]
-
-ds = ds[!is.na(anyEPY)]
-
-ds[is.na(renesting_male), renesting_male := FALSE]
-ds[, any_renesting := any(renesting_male == TRUE), by = female_id_year]
-ds[any_renesting == FALSE, next_clutch := 'polyandrous']
-ds[any_renesting == TRUE, next_clutch := 'renesting']
-
-# add first and second clutch of females with three clutches again (otherwise linetype does not work)
-ds[clutch_identity == 'third']
-dss = ds[clutch_identity %in% c('first', 'second') & female_id %in% c(270170935, 19222)]
-dss[, female_id_year_NA := paste0(female_id_year, '2')]
-
-ds = rbind(ds, dss)
-ds[!(clutch_identity %in% c('first', 'second', 'third')), clutch_identity := 'single']
-
-# factor order
-ds[, clutch_identity := factor(clutch_identity, levels = c('single', 'first', 'second', 'third'))]
-ds[, anyEPY := factor(anyEPY, levels = c('0', '1'))]
-
-
-
-theme_classic_edit = function (base_size = 11, base_family = "", base_line_size = base_size/22, 
-                               base_rect_size = base_size/22, lp = c(0.8, 0.2)) 
-{
-  theme_bw(base_size = base_size, base_family = base_family, 
-           base_line_size = base_line_size, base_rect_size = base_rect_size) %+replace% 
-    theme(panel.border = element_blank(), panel.grid.major = element_blank(), 
-          panel.grid.minor = element_blank(), 
-          axis.line = element_line(colour = "black", size = rel(1)), legend.key = element_blank(), 
-          strip.background = element_rect(fill = "white", colour = "black", size = rel(2)), complete = TRUE,
-          legend.position = lp)
-}
-
-ds[anyEPY == '1', .N, clutch_identity]
-ds[, .N, clutch_identity]
-
-dss = data.table(clutch_identity = c('single', 'first', 'second', 'third'),
-                 sample_size = c('14/138', '0/15', '3/15', '0/2'))
-
-p2 = 
-  ggplot() +
-  geom_boxplot(data = ds, aes(clutch_identity, initiation_st), fill = 'grey85', outlier.alpha = 0) +
-  geom_line(data = ds, aes(clutch_identity, initiation_st, group = female_id_year, linetype = next_clutch)) +
-  # geom_point(data = ds[clutch_identity != 'single'], aes(clutch_identity, initiation_st, fill = anyEPY), 
-  #            shape = 21, size = ps) +
-  
-  geom_point(data = ds[clutch_identity != 'single' & anyEPY == '0'], aes(clutch_identity, initiation_st, fill = anyEPY),
-             shape = 21, size = 1.5) +
-  # geom_point(data = ds[clutch_identity != 'single' & next_clutch == 'polyandrous'], aes(clutch_identity, initiation_st, fill = anyEPY), 
-  #            shape = 21, size = ps) +
-  geom_point(data = ds[clutch_identity != 'single' & anyEPY == '1'], aes(clutch_identity, initiation_st, fill = anyEPY),
-             shape = 21, size = 1.5) +
-  
-  
-  geom_jitter(data = ds[clutch_identity == 'single'], aes(clutch_identity, initiation_st, fill = anyEPY), 
-              shape = 21, size = ps, height = 0, width = 0.3) +
-  scale_fill_manual(values = c('white', 'black'), name = NULL, labels = c('no EPY', 'EPY'), guide = FALSE) +
-  scale_linetype_manual(values = c('solid', 'dotted'), name = NULL) +
-  scale_x_discrete(labels = c('single', 'first', 'second', 'third')) +
-  scale_y_continuous(breaks = c(-14, -7, 0, 7, 14), limits = c(-18, 18), expand = c(0, 0)) +
-  xlab('Clutch type') + ylab('Clutch initiation date (standardized)') +
-  geom_text(data = dss, aes(clutch_identity, Inf, label = sample_size), vjust = 1, size = ls) +
-  theme_classic_edit(base_size = bs, lp = c(0.85, 0.08)) +
-  theme(legend.background = element_rect(fill = alpha('white', 0)),
-        legend.key.size = unit(0.5, 'lines'))
-p2
-
-
-#------------------------------------------------------------------------------------------------------------------------
-# 3. Rates of EPP, polyandry and renesting
+# 1. Rates of EPP, polyandry and renesting
 #------------------------------------------------------------------------------------------------------------------------
 
 
@@ -371,7 +256,7 @@ ds[year_ == '2019' & type %in% c('polyandry', 'renesting'), sample_size := paste
 
 ds[, type := factor(type, levels = c('EPY', 'EPP', 'polyandry', 'renesting'))]
 
-p3 = 
+p1 = 
   ggplot(data = ds[study_site == FALSE], aes(year_, x, fill = type, label = sample_size)) +
   geom_bar(stat = "identity", position = 'dodge', width = 0.9) +
   # geom_text(position = position_dodge(width = 0.7), size = 6, vjust = -0.5) + # text horizontal
@@ -380,9 +265,108 @@ p3 =
   #                   labels = c('EPY', 'nests with EPY', 'polyandrous females', 'renesting males')) +
   scale_fill_grey(labels = c('EPY', 'nests with EPY', 'polyandrous females', 'renesting males')) +
   scale_y_continuous(breaks = c(0, 5, 10, 15), limits = c(0, 16), expand = c(0, 0)) +
-  xlab('Year') + ylab('Percentage of') + 
+  xlab('Year') + ylab('Percentage') + 
   theme_classic(base_size = bs) +
   theme(legend.position = c(0.3, 0.82), legend.title = element_blank())
+p1
+
+
+
+#------------------------------------------------------------------------------------------------------------------------
+# 2. Nests on plot
+#------------------------------------------------------------------------------------------------------------------------
+
+ds = d[study_site == TRUE & !is.na(initiation_y)]
+
+dss = ds[, .(median = median(initiation_y), q25 = quantile(initiation_y, probs = c(0.25)), 
+             q75 = quantile(initiation_y, probs = c(0.75)), .N, max = max(initiation_y)), by = year_]
+
+p2 = 
+  ggplot(data = ds) +
+  geom_violin(aes(as.character(year_), initiation_y), show.legend = FALSE, fill = 'grey85') +
+  geom_point(data = dss, aes(as.character(year_), median), size = 2) +
+  geom_linerange(data = dss, aes(x = as.character(year_), ymin = q75, ymax = q25), size = 0.5) +
+  geom_point(data = ds[year_ == 2017 & initiation_y < as.POSIXct('2020-06-16')], aes(as.character(year_), initiation_y), 
+             shape = 4, size = 1, stroke = 1.3) +
+  geom_text(data = dss, aes(as.character(year_), as.POSIXct('2020-07-02 11:03:00'), label = N), vjust = 0, size = ls) +
+  scale_y_datetime(breaks = c(as.POSIXct(c('2020-06-07', '2020-06-14', '2020-06-21', '2020-06-28'))), 
+                   labels = c('7', '14', '21', '28')) +
+  xlab('Year') + ylab('Clutch initiation date (June)') + 
+  theme_classic(base_size = bs)
+p2
+
+
+#------------------------------------------------------------------------------------------------------------------------
+# 3. Timing of multiple clutches vs. single clutches
+#------------------------------------------------------------------------------------------------------------------------
+
+# subset all multiple clutches or in study site
+ds = d[!is.na(initiation)]
+ds = ds[study_site == TRUE & !(clutch_identity %in% c('first', 'second', 'third')) | clutch_identity %in% c('first', 'second', 'third')]
+ds[, anyEPY := as.character(anyEPY)]
+
+ds[, mean_initiation := mean(initiation, na.rm = TRUE), by = year_]
+ds[, initiation_st := difftime(initiation, mean_initiation, units = 'days') %>% as.numeric]
+
+ds = ds[!is.na(anyEPY)]
+
+ds[is.na(renesting_male), renesting_male := FALSE]
+ds[, any_renesting := any(renesting_male == TRUE), by = female_id_year]
+ds[any_renesting == FALSE, next_clutch := 'polyandrous']
+ds[any_renesting == TRUE, next_clutch := 'renesting']
+
+# add first and second clutch of females with three clutches again (otherwise linetype does not work)
+ds[clutch_identity == 'third']
+dss = ds[clutch_identity %in% c('first', 'second') & female_id %in% c(270170935, 19222)]
+dss[, female_id_year_NA := paste0(female_id_year, '2')]
+
+ds = rbind(ds, dss)
+ds[!(clutch_identity %in% c('first', 'second', 'third')), clutch_identity := 'single']
+
+# factor order
+ds[, clutch_identity := factor(clutch_identity, levels = c('single', 'first', 'second', 'third'))]
+ds[, anyEPY := factor(anyEPY, levels = c('0', '1'))]
+
+
+
+theme_classic_edit = function (base_size = 11, base_family = "", base_line_size = base_size/22, 
+                               base_rect_size = base_size/22, lp = c(0.8, 0.2)) 
+{
+  theme_bw(base_size = base_size, base_family = base_family, 
+           base_line_size = base_line_size, base_rect_size = base_rect_size) %+replace% 
+    theme(panel.border = element_blank(), panel.grid.major = element_blank(), 
+          panel.grid.minor = element_blank(), 
+          axis.line = element_line(colour = "black", size = rel(1)), legend.key = element_blank(), 
+          strip.background = element_rect(fill = "white", colour = "black", size = rel(2)), complete = TRUE,
+          legend.position = lp)
+}
+
+ds[anyEPY == '1', .N, clutch_identity]
+ds[, .N, clutch_identity]
+
+dss = data.table(clutch_identity = c('single', 'first', 'second', 'third'),
+                 sample_size = c('14/138', '0/15', '3/15', '0/2'))
+
+p3 = 
+  ggplot() +
+  geom_hline(yintercept = 0, color = 'grey70') +
+  geom_boxplot(data = ds, aes(clutch_identity, initiation_st), fill = 'grey85', outlier.alpha = 0) +
+  geom_line(data = ds, aes(clutch_identity, initiation_st, group = female_id_year, linetype = next_clutch), size = 0.3) +
+  geom_point(data = ds[clutch_identity != 'single' & anyEPY == '0'], aes(clutch_identity, initiation_st, fill = anyEPY),
+             shape = 21, size = 1) +
+  geom_point(data = ds[clutch_identity != 'single' & anyEPY == '1'], aes(clutch_identity, initiation_st, fill = anyEPY),
+             shape = 21, size = 1) +
+  geom_jitter(data = ds[clutch_identity == 'single'], aes(clutch_identity, initiation_st, fill = anyEPY), 
+              shape = 21, size = ps, height = 0, width = 0.3) +
+  scale_fill_manual(values = c('white', 'black'), name = NULL, labels = c('no EPY', 'EPY'), guide = FALSE) +
+  scale_linetype_manual(values = c('solid', 'dotted'), name = NULL) +
+  scale_x_discrete(labels = c('single', 'first', 'second', 'third')) +
+  scale_y_continuous(breaks = c(-14, -7, 0, 7, 14), limits = c(-18, 18), expand = c(0, 0)) +
+  xlab('Clutch type') + ylab('Clutch initiation date (standardized)') +
+  geom_text(data = dss, aes(clutch_identity, Inf, label = sample_size), vjust = 1, size = ls) +
+  theme_classic_edit(base_size = bs, lp = c(0.85, 0.08)) +
+  theme(legend.background = element_rect(fill = alpha('white', 0)),
+        legend.key.size = unit(0.5, 'lines'))
 p3
 
 
@@ -419,24 +403,9 @@ dss2 = data.table(study_site = c('Intensive study', 'Collection', 'Dale et al.')
 ds[, study_site := factor(study_site, levels = c('Intensive study', 'Collection', 'Dale et al.'))]
 ds[, anyEPY := factor(anyEPY, levels = c('1', '0'))]
 
-
-
-
-# p4 = 
-#   ggplot(data = ds, aes(study_site, initiation_st, fill = anyEPY)) +
-#   geom_violin(position = position_dodge(width = 0.9)) +
-#   geom_point(data = dss, aes(study_site, median, group = anyEPY), position = position_dodge(width = 0.9)) +
-#   # geom_errorbar(data = dss, aes(study_site, ymax = q75, ymin = q25, group = anyEPY), position = position_dodge(width = 0.9)) +
-#   scale_fill_manual(values = c('grey70', 'grey50'), labels = c('0', '1')) +
-#   xlab('Data source') + ylab('Clutch initiation date (standardized)') + 
-#   theme_classic(base_size = bs)
-# 
-# p4
-
-
-
 p4 = 
   ggplot(data = ds, aes(study_site, initiation_st, fill = anyEPY)) +
+  geom_hline(yintercept = 0, color = 'grey70') +
   geom_boxplot(position = position_dodge(width = 0.9), outlier.alpha = 0, show.legend = FALSE) +
   scale_fill_manual(values = c('grey85', 'grey85'), labels = c('0', '1')) +
   new_scale_fill() +
@@ -454,32 +423,11 @@ p4 =
 p4
 
 
-# 
-# # Function to produce summary statistics (mean and +/- sd)
-# data_summary <- function(x) {
-#   m <- mean(x)
-#   ymin <- m-sd(x)
-#   ymax <- m+sd(x)
-#   return(c(y=m,ymin=ymin,ymax=ymax))
-# }
-# 
-# # Use a custom summary function :
-#   
-#   p4 + stat_summary(fun.data=data_summary, position_dodge(width=0.75))
-# 
-# 
+#------------------------------------------------------------------------------------------------------------------------
+# Save
+#------------------------------------------------------------------------------------------------------------------------
 
-
-
-
-
-
-
-
-
-
-
-p3 + p1 + p2 + p4 + plot_layout(ncol = 2, nrow = 2) +
+p1 + p2 + p3 + p4 + plot_layout(ncol = 2, nrow = 2) +
   plot_annotation(tag_levels = 'a')
 
 ggsave('./REPORTS/FIGURES/Figure2.tiff', plot = last_plot(),  width = 177, height = 177, units = c('mm'), dpi = 'print')
