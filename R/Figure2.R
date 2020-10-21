@@ -6,6 +6,8 @@
 # 0. Prepare data for analysis
 
 
+
+
 # Packages
 sapply( c('data.table', 'magrittr', 'sdb', 'ggplot2', 'sf', 'auksRuak', 'patchwork', 'multcomp', 'viridis', 'car', 
           'scales', 'ggnewscale'),
