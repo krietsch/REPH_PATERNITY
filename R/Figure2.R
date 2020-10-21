@@ -5,12 +5,6 @@
 # Summary
 # 0. Prepare data for analysis
 
-<<<<<<< HEAD
-=======
-
-
-
->>>>>>> 8b202de8cae239ae749776217bd42e83517fa839
 # Packages
 sapply( c('data.table', 'magrittr', 'sdb', 'ggplot2', 'sf', 'auksRuak', 'patchwork', 'multcomp', 'viridis', 'car', 
           'scales', 'ggnewscale'),
@@ -188,18 +182,8 @@ p1 =
   geom_linerange(data = dss, aes(x = as.character(year_), ymin = q75, ymax = q25), size = 1.5) +
   geom_point(data = ds[year_ == 2017 & initiation_y < as.POSIXct('2020-06-16')], aes(as.character(year_), initiation_y), 
              shape = 8, size = 2) +
-<<<<<<< HEAD
   scale_y_datetime(date_breaks = "1 week", date_labels = "%d") +
   xlab('Year') + ylab('Date (June)') + 
-=======
-<<<<<<< HEAD
-  scale_y_datetime(date_breaks = "1 week", date_labels = "%d") +
-  xlab('Year') + ylab('Date (June)') + 
-  theme_classic(base_size = 20)
-p1
-=======
-  xlab('Year') + ylab('Date') + 
->>>>>>> 8b202de8cae239ae749776217bd42e83517fa839
   theme_classic(base_size = 20)
 p1
 
@@ -214,8 +198,6 @@ p1
 #   xlab('Year') + ylab('Date') + 
 #   theme_classic(base_size = 20)
 # p1
->>>>>>> 7a69dde99fcc8a50a9fbf157cce4c3ff3340c510
-
 
 #------------------------------------------------------------------------------------------------------------------------
 # 2. Timing of multiple clutches vs. single clutches
