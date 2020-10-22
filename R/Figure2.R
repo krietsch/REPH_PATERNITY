@@ -26,7 +26,7 @@ ps = 1 # point size
 ls = 3 # label size
 
 #------------------------------------------------------------------------------------------------------------------------
-# 0. Prepare data for analysis
+# Prepare data for analysis
 #------------------------------------------------------------------------------------------------------------------------
 
 # Change projection
@@ -170,11 +170,48 @@ d[, .N, by = clutch_identity]
 # factor order
 d[, clutch_identity := factor(clutch_identity, levels = c('one_noEPY', 'one_EPY', 'first', 'second', 'third'))]
 
+#------------------------------------------------------------------------------------------------------------------------
+# 0. Rates of EPP
+#------------------------------------------------------------------------------------------------------------------------
+
+# split in year only
+ds = d[, .(N_nests = .N), by = .(year_)]
+ds2 = d[parentage == TRUE, .(N_parentage = .N), by = .(year_)]
+ds3 = d[anyEPY == TRUE, .(N_EPY = .N), by = .(year_)]
+ds4 = d[, .(N_eggs = sum(N_parentage, na.rm = TRUE), N_eggs_EPY = sum(N_EPY, na.rm = TRUE)), by = .(year_)]
+ds = merge(ds, ds2, by = c('year_'), all.x = TRUE)
+ds = merge(ds, ds3, by = c('year_'), all.x = TRUE)
+ds = merge(ds, ds4, by = c('year_'), all.x = TRUE)
+ds[is.na(ds)] = 0
+ds = ds[N_parentage != 0]
+ds[, EPY_nests_ := round(N_EPY / N_parentage * 100, 1)]
+ds[, EPY_eggs_  := round(N_eggs_EPY / N_eggs * 100, 1)]
+ds[, EPY_nests := paste0(round(N_EPY / N_parentage * 100, 1), '% (', N_EPY, '/', N_parentage, ')')]
+ds[, EPY_eggs  := paste0(round(N_eggs_EPY / N_eggs * 100, 1), '% (', N_eggs_EPY, '/', N_eggs, ')')]
+
+# plot 
+ds[, sample_size := paste0(N_EPY, '/', N_parentage)]
+ds[, sample_size_eggs := paste0(N_eggs_EPY, '/', N_eggs)]
+ds[, year_ := as.factor(year_)]
+
+dss = rbindlist(list(ds[, .(type = 'EPY', year_, x = EPY_eggs_, sample_size = sample_size_eggs) ],
+                     ds[, .(type = 'EPY_nest', year_, x = EPY_nests_, sample_size = sample_size)]  ))
+
+p0 = 
+  ggplot(data = dss, aes(year_, x, fill = type, label = sample_size)) +
+  geom_bar(stat = "identity", position = 'dodge', width = 0.9) +
+  geom_text(position = position_dodge(width = 0.9), size = ls, hjust = -0.1, angle = 90) +
+  scale_fill_manual(values = c('#333333', '#818181'), labels = c('EPY', 'nests with EPY')) +
+  scale_y_continuous(breaks = c(0, 10, 20), limits = c(0, 25), expand = c(0, 0)) +
+  xlab('Year') + ylab('Percentage') + 
+  theme_classic(base_size = bs) +
+  theme(legend.position = c(0.105, 0.82), legend.title = element_blank(),legend.background = element_rect(fill = alpha('white', 0)))
+p0
+
 
 #------------------------------------------------------------------------------------------------------------------------
 # 1. Rates of EPP, polyandry and renesting
 #------------------------------------------------------------------------------------------------------------------------
-
 
 # data sets and data available
 d[study_site == TRUE, data_type := 'study_site']
@@ -270,7 +307,7 @@ p1 =
   theme(legend.position = c(0.3, 0.82), legend.title = element_blank())
 p1
 
-
+# ggplot_build(p1)$data # check used colors
 
 #------------------------------------------------------------------------------------------------------------------------
 # 2. Nests on plot
@@ -278,8 +315,13 @@ p1
 
 ds = d[study_site == TRUE & !is.na(initiation_y)]
 
+ds[, initiation_date := as.Date(initiation)]
+y = ds[, .N, by = .(year_, initiation_date)]
+y[, max(N), by = year_]
+
 dss = ds[, .(median = median(initiation_y), q25 = quantile(initiation_y, probs = c(0.25)), 
              q75 = quantile(initiation_y, probs = c(0.75)), .N, max = max(initiation_y)), by = year_]
+
 
 p2 = 
   ggplot(data = ds) +
@@ -317,11 +359,22 @@ ds[any_renesting == TRUE, next_clutch := 'renesting']
 
 # add first and second clutch of females with three clutches again (otherwise linetype does not work)
 ds[clutch_identity == 'third']
-dss = ds[clutch_identity %in% c('first', 'second') & female_id %in% c(270170935, 19222)]
+dss = ds[female_id %in% c(270170935, 19222)]
 dss[, female_id_year_NA := paste0(female_id_year, '2')]
 
 ds = rbind(ds, dss)
 ds[!(clutch_identity %in% c('first', 'second', 'third')), clutch_identity := 'single']
+
+# correct females with three clutches
+ds = ds[!(female_id_year_NA %in% c('270170935_19', '19222_19') & clutch_identity == 'third')]
+
+ds[female_id_year_NA %in% c('270170935_19', '19222_19'), next_clutch := 'polyandrous']
+
+ds[female_id_year_NA %in% c('270170935_19', '19222_19')]
+
+ds[next_clutch == 'polyandrous' & clutch_identity ==  'second']
+
+ds[female_id_year == '273145005_18']
 
 # factor order
 ds[, clutch_identity := factor(clutch_identity, levels = c('single', 'first', 'second', 'third'))]
@@ -344,6 +397,9 @@ theme_classic_edit = function (base_size = 11, base_family = "", base_line_size 
 ds[anyEPY == '1', .N, clutch_identity]
 ds[, .N, clutch_identity]
 
+ds[clutch_identity == 'first' & next_clutch == 'polyandrous']
+ds[clutch_identity == 'first' & next_clutch == 'renesting']
+
 dss = data.table(clutch_identity = c('single', 'first', 'second', 'third'),
                  sample_size = c('14/138', '0/15', '3/15', '0/2'))
 
@@ -351,7 +407,7 @@ p3 =
   ggplot() +
   geom_hline(yintercept = 0, color = 'grey70') +
   geom_boxplot(data = ds, aes(clutch_identity, initiation_st), fill = 'grey85', outlier.alpha = 0) +
-  geom_line(data = ds, aes(clutch_identity, initiation_st, group = female_id_year, linetype = next_clutch), size = 0.3) +
+  geom_line(data = ds, aes(clutch_identity, initiation_st, group = female_id_year_NA, linetype = next_clutch), size = 0.3) +
   geom_point(data = ds[clutch_identity != 'single' & anyEPY == '0'], aes(clutch_identity, initiation_st, fill = anyEPY),
              shape = 21, size = 1) +
   geom_point(data = ds[clutch_identity != 'single' & anyEPY == '1'], aes(clutch_identity, initiation_st, fill = anyEPY),
@@ -427,9 +483,31 @@ p4
 # Save
 #------------------------------------------------------------------------------------------------------------------------
 
-p1 + p2 + p3 + p4 + plot_layout(ncol = 2, nrow = 2) +
+# without inital overview
+
+# p1 + p2 + p3 + p4 + plot_layout(ncol = 2, nrow = 2) +
+#   plot_annotation(tag_levels = 'a')
+# 
+# ggsave('./REPORTS/FIGURES/Figure2.tiff', plot = last_plot(),  width = 177, height = 177, units = c('mm'), dpi = 'print')
+
+
+
+layout <- "
+AAAA
+BBCC
+BBCC
+DDEE
+DDEE
+"
+p0 + p1 + p2 + p3 + p4 + plot_layout(design = layout)+
   plot_annotation(tag_levels = 'a')
 
-ggsave('./REPORTS/FIGURES/Figure2.tiff', plot = last_plot(),  width = 177, height = 177, units = c('mm'), dpi = 'print')
+ggsave('./REPORTS/FIGURES/Figure2_.tiff', plot = last_plot(),  width = 177, height = 238, units = c('mm'), dpi = 'print')
+
+
+
+
+
+
 
 
