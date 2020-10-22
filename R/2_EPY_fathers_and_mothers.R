@@ -122,6 +122,9 @@ dpu[, .N, by = N_EPY]
 dps[N_EPY > 1, .(nestID, EPY_father, IDfather_identified)]
 # only one case known with two different fathers: R409_19
 
+dps[study_site == TRUE, .(EPY_father_identified = .N), by = IDfather_identified]
+dps[study_site == TRUE, .(year_, nest, IDfather, EPY_father)]
+
 # How many EPY fathers identified?
 ds1 = dps[, .(N_EPY_eggs = .N), by = study_site]
 ds2 = dps[IDfather_identified == TRUE, .(EPY_father_identified = .N), by = study_site]
