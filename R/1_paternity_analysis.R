@@ -394,9 +394,6 @@ ggplot(data = ds) +
   geom_boxplot(aes(data_type, initiation))
 ds[, .N, data_type]
 
-
-
-
 # split in year only
 ds = d[, .(N_nests = .N), by = .(year_)]
 ds2 = d[parentage == TRUE, .(N_parentage = .N), by = .(year_)]
@@ -743,10 +740,17 @@ fm = glm(anyEPY ~ YEAR_, data = ds, family = binomial)
 summary(fm)
 Anova(fm)
 
-# correlation between EPP and polyandry?
-cor.test(x = c(3, 5, 9), y = c(3, 6, 14)) # just study site
-cor.test(x = c(3, 5, 9), y = c(6, 8, 13)) # all data
+# correlation between EPP and sclutch initiation period?
+ds = d[study_site == TRUE & !is.na(initiation_y)]
+ds = ds[!(year_ == 2017 & initiation_y < as.POSIXct('2020-06-16'))] # exclude to outliers in 2017
+dss = ds[, .(min = min(initiation_y), max = max(initiation_y)), by = year_]
+dss[, season_length := difftime(max, min, units = 'days')]
+dss
 
+cor.test(x = c(2.9, 5.4, 8.8), y = c(6.9, 13.0, 26.9)) 
+
+# correlation between EPP and polyandry?
+cor.test(x = c(2.9, 5.4, 8.8), y = c(2.9, 5.7, 13.5)) 
 
 #------------------------------------------------------------------------------------------------------------------------
 # 7. Paternity polyandrous clutches & renesting 
