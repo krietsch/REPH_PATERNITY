@@ -111,6 +111,11 @@ dr[, diff_initiation := difftime(initiation2, initiation1, units = 'days') %>% a
 setorder(dr, female_id_year)
 dr
 
+# timing of second clutches
+dr[, .(.N, mean = mean(diff_initiation), min = min(diff_initiation), max = max(diff_initiation))]
+dr[same_male == FALSE, .(.N, mean = mean(diff_initiation), min = min(diff_initiation), max = max(diff_initiation))]
+dr[same_male == TRUE, .(.N, mean = mean(diff_initiation), min = min(diff_initiation), max = max(diff_initiation))]
+
 # polyandrous females
 dr = dr[same_male == FALSE, .(female_id_year, polyandrous = TRUE, polyandry_study_site = both_study_site)]
 d = merge(d, dr, by = 'female_id_year', all.x = TRUE)
@@ -143,6 +148,12 @@ dr[, both_study_site := ss1 == ss2]
 dr[, diff_initiation := difftime(initiation2, initiation1, units = 'days') %>% as.numeric]
 setorder(dr, male_id_year)
 dr
+
+# timing of second clutches
+dr[, .(.N, mean = mean(diff_initiation), min = min(diff_initiation), max = max(diff_initiation))]
+dr[same_female == TRUE, .(.N, mean = mean(diff_initiation), min = min(diff_initiation), max = max(diff_initiation))]
+dr[same_female == FALSE, .(.N, mean = mean(diff_initiation), min = min(diff_initiation), max = max(diff_initiation))]
+
 
 # renesting males
 dr = dr[, .(male_id_year, renesting_male = TRUE, same_female, renesting_study_site = both_study_site)]
@@ -367,19 +378,11 @@ ds[!(clutch_identity %in% c('first', 'second', 'third')), clutch_identity := 'si
 
 # correct females with three clutches
 ds = ds[!(female_id_year_NA %in% c('270170935_19', '19222_19') & clutch_identity == 'third')]
-
 ds[female_id_year_NA %in% c('270170935_19', '19222_19'), next_clutch := 'polyandrous']
-
-ds[female_id_year_NA %in% c('270170935_19', '19222_19')]
-
-ds[next_clutch == 'polyandrous' & clutch_identity ==  'second']
-
-ds[female_id_year == '273145005_18']
 
 # factor order
 ds[, clutch_identity := factor(clutch_identity, levels = c('single', 'first', 'second', 'third'))]
 ds[, anyEPY := factor(anyEPY, levels = c('0', '1'))]
-
 
 
 theme_classic_edit = function (base_size = 11, base_family = "", base_line_size = base_size/22, 
@@ -425,6 +428,24 @@ p3 =
         legend.key.size = unit(0.5, 'lines'))
 p3
 
+
+# some descriptive statisic about the timing
+
+# exclude double again
+ds = ds[!(female_id_year_NA %in% c('270170935_19', '19222_19'))]
+ds[, .N, clutch_identity]
+
+# initiation first clutch compared to single clutch
+ds[clutch_identity == 'single', mean(initiation_st)] - ds[clutch_identity == 'first', mean(initiation_st)] 
+
+# second clutches compared to single
+ds[clutch_identity == 'single', mean(initiation_st)] - ds[clutch_identity == 'second', mean(initiation_st)] 
+ds[clutch_identity == 'single', mean(initiation_st)] - ds[clutch_identity == 'second' & polyandrous == TRUE, mean(initiation_st)] 
+ds[clutch_identity == 'single', mean(initiation_st)] - ds[clutch_identity == 'second' & polyandrous != TRUE, mean(initiation_st)] 
+
+ds[clutch_identity == 'third', .(initiation_st)] 
+
+# other timings see polyandry / renesting above
 
 #------------------------------------------------------------------------------------------------------------------------
 # 4. EPY and timing 
@@ -478,6 +499,12 @@ p4 =
 
 p4
 
+# statistics
+fm = glm(anyEPY ~ initiation_st, data = ds[study_site == 'Intensive study'], family = binomial)
+summary(fm)
+
+fm = glm(anyEPY ~ initiation_st, data = ds[study_site == 'Collection'], family = binomial)
+summary(fm)
 
 #------------------------------------------------------------------------------------------------------------------------
 # Save
