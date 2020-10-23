@@ -125,6 +125,17 @@ dps[N_EPY > 1, .(nestID, EPY_father, IDfather_identified)]
 dps[study_site == TRUE, .(EPY_father_identified = .N), by = IDfather_identified]
 dps[study_site == TRUE, .(year_, nest, IDfather, EPY_father)]
 
+# possible sources of EPP
+# one known previous male 
+1/17*100
+11/17*100
+
+# 5 previous social male
+5/17*100
+
+# 2 unknown breeding history
+2/17*100
+
 # How many EPY fathers identified?
 ds1 = dps[, .(N_EPY_eggs = .N), by = study_site]
 ds2 = dps[IDfather_identified == TRUE, .(EPY_father_identified = .N), by = study_site]

@@ -731,6 +731,16 @@ Anova(fm)
 #------------------------------------------------------------------------------------------------------------------------
 
 # subset nests with parentage
+ds = d[parentage == TRUE & study_site == TRUE]
+
+fm = glm(anyEPY ~ YEAR_, data = ds, family = binomial)
+summary(fm)
+Anova(fm)
+
+marginal = emmeans::emmeans(fm, ~ YEAR_)
+emmeans::pairs(marginal)
+
+# subset nests with parentage
 ds = d[parentage == TRUE]
 
 # reverse factor, otherwise intercept 2003 (no EPY)
