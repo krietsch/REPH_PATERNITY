@@ -344,6 +344,8 @@ da = dss[diff_obs_initiation > 0]
 da = merge(da, dn[, .(male_id_year, female_id_year, nest_state_date)], 
            by.x = c('ID1', 'ID2'), by.y = c('male_id_year', 'female_id_year'), all.x = TRUE)
 
+da = unique(da, by = c('ID1', 'ID2', 'datetime_'))
+
 da[, nest_still_active := difftime(nest_state_date, datetime_, units = 'days') %>% as.numeric]
 
 da[nest_still_active > 0, nest_still_active_factor := TRUE]
@@ -402,6 +404,8 @@ da = dss[diff_obs_initiation > 0]
 
 da = merge(da, dn[, .(male_id_year, female_id_year, nest_state_date)], 
            by.x = c('ID1', 'ID1_1st_partner'), by.y = c('male_id_year', 'female_id_year'), all.x = TRUE)
+
+da = unique(da, by = c('ID1', 'ID2', 'datetime_'))
 
 da[, nest_still_active := difftime(nest_state_date, datetime_, units = 'days') %>% as.numeric]
 da[nest_still_active > 0, nest_still_active_factor := TRUE]
@@ -470,6 +474,8 @@ da = dss[diff_obs_initiation > 0]
 da = merge(da, dnID[, .(ID_year, first_initiation, second_initiation, first_nest_state_date, second_nest_state_date)], 
            by.x = c('ID2'), by.y = c('ID_year'), all.x = TRUE)
 
+da = unique(da, by = c('ID1', 'ID2', 'datetime_'))
+
 # nest active?
 da[, active_nest1 := datetime_%between% c(first_initiation, first_nest_state_date), by = 1:nrow(da)]
 da[is.na(second_initiation), active_nest1 := NA]
@@ -533,6 +539,8 @@ da = dss[diff_obs_initiation > 0]
 da = merge(da, dn[, .(male_id_year, female_id_year, nest_state_date)], 
            by.x = c('ID1', 'ID2'), by.y = c('male_id_year', 'female_id_year'), all.x = TRUE)
 
+da = unique(da, by = c('ID1', 'ID2', 'datetime_'))
+
 da[, nest_still_active := difftime(nest_state_date, datetime_, units = 'days') %>% as.numeric]
 
 da[nest_still_active > 0, nest_still_active_factor := TRUE]
@@ -545,7 +553,7 @@ dss[diff_obs_initiation > 0 & nest_still_active_factor == FALSE, type2 := 'faile
 
 dss[is.na(type2), type2 := 'aabefore']
 
-dss[diff_obs_initiation > 0]
+dss[diff_obs_initiation > 2]
 
 
 p4 = 
@@ -585,6 +593,8 @@ da = dss[diff_obs_initiation > 0]
 
 da = merge(da, dn[, .(male_id_year, female_id_year, nest_state_date)], 
            by.x = c('ID1', 'ID1_1st_partner'), by.y = c('male_id_year', 'female_id_year'), all.x = TRUE)
+
+da = unique(da, by = c('ID1', 'ID2', 'datetime_'))
 
 da[, nest_still_active := difftime(nest_state_date, datetime_, units = 'days') %>% as.numeric]
 da[nest_still_active > 0, nest_still_active_factor := TRUE]
