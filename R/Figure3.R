@@ -310,6 +310,9 @@ t_margin = 0
 
 # plot settings
 bs = 11 # basesize
+ls = 3 # label size
+lsa = 4 # label size annotation
+vline = 0.7 # size of vertical line
 width_ = 1
 grey_ = 'grey75'
 bar_line = 'grey20'
@@ -353,7 +356,6 @@ dss[diff_obs_initiation > 0 & nest_still_active_factor == FALSE, type2 := 'faile
 
 dss[is.na(type2), type2 := 'aabefore']
 
-
 # dss = merge(dss, da[, .(ID1, ID2, datetime_, nest_still_active)], by = c('ID1', 'ID2', 'datetime_'), all.x = TRUE)
 # 
 # dss[diff_obs_initiation > 0 & type != '2nd_same', type2 := 'renesting']
@@ -363,13 +365,13 @@ dss[is.na(type2), type2 := 'aabefore']
 p1 = 
   ggplot(data = dss) +
   geom_bar(aes(diff_obs_initiation, fill = type2), width = width_, color = bar_line, size = bar_line_thickness) +
-  geom_vline(aes(xintercept = 3), linetype = 'dotted', size = 1.2) + 
+  geom_vline(aes(xintercept = 3), linetype = 'dotted', size = vline) + 
   scale_x_continuous(limits = c(-13, 23), labels = NULL, expand = c(0.02, 0.02)) +
   scale_y_continuous(limits = c(0, 54), labels = c('0', '','20', '','40', ''), expand = c(0, 0)) +
   scale_fill_manual(values = c(grey_, '#95D840FF', '#33638DFF')) +
   xlab('') + ylab('') +
-  # geom_text(aes(-10, Inf, label = sample_size1), vjust = 1, size = 6) +
-  # geom_text(aes(17, Inf, label = 'within-pair'), vjust = 1, size = 6) +
+  geom_text(aes(-9.5, Inf, label = sample_size1), vjust = 1, size = ls) +
+  geom_text(aes(20, Inf, label = 'a1'), vjust = 1, size = lsa) +
   theme_classic(base_size = bs) +
   theme(legend.position = 'none', plot.margin = margin_, axis.title.x = element_blank(), axis.text.x=element_blank()) # legend.position = c(0.9, 0.9), legend.title = element_blank()
 
@@ -415,13 +417,13 @@ dss[is.na(type2), type2 := 'aabefore']
 p2 = 
   ggplot(data = dss) +
   geom_bar(aes(diff_obs_initiation, fill = type2, width = width_), width = width_, color = bar_line, size = bar_line_thickness) +
-  geom_vline(aes(xintercept = 3), linetype = 'dotted', size = 1.2) + 
+  geom_vline(aes(xintercept = 3), linetype = 'dotted', size = vline) + 
   scale_x_continuous(limits = c(-13, 23), labels = NULL, expand = c(0.02, 0.02)) +
   scale_y_continuous(limits = c(0, 22), labels = c('0', '','10', '','20'), expand = c(0, 0)) +
   scale_fill_manual(values = c(grey_, '#95D840FF', '#33638DFF')) +
   xlab('') + ylab('Number of male-female interactions') + 
-  # geom_text(aes(-10, Inf, label = sample_size3), vjust = 1, size = 6) +
-  # geom_text(aes(17, Inf, label = 'males with\nextra-pair females'), vjust = 1, size = 6) +
+  geom_text(aes(-9.5, Inf, label = sample_size3), vjust = 1, size = ls) +
+  geom_text(aes(20, Inf, label = 'a2'), vjust = 1, size = lsa) +
   theme_classic(base_size = bs) +
   theme(legend.position = 'none', plot.margin = margin_, axis.title.x = element_blank(), axis.text.x=element_blank())
 p2
@@ -449,13 +451,13 @@ dss[, type := factor(type, levels = c('1st', '2nd', 'previous partner', 'next pa
 p3 = 
   ggplot(data = dss) +
   geom_bar(aes(diff_obs_initiation, fill = type), width = width_, color = bar_line, size = bar_line_thickness) +
-  geom_vline(aes(xintercept = 3), linetype = 'dotted', size = 1.2) + 
+  geom_vline(aes(xintercept = 3), linetype = 'dotted', size = vline) + 
   scale_x_continuous(limits = c(-13, 23), expand = c(0.02, 0.02)) +
   scale_y_continuous(limits = c(0, 22), labels = c('0', '','10', '','20'), expand = c(0, 0)) +
   scale_fill_manual(values = c(grey_, grey_, 'orange', 'orangered2')) + 
   xlab('Day relative to clutch initiation (=0)') + ylab('') +
-  # geom_text(aes(-10, Inf, label = sample_size2), vjust = 1, size = 6) +
-  # geom_text(aes(17, Inf, label = 'females with\nextra-pair males'), vjust = 1, size = 6) +
+  geom_text(aes(-9.5, Inf, label = sample_size2), vjust = 1, size = ls) +
+  geom_text(aes(20, Inf, label = 'a3'), vjust = 1, size = lsa) +
   theme_classic(base_size = bs) +
   theme(legend.position = 'none', plot.background = element_rect(fill = 'transparent'),
         plot.margin = margin_) # legend.position = c(0.8, 0.9), legend.title = element_blank()
@@ -483,20 +485,20 @@ dss[diff_obs_initiation > 0 & type %in% c('1st', '2nd') & no_nest == TRUE, type 
 dss[diff_obs_initiation > 0 & type %in% c('1st', '2nd') & active_nest == FALSE, type := 'not active nest']
 
 
-p3b = 
-  ggplot(data = dss) +
-  geom_bar(aes(diff_obs_initiation, fill = type), width = width_, color = bar_line, size = bar_line_thickness) +
-  geom_vline(aes(xintercept = 3), linetype = 'dotted', size = 1.2) + 
-  scale_x_continuous(limits = c(-13, 23), expand = c(0.02, 0.02)) +
-  scale_y_continuous(limits = c(0, 22), labels = c('0', '','10', '','20'), expand = c(0, 0)) +
-  scale_fill_manual(values = c(grey_, 'black', 'orange', 'orangered2', 'green', 'blue', 'yellow')) + 
-  xlab('Day relative to clutch initiation') + ylab('') +
-  # geom_text(aes(-10, Inf, label = sample_size2), vjust = 1, size = 6) +
-  # geom_text(aes(17, Inf, label = 'females with\nextra-pair males'), vjust = 1, size = 6) +
-  theme_classic(base_size = bs) +
-  theme(panel.spacing = unit(0, "cm"), plot.margin = margin_,
-        axis.title.x = element_blank()) # legend.position = c(0.8, 0.9), legend.title = element_blank()
-p3b
+# p3b = 
+#   ggplot(data = dss) +
+#   geom_bar(aes(diff_obs_initiation, fill = type), width = width_, color = bar_line, size = bar_line_thickness) +
+#   geom_vline(aes(xintercept = 3), linetype = 'dotted', size = 1.2) + 
+#   scale_x_continuous(limits = c(-13, 23), expand = c(0.02, 0.02)) +
+#   scale_y_continuous(limits = c(0, 22), labels = c('0', '','10', '','20'), expand = c(0, 0)) +
+#   scale_fill_manual(values = c(grey_, 'black', 'orange', 'orangered2', 'green', 'blue', 'yellow')) + 
+#   xlab('Day relative to clutch initiation') + ylab('') +
+#   geom_text(aes(-10, Inf, label = sample_size2), vjust = 1, size = ls) +
+#   geom_text(aes(17, Inf, label = 'females with\nextra-pair males'), vjust = 1, size = 6) +
+#   theme_classic(base_size = bs) +
+#   theme(panel.spacing = unit(0, "cm"), plot.margin = margin_,
+#         axis.title.x = element_blank()) # legend.position = c(0.8, 0.9), legend.title = element_blank()
+# p3b
 
 dss[type == '1st']
 
@@ -543,16 +545,19 @@ dss[diff_obs_initiation > 0 & nest_still_active_factor == FALSE, type2 := 'faile
 
 dss[is.na(type2), type2 := 'aabefore']
 
+dss[diff_obs_initiation > 0]
+
+
 p4 = 
   ggplot(data = dss) +
   geom_bar(aes(diff_obs_initiation, fill = type2), width = width_, color = bar_line, size = bar_line_thickness) +
-  geom_vline(aes(xintercept = 3), linetype = 'dotted', size = 1.2) + 
+  geom_vline(aes(xintercept = 3), linetype = 'dotted', size = vline) + 
   scale_x_continuous(limits = c(-13, 23), labels = NULL, expand = c(0.02, 0.02)) +
   scale_y_continuous(limits = c(0, 27), breaks = c(0, 5, 10, 15, 20, 25), labels = c('0', '', '10', '', '20', ''), expand = c(0, 0)) +
   scale_fill_manual(values = c(grey_, '#95D840FF', '#33638DFF')) +
   xlab('') + ylab('') +
-  # geom_text(aes(-10, Inf, label = sample_size4), vjust = 1, size = 6) +
-  # geom_text(aes(17, Inf, label = 'within-pair'), vjust = 1, size = 6) +
+  geom_text(aes(-10, Inf, label = sample_size4), vjust = 1, size = ls) +
+  geom_text(aes(20, Inf, label = 'b1'), vjust = 1, size = lsa) +
   theme_classic(base_size = bs) +
   theme(legend.position = 'none', plot.margin = margin_, axis.title.x = element_blank(), axis.text.x=element_blank())
 p4 
@@ -595,13 +600,13 @@ dss[is.na(type2), type2 := 'aabefore']
 p5 = 
   ggplot(data = dss) +
   geom_bar(aes(diff_obs_initiation, fill = type2), width = width_, color = bar_line, size = bar_line_thickness) +
-  geom_vline(aes(xintercept = 3), linetype = 'dotted', size = 1.2) + 
+  geom_vline(aes(xintercept = 3), linetype = 'dotted', size = vline) + 
   scale_x_continuous(limits = c(-13, 23), labels = NULL, expand = c(0.02, 0.02)) +
   scale_y_continuous(limits = c(0, 11), breaks = c(0, 2.5, 5, 7.5, 10), labels = c('0', '', '5', '', '10'), expand = c(0, 0)) +
   scale_fill_manual(values = c(grey_, '#95D840FF', '#33638DFF')) +
   xlab('') + ylab('Number of copulations and copulation attempts') +
-  # geom_text(aes(-10, Inf, label = sample_size6), vjust = 1, size = 6) +
-  # geom_text(aes(17, Inf, label = 'males with\nextra-pair females'), vjust = 1, size = 6) +
+  geom_text(aes(-10, Inf, label = sample_size6), vjust = 1, size = ls) +
+  geom_text(aes(20, Inf, label = 'b2'), vjust = 1, size = lsa) +
   theme_classic(base_size = bs) +
   theme(legend.position = 'none', plot.margin = margin_, axis.title.x = element_blank(), axis.text.x=element_blank())
 p5
@@ -630,13 +635,13 @@ dss[diff_obs_initiation > 0 & type == 'previous_partner']
 p6 = 
   ggplot(data = dss) +
   geom_bar(aes(diff_obs_initiation, fill = type), width = width_, color = bar_line, size = bar_line_thickness) +
-  geom_vline(aes(xintercept = 3), linetype = 'dotted', size = 1.2) + 
+  geom_vline(aes(xintercept = 3), linetype = 'dotted', size = vline) + 
   scale_x_continuous(limits = c(-13, 23), expand = c(0.02, 0.02)) +
   scale_y_continuous(limits = c(0, 11), breaks = c(0, 2.5, 5, 7.5, 10), labels = c('0', '', '5', '', '10'), expand = c(0, 0)) +
   scale_fill_manual(values = c(grey_, 'orangered2', 'orange')) + 
   xlab('Day relative to clutch initiation (=0)') + ylab('') +
-  # geom_text(aes(-10, Inf, label = sample_size5), vjust = 1, size = 6) +
-  # geom_text(aes(17, Inf, label = 'females with\nextra-pair males'), vjust = 1, size = 6) +
+  geom_text(aes(-10, Inf, label = sample_size5), vjust = 1, size = ls) +
+  geom_text(aes(20, Inf, label = 'b3'), vjust = 1, size = lsa) +
   theme_classic(base_size = bs) +
   theme(legend.position = 'none', plot.background = element_rect(fill = 'transparent'), 
         plot.margin = margin_)
