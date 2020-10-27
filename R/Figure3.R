@@ -643,13 +643,13 @@ p6 =
 p6
 
 # legend
-ds = data.table(type = c('has active nest', 'has failed nest', 'is previous partner', 'is next partner'),
+ds = data.table(type = c('has active nest', 'has failed nest', 'is next partner', 'is previous partner'),
                 N = c(rep(1, 4)))
 
 pl = 
 ggplot(data = ds) +
   geom_bar(aes(N, fill = type)) +
-  scale_fill_manual(name = 'Male', values = c('#95D840FF', '#33638DFF', 'orange', 'orangered2')) + 
+  scale_fill_manual(name = 'Male', values = c('#95D840FF', '#33638DFF', 'orangered2', 'orange')) + 
   theme_classic(base_size = bs) +
   theme(legend.position = 'top')
 
