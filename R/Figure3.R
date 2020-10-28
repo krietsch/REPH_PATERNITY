@@ -449,27 +449,8 @@ dss[type == '1st' & ID2 == ID1_2nd_partner, type := 'next partner']
 # interaction with previous partner
 dss[type == '2nd' & ID2 == ID1_1st_partner, type := 'previous partner']
 
-# factor order
-dss[, type := factor(type, levels = c('1st', '2nd', 'previous partner', 'next partner'))]
-
-p3 = 
-  ggplot(data = dss) +
-  geom_bar(aes(diff_obs_initiation, fill = type), width = width_, color = bar_line, size = bar_line_thickness) +
-  geom_vline(aes(xintercept = 3), linetype = 'dotted', size = vline) + 
-  scale_x_continuous(limits = c(-13, 23), expand = c(0.02, 0.02)) +
-  scale_y_continuous(limits = c(0, 22), labels = c('0', '','10', '','20'), expand = c(0, 0)) +
-  scale_fill_manual(values = c(grey_, grey_, 'orange', 'orangered2')) + 
-  xlab('Day relative to clutch initiation (=0)') + ylab('') +
-  geom_text(aes(-9.5, Inf, label = sample_size2), vjust = 1, size = ls) +
-  geom_text(aes(20, Inf, label = 'a3'), vjust = 1, size = lsa) +
-  theme_classic(base_size = bs) +
-  theme(legend.position = 'none', plot.background = element_rect(fill = 'transparent'),
-        plot.margin = margin_) # legend.position = c(0.8, 0.9), legend.title = element_blank()
-p3
-
-
 # additional ask which males had an active nest
-da = dss[diff_obs_initiation > 0]
+da = dss
 
 da = merge(da, dnID[, .(ID_year, first_initiation, second_initiation, first_nest_state_date, second_nest_state_date)], 
            by.x = c('ID2'), by.y = c('ID_year'), all.x = TRUE)
@@ -485,19 +466,60 @@ da[, active_nest := any(active_nest1 == TRUE | active_nest2 == TRUE), by = 1:nro
 da[is.na(first_initiation), no_nest := TRUE]
 
 dss = merge(dss, da[, .(ID1, ID2, datetime_, active_nest, no_nest)], by = c('ID1', 'ID2', 'datetime_'), all.x = TRUE)
+dss[type %in% c('1st', '2nd') & active_nest == TRUE, type := 'active nest']
+# dss[diff_obs_initiation > 0 & type %in% c('1st', '2nd') & active_nest == FALSE, type := 'not active nest']
+# dss[diff_obs_initiation > 0 & type %in% c('1st', '2nd') & no_nest == TRUE, type := 'no nest']
 
-dss[diff_obs_initiation > 0 & type %in% c('1st', '2nd') & active_nest == TRUE, type := 'active nest']
-dss[diff_obs_initiation > 0 & type %in% c('1st', '2nd') & no_nest == TRUE, type := 'no nest']
-dss[diff_obs_initiation > 0 & type %in% c('1st', '2nd') & active_nest == FALSE, type := 'not active nest']
+# factor order
+dss[!(type %in% c('previous partner', 'next partner', 'active nest')), type := 'unknown']
+dss[, type := factor(type, levels = c('unknown', 'active nest', 'previous partner', 'next partner'))]
+
+p3 = 
+  ggplot(data = dss) +
+  geom_bar(aes(diff_obs_initiation, fill = type), width = width_, color = bar_line, size = bar_line_thickness) +
+  geom_vline(aes(xintercept = 3), linetype = 'dotted', size = vline) + 
+  scale_x_continuous(limits = c(-13, 23), expand = c(0.02, 0.02)) +
+  scale_y_continuous(limits = c(0, 22), labels = c('0', '','10', '','20'), expand = c(0, 0)) +
+  scale_fill_manual(values = c(grey_, '#95D840FF', 'orange', 'orangered2')) + 
+  xlab('Day relative to clutch initiation (=0)') + ylab('') +
+  geom_text(aes(-9.5, Inf, label = sample_size2), vjust = 1, size = ls) +
+  geom_text(aes(20, Inf, label = 'a3'), vjust = 1, size = lsa) +
+  theme_classic(base_size = bs) +
+  theme(legend.position = 'none', plot.background = element_rect(fill = 'transparent'),
+        plot.margin = margin_) # legend.position = c(0.8, 0.9), legend.title = element_blank()
+p3
 
 
-# p3b = 
+# # additional ask which males had an active nest
+# da = dss[diff_obs_initiation > 0]
+# 
+# da = merge(da, dnID[, .(ID_year, first_initiation, second_initiation, first_nest_state_date, second_nest_state_date)], 
+#            by.x = c('ID2'), by.y = c('ID_year'), all.x = TRUE)
+# 
+# da = unique(da, by = c('ID1', 'ID2', 'datetime_'))
+# 
+# # nest active?
+# da[, active_nest1 := datetime_%between% c(first_initiation, first_nest_state_date), by = 1:nrow(da)]
+# da[is.na(second_initiation), active_nest1 := NA]
+# da[, active_nest2 := datetime_%between% c(second_initiation, second_nest_state_date), by = 1:nrow(da)]
+# da[is.na(second_initiation), active_nest2 := NA]
+# da[, active_nest := any(active_nest1 == TRUE | active_nest2 == TRUE), by = 1:nrow(da)]
+# da[is.na(first_initiation), no_nest := TRUE]
+# 
+# dss = merge(dss, da[, .(ID1, ID2, datetime_, active_nest, no_nest)], by = c('ID1', 'ID2', 'datetime_'), all.x = TRUE)
+# 
+# dss[diff_obs_initiation > 0 & type %in% c('1st', '2nd') & active_nest == TRUE, type := 'active nest']
+# dss[diff_obs_initiation > 0 & type %in% c('1st', '2nd') & no_nest == TRUE, type := 'no nest']
+# dss[diff_obs_initiation > 0 & type %in% c('1st', '2nd') & active_nest == FALSE, type := 'not active nest']
+# 
+# 
+# p3b =
 #   ggplot(data = dss) +
 #   geom_bar(aes(diff_obs_initiation, fill = type), width = width_, color = bar_line, size = bar_line_thickness) +
-#   geom_vline(aes(xintercept = 3), linetype = 'dotted', size = 1.2) + 
+#   geom_vline(aes(xintercept = 3), linetype = 'dotted', size = 1.2) +
 #   scale_x_continuous(limits = c(-13, 23), expand = c(0.02, 0.02)) +
 #   scale_y_continuous(limits = c(0, 22), labels = c('0', '','10', '','20'), expand = c(0, 0)) +
-#   scale_fill_manual(values = c(grey_, 'black', 'orange', 'orangered2', 'green', 'blue', 'yellow')) + 
+#   scale_fill_manual(values = c(grey_, 'black', 'orange', 'orangered2', 'green', 'blue', 'yellow')) +
 #   xlab('Day relative to clutch initiation') + ylab('') +
 #   geom_text(aes(-10, Inf, label = sample_size2), vjust = 1, size = ls) +
 #   geom_text(aes(17, Inf, label = 'females with\nextra-pair males'), vjust = 1, size = 6) +
@@ -505,8 +527,8 @@ dss[diff_obs_initiation > 0 & type %in% c('1st', '2nd') & active_nest == FALSE, 
 #   theme(panel.spacing = unit(0, "cm"), plot.margin = margin_,
 #         axis.title.x = element_blank()) # legend.position = c(0.8, 0.9), legend.title = element_blank()
 # p3b
-
-dss[type == '1st']
+# 
+# dss[type == '1st']
 
 
 #------------------------------------------------------------------------------------------------------------------------
@@ -589,7 +611,7 @@ dss[type == '1st' & ID2 == ID1_2nd_partner, type := 'next_partner']
 dss[type == '2nd' & ID2 == ID1_1st_partner, type := 'previous_partner']
 
 # within pair interactions while clutch active?
-da = dss[diff_obs_initiation > 0]
+da = dss
 
 da = merge(da, dn[, .(male_id_year, female_id_year, nest_state_date)], 
            by.x = c('ID1', 'ID1_1st_partner'), by.y = c('male_id_year', 'female_id_year'), all.x = TRUE)
@@ -603,8 +625,8 @@ da[nest_still_active < 0, nest_still_active_factor := FALSE]
 dss = merge(dss, da[, .(ID1, ID2, datetime_, nest_still_active_factor)], by = c('ID1', 'ID2', 'datetime_'), all.x = TRUE)
 
 
-dss[diff_obs_initiation > 0 & nest_still_active_factor == TRUE, type2 := 'active nest']
-dss[diff_obs_initiation > 0 & nest_still_active_factor == FALSE, type2 := 'failed nest']
+dss[nest_still_active_factor == TRUE, type2 := 'active nest']
+dss[nest_still_active_factor == FALSE, type2 := 'failed nest']
 dss[is.na(type2), type2 := 'aabefore']
 
 p5 = 
@@ -634,12 +656,39 @@ sample_size5 = paste0('N = ', nrow(dss))
 dnpu = unique(dnp, by = 'ID1')
 dss = merge(dss, dnpu[, .(ID1, ID1_1st_partner, ID1_2nd_partner)], by = 'ID1', all.x = TRUE)
 
-dss[type == '1st' & ID2 == ID1_2nd_partner, type := 'next_partner']
+dss[type == '1st' & ID2 == ID1_2nd_partner, type := 'next partner']
 
 # interaction with previous partner
-dss[type == '2nd' & ID2 == ID1_1st_partner, type := 'previous_partner']
+dss[type == '2nd' & ID2 == ID1_1st_partner, type := 'previous partner']
 
-dss[diff_obs_initiation > 0 & type == 'previous_partner']
+dss[diff_obs_initiation > 0 & type == 'previous partner']
+
+# additional ask which males had an active nest
+da = dss[diff_obs_initiation > 0]
+
+da = merge(da, dnID[, .(ID_year, first_initiation, second_initiation, first_nest_state_date, second_nest_state_date)], 
+           by.x = c('ID2'), by.y = c('ID_year'), all.x = TRUE)
+
+da = unique(da, by = c('ID1', 'ID2', 'datetime_'))
+
+# nest active?
+da[, active_nest1 := datetime_%between% c(first_initiation, first_nest_state_date), by = 1:nrow(da)]
+da[is.na(second_initiation), active_nest1 := NA]
+da[, active_nest2 := datetime_%between% c(second_initiation, second_nest_state_date), by = 1:nrow(da)]
+da[is.na(second_initiation), active_nest2 := NA]
+da[, active_nest := any(active_nest1 == TRUE | active_nest2 == TRUE), by = 1:nrow(da)]
+da[is.na(first_initiation), no_nest := TRUE]
+
+dss = merge(dss, da[, .(ID1, ID2, datetime_, active_nest, no_nest)], by = c('ID1', 'ID2', 'datetime_'), all.x = TRUE)
+dss[diff_obs_initiation > 0 & type %in% c('1st', '2nd') & active_nest == TRUE, type := 'active nest']
+# dss[diff_obs_initiation > 0 & type %in% c('1st', '2nd') & active_nest == FALSE, type := 'not active nest']
+# dss[diff_obs_initiation > 0 & type %in% c('1st', '2nd') & no_nest == TRUE, type := 'no nest']
+
+# factor order
+dss[!(type %in% c('previous partner', 'next partner', 'active nest')), type := 'unknown']
+dss[, type := factor(type, levels = c('unknown', 'active nest', 'previous partner', 'next partner'))]
+
+dss[type == 'active nest']
 
 
 p6 = 
@@ -648,7 +697,7 @@ p6 =
   geom_vline(aes(xintercept = 3), linetype = 'dotted', size = vline) + 
   scale_x_continuous(limits = c(-13, 23), expand = c(0.02, 0.02)) +
   scale_y_continuous(limits = c(0, 11), breaks = c(0, 2.5, 5, 7.5, 10), labels = c('0', '', '5', '', '10'), expand = c(0, 0)) +
-  scale_fill_manual(values = c(grey_, 'orangered2', 'orange')) + 
+  scale_fill_manual(values = c(grey_, '#95D840FF', 'orange', 'orangered2')) + 
   xlab('Day relative to clutch initiation (=0)') + ylab('') +
   geom_text(aes(-10, Inf, label = sample_size5), vjust = 1, size = ls) +
   geom_text(aes(20, Inf, label = 'b3'), vjust = 1, size = lsa) +
@@ -658,13 +707,15 @@ p6 =
 p6
 
 # legend
-ds = data.table(type = c('has active nest', 'has failed nest', 'is next partner', 'is previous partner'),
+ds = data.table(type = c('with active nest', 'with failed nest', 'is next partner', 'is previous partner'),
                 N = c(rep(1, 4)))
+
+ds[, type := factor(type, levels =c('with active nest', 'with failed nest', 'is previous partner', 'is next partner'))]
 
 pl = 
 ggplot(data = ds) +
   geom_bar(aes(N, fill = type)) +
-  scale_fill_manual(name = 'Male', values = c('#95D840FF', '#33638DFF', 'orangered2', 'orange')) + 
+  scale_fill_manual(name = 'Male', values = c('#95D840FF', '#33638DFF', 'orange', 'orangered2')) + 
   theme_classic(base_size = bs) +
   theme(legend.position = 'top')
 
