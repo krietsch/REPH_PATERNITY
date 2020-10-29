@@ -320,6 +320,17 @@ bar_line_thickness = 0.1
 margin_ = unit(c(0, 0, 2, 0), "pt")
 vjust_ = 1.5 # vjust of text
 
+# colors in legend scale
+c_active = '#A6D854'
+c_failed = '#D53E4F'
+c_previous = '#2B83BA'
+c_next = '#FDAE61'
+
+# colors in legend scale
+# c_active = '#95D840FF'
+# c_failed = '#33638DFF'
+# c_previous = 'orange'
+# c_next = 'firebrick3'
 
 ### interactions
 
@@ -371,7 +382,7 @@ p1 =
   geom_vline(aes(xintercept = 3), linetype = 'dotted', size = vline) + 
   scale_x_continuous(limits = c(-13, 23), labels = NULL, expand = c(0.02, 0.02)) +
   scale_y_continuous(limits = c(0, 54), labels = c('', '','20', '','40', ''), expand = c(0, 0)) +
-  scale_fill_manual(values = c(grey_, '#95D840FF', '#33638DFF')) +
+  scale_fill_manual(values = c(grey_, c_active, c_failed)) +
   xlab('') + ylab('') +
   geom_text(aes(-9.5, Inf, label = sample_size1), vjust = vjust_, size = ls) +
   geom_text(aes(20, Inf, label = 'a1'), vjust = vjust_, size = lsa) +
@@ -425,7 +436,7 @@ p2 =
   geom_vline(aes(xintercept = 3), linetype = 'dotted', size = vline) + 
   scale_x_continuous(limits = c(-13, 23), labels = NULL, expand = c(0.02, 0.02)) +
   scale_y_continuous(limits = c(0, 22), labels = c('', '','10', '','20'), expand = c(0, 0)) +
-  scale_fill_manual(values = c(grey_, '#95D840FF', '#33638DFF')) +
+  scale_fill_manual(values = c(grey_, c_active, c_failed)) +
   xlab('') + ylab('Number of male-female interactions') + 
   geom_text(aes(-9.5, Inf, label = sample_size3), vjust = vjust_, size = ls) +
   geom_text(aes(20, Inf, label = 'a2'), vjust = vjust_, size = lsa) +
@@ -481,7 +492,7 @@ p3 =
   geom_vline(aes(xintercept = 3), linetype = 'dotted', size = vline) + 
   scale_x_continuous(limits = c(-13, 23), expand = c(0.02, 0.02)) +
   scale_y_continuous(limits = c(0, 22), labels = c('0', '','10', '','20'), expand = c(0, 0)) +
-  scale_fill_manual(values = c(grey_, '#95D840FF', 'orange', 'orangered2')) + 
+  scale_fill_manual(values = c(grey_, c_active, c_previous, c_next)) + 
   xlab('Day relative to clutch initiation (=0)') + ylab('') +
   geom_text(aes(-9.5, Inf, label = sample_size2), vjust = vjust_, size = ls) +
   geom_text(aes(20, Inf, label = 'a3'), vjust = vjust_, size = lsa) +
@@ -585,7 +596,7 @@ p4 =
   geom_vline(aes(xintercept = 3), linetype = 'dotted', size = vline) + 
   scale_x_continuous(limits = c(-13, 23), labels = NULL, expand = c(0.02, 0.02)) +
   scale_y_continuous(limits = c(0, 27), breaks = c(0, 5, 10, 15, 20, 25), labels = c('', '', '10', '', '20', ''), expand = c(0, 0)) +
-  scale_fill_manual(values = c(grey_, '#95D840FF', '#33638DFF')) +
+  scale_fill_manual(values = c(grey_, c_active, c_failed)) +
   xlab('') + ylab('') +
   geom_text(aes(-10, Inf, label = sample_size4), vjust = vjust_, size = ls) +
   geom_text(aes(20, Inf, label = 'b1'), vjust = vjust_, size = lsa) +
@@ -617,7 +628,7 @@ da = dss[diff_obs_initiation >= 0]
 da = merge(da, dn[, .(male_id_year, female_id_year, nest_state_date)], 
            by.x = c('ID1', 'ID1_1st_partner'), by.y = c('male_id_year', 'female_id_year'), all.x = TRUE)
 
-# da = unique(da, by = c('ID1', 'ID2', 'datetime_'))
+da = unique(da, by = c('ID1', 'ID2', 'datetime_'))
 
 da[, nest_still_active := difftime(nest_state_date, datetime_, units = 'days') %>% as.numeric]
 da[nest_still_active > 0, nest_still_active_factor := TRUE]
@@ -639,7 +650,7 @@ p5 =
   geom_vline(aes(xintercept = 3), linetype = 'dotted', size = vline) + 
   scale_x_continuous(limits = c(-13, 23), labels = NULL, expand = c(0.02, 0.02)) +
   scale_y_continuous(limits = c(0, 11), breaks = c(0, 2.5, 5, 7.5, 10), labels = c('', '', '5', '', '10'), expand = c(0, 0)) +
-  scale_fill_manual(values = c(grey_, '#95D840FF', '#33638DFF')) +
+  scale_fill_manual(values = c(grey_, c_active, c_failed)) +
   xlab('') + ylab('Number of copulations and copulation attempts') +
   geom_text(aes(-10, Inf, label = sample_size6), vjust = vjust_, size = ls) +
   geom_text(aes(20, Inf, label = 'b2'), vjust = vjust_, size = lsa) +
@@ -701,7 +712,7 @@ p6 =
   geom_vline(aes(xintercept = 3), linetype = 'dotted', size = vline) + 
   scale_x_continuous(limits = c(-13, 23), expand = c(0.02, 0.02)) +
   scale_y_continuous(limits = c(0, 11), breaks = c(0, 2.5, 5, 7.5, 10), labels = c('0', '', '5', '', '10'), expand = c(0, 0)) +
-  scale_fill_manual(values = c(grey_, '#95D840FF', 'orange', 'orangered2')) + 
+  scale_fill_manual(values = c(grey_, c_active, c_previous, c_next)) + 
   xlab('Day relative to clutch initiation (=0)') + ylab('') +
   geom_text(aes(-10, Inf, label = sample_size5), vjust = vjust_, size = ls) +
   geom_text(aes(20, Inf, label = 'b3'), vjust = vjust_, size = lsa) +
@@ -719,9 +730,9 @@ ds[, type := factor(type, levels =c('with active nest', 'with failed nest', 'is 
 pl = 
 ggplot(data = ds) +
   geom_bar(aes(N, fill = type)) +
-  scale_fill_manual(name = 'Male', values = c('#95D840FF', '#33638DFF', 'orange', 'orangered2')) + 
+  scale_fill_manual(name = 'Male', values = c(c_active, c_failed, c_previous, c_next)) + 
   theme_classic(base_size = bs) +
-  theme(legend.position = 'top')
+  theme(legend.position = 'top', legend.key.width = unit(0.4, 'cm'), legend.key.height = unit(0.4, 'cm'))
 
 legend = ggpubr::get_legend(pl)
 plgg = ggpubr::as_ggplot(legend)
@@ -740,27 +751,28 @@ plgg = ggpubr::as_ggplot(legend)
 # ggsave('./REPORTS/FIGURES/Figure3_.tiff', plot = last_plot(),  width = 177, height = 177, units = c('mm'), dpi = 'print')
 
 
-# try to include icon
+# include icon
 
 pi1 = 
   ggdraw() +
-  draw_image('./REPORTS/FIGURES/reph_icon1.tif') 
+  draw_image('./DATA/reph_icon1.tif') +
+  geom_text(aes(0.5, 0.5, label = 'Within-pair'), vjust = 3, size = 4) 
 pi1
 
 pi2 = 
   ggdraw() +
-  draw_image('./REPORTS/FIGURES/reph_icon2.tif') 
+  draw_image('./DATA/reph_icon2.tif') +
+  geom_text(aes(0.5, 0.5, label = 'Extra-pair'), vjust = 3, size = 4) 
 pi2
 
 pi3 = 
   ggdraw() +
-  draw_image('./REPORTS/FIGURES/reph_icon3.tif') 
+  draw_image('./DATA/reph_icon3.tif') +
+  geom_text(aes(0.5, 0.5, label = 'Extra-pair'), vjust = 3, size = 4) 
 pi3
 
 
-
-
-# plotwith icon
+# plot with icon
 patchwork <- (pi1 + p1 + p4) / (pi2 + p2 + p5) / (pi3 + p3 + p6) / (plot_spacer() + plgg)
 
 patchwork[[1]] <- patchwork[[1]] + plot_layout(tag_level = 'new') + plot_layout(widths = c(1, 2, 2))
