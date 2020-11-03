@@ -10,8 +10,7 @@
 # 4. Copulations
 
 # Packages
-sapply( c('data.table', 'magrittr', 'sdb', 'ggplot2', 'anytime', 'sf', 'foreach', 'auksRuak', 'viridis', 'asnipe', 
-          'igraph', 'patchwork', 'effects', 'cowplot'),
+sapply( c('data.table', 'magrittr', 'sdb', 'ggplot2', 'foreach', 'auksRuak', 'patchwork', 'cowplot'),
         require, character.only = TRUE)
 
 # Projection
@@ -317,7 +316,7 @@ width_ = 1
 grey_ = 'grey75'
 bar_line = 'grey20'
 bar_line_thickness = 0.1
-margin_ = unit(c(0, 0, 2, 0), "pt")
+margin_ = unit(c(0, 8, 2, 0), "pt")
 vjust_ = 1.5 # vjust of text
 
 # colors in legend scale
@@ -385,7 +384,7 @@ p1 =
   scale_fill_manual(values = c(grey_, c_active, c_failed)) +
   xlab('') + ylab('') +
   geom_text(aes(-9.5, Inf, label = sample_size1), vjust = vjust_, size = ls) +
-  geom_text(aes(20, Inf, label = 'a1'), vjust = vjust_, size = lsa) +
+  geom_text(aes(20, Inf, label = 'a'), vjust = vjust_, size = lsa) +
   theme_classic(base_size = bs) +
   theme(legend.position = 'none', plot.margin = margin_, axis.title.x = element_blank(), axis.text.x=element_blank()) # legend.position = c(0.9, 0.9), legend.title = element_blank()
 
@@ -439,7 +438,7 @@ p2 =
   scale_fill_manual(values = c(grey_, c_active, c_failed)) +
   xlab('') + ylab('Number of male-female interactions') + 
   geom_text(aes(-9.5, Inf, label = sample_size3), vjust = vjust_, size = ls) +
-  geom_text(aes(20, Inf, label = 'a2'), vjust = vjust_, size = lsa) +
+  geom_text(aes(20, Inf, label = 'c'), vjust = vjust_, size = lsa) +
   theme_classic(base_size = bs) +
   theme(legend.position = 'none', plot.margin = margin_, axis.title.x = element_blank(), axis.text.x=element_blank())
 p2
@@ -495,7 +494,7 @@ p3 =
   scale_fill_manual(values = c(grey_, c_active, c_previous, c_next)) + 
   xlab('Day relative to clutch initiation (=0)') + ylab('') +
   geom_text(aes(-9.5, Inf, label = sample_size2), vjust = vjust_, size = ls) +
-  geom_text(aes(20, Inf, label = 'a3'), vjust = vjust_, size = lsa) +
+  geom_text(aes(20, Inf, label = 'e'), vjust = vjust_, size = lsa) +
   theme_classic(base_size = bs) +
   theme(legend.position = 'none', plot.background = element_rect(fill = 'transparent'),
         plot.margin = margin_) # legend.position = c(0.8, 0.9), legend.title = element_blank()
@@ -599,7 +598,7 @@ p4 =
   scale_fill_manual(values = c(grey_, c_active, c_failed)) +
   xlab('') + ylab('') +
   geom_text(aes(-10, Inf, label = sample_size4), vjust = vjust_, size = ls) +
-  geom_text(aes(20, Inf, label = 'b1'), vjust = vjust_, size = lsa) +
+  geom_text(aes(20, Inf, label = 'b'), vjust = vjust_, size = lsa) +
   theme_classic(base_size = bs) +
   theme(legend.position = 'none', plot.margin = margin_, axis.title.x = element_blank(), axis.text.x=element_blank())
 p4 
@@ -653,7 +652,7 @@ p5 =
   scale_fill_manual(values = c(grey_, c_active, c_failed)) +
   xlab('') + ylab('Number of copulations and copulation attempts') +
   geom_text(aes(-10, Inf, label = sample_size6), vjust = vjust_, size = ls) +
-  geom_text(aes(20, Inf, label = 'b2'), vjust = vjust_, size = lsa) +
+  geom_text(aes(20, Inf, label = 'd'), vjust = vjust_, size = lsa) +
   theme_classic(base_size = bs) +
   theme(legend.position = 'none', plot.margin = margin_, axis.title.x = element_blank(), axis.text.x=element_blank())
 p5
@@ -715,17 +714,17 @@ p6 =
   scale_fill_manual(values = c(grey_, c_active, c_previous, c_next)) + 
   xlab('Day relative to clutch initiation (=0)') + ylab('') +
   geom_text(aes(-10, Inf, label = sample_size5), vjust = vjust_, size = ls) +
-  geom_text(aes(20, Inf, label = 'b3'), vjust = vjust_, size = lsa) +
+  geom_text(aes(20, Inf, label = 'f'), vjust = vjust_, size = lsa) +
   theme_classic(base_size = bs) +
   theme(legend.position = 'none', plot.background = element_rect(fill = 'transparent'), 
         plot.margin = margin_)
 p6
 
 # legend
-ds = data.table(type = c('with active nest', 'with failed nest', 'is next partner', 'is previous partner'),
+ds = data.table(type = c('with active nest', 'with failed nest', 'next partner', 'previous partner'),
                 N = c(rep(1, 4)))
 
-ds[, type := factor(type, levels =c('with active nest', 'with failed nest', 'is previous partner', 'is next partner'))]
+ds[, type := factor(type, levels =c('with active nest', 'with failed nest', 'previous partner', 'next partner'))]
 
 pl = 
 ggplot(data = ds) +
@@ -775,16 +774,14 @@ pi3
 # plot with icon
 patchwork <- (pi1 + p1 + p4) / (pi2 + p2 + p5) / (pi3 + p3 + p6) / (plot_spacer() + plgg)
 
-patchwork[[1]] <- patchwork[[1]] + plot_layout(tag_level = 'new') + plot_layout(widths = c(1, 2, 2))
-patchwork[[2]] <- patchwork[[2]] + plot_layout(tag_level = 'new') + plot_layout(widths = c(1, 2, 2))
-patchwork[[3]] <- patchwork[[3]] + plot_layout(tag_level = 'new') + plot_layout(widths = c(1, 2, 2))
-patchwork[[4]] <- patchwork[[4]] + plot_layout(tag_level = 'new') + plot_layout(widths = c(0.5, 2))
+patchwork[[1]] <- patchwork[[1]] + plot_layout(widths = c(1, 2, 2))
+patchwork[[2]] <- patchwork[[2]] + plot_layout(widths = c(1, 2, 2))
+patchwork[[3]] <- patchwork[[3]] + plot_layout(widths = c(1, 2, 2))
+patchwork[[4]] <- patchwork[[4]] + plot_layout(widths = c(0.5, 2))
 patchwork + plot_layout(heights = c(3, 2, 2, 0.2)) 
 
 
 ggsave('./REPORTS/FIGURES/Figure3_icon.tiff', plot = last_plot(),  width = 177, height = 177, units = c('mm'), dpi = 'print')
-
-
 
 
 
