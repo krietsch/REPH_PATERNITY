@@ -390,8 +390,24 @@ ds = d[parentage == TRUE, .(N_parentage = .N), by =  data_type]
 ds = d[data_type == 'clutch_removal_exp']
 
 ds = d[parentage == TRUE & year_ == 2018]
+
+bm = create_bm(ds)
+bm + geom_point(data = d[parentage == TRUE & !is.na(data_type)], aes(lon, lat, color = data_type))
+
 ggplot(data = ds) +
-  geom_boxplot(aes(data_type, initiation))
+  geom_boxplot(aes(data_type, initiation)) +
+  geom_jitter(aes(data_type, initiation), shape = 21, size = 1, width = 0.2, height = 0) +
+  theme_classic(base_size = 20) 
+
+d1 = ds[data_type == 'clutch_removal_exp' & plot == 'kaleak']
+d2 = d[parentage == TRUE & year_ == 2018 & data_type != 'clutch_removal_exp']
+ds = rbind(d1, d2)
+
+ggplot(data = ds) +
+  geom_boxplot(aes(data_type, initiation)) +
+  geom_jitter(aes(data_type, initiation), shape = 21, size = 1, width = 0.2, height = 0) +
+  theme_classic(base_size = 20) 
+
 ds[, .N, data_type]
 
 # split in year only
