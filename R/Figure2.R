@@ -24,8 +24,9 @@ DBI::dbDisconnect(con)
 bs = 11 # basesize
 ps = 1 # point size
 ls = 3 # label size
-lsa = 4 # label size annotation
-vjust_ = 1 # vjust of text
+lsa = 5 # label size annotation
+vjust_ = 1.5 # vjust of text
+vjust_label = 1
 hjust_ = 1.5 # hjust of text
 
 #------------------------------------------------------------------------------------------------------------------------
@@ -218,10 +219,10 @@ p0 =
   geom_text(position = position_dodge(width = 0.9), size = ls, hjust = 0.5, vjust = -0.5) +
   scale_fill_manual(values = c('#333333', '#818181'), labels = c('EPY', 'nests with EPY')) +
   scale_y_continuous(breaks = c(0, 10, 20), limits = c(0, 25), expand = c(0, 0)) +
-  geom_text(aes(Inf, Inf, label = 'a'), vjust = vjust_, hjust = hjust_,  size = lsa) +
+  geom_text(aes(Inf, Inf, label = 'a'), vjust = vjust_label, hjust = hjust_,  size = lsa) +
   xlab('Year') + ylab('Percentage') + 
   theme_classic(base_size = bs) +
-  theme(legend.position = c(0.105, 0.82), legend.title = element_blank(),legend.background = element_rect(fill = alpha('white', 0)))
+  theme(legend.position = c(0.105, 0.82), legend.title = element_blank(), legend.background = element_rect(fill = alpha('white', 0)))
 p0
 
 
@@ -318,10 +319,10 @@ p1 =
   #                   labels = c('EPY', 'nests with EPY', 'polyandrous females', 'renesting males')) +
   scale_fill_grey(labels = c('EPY', 'nests with EPY', 'polyandrous females', 'renesting males')) +
   scale_y_continuous(breaks = c(0, 5, 10, 15), limits = c(0, 16), expand = c(0, 0)) +
-  geom_text(aes(Inf, Inf, label = 'b'), vjust = vjust_, hjust = hjust_,  size = lsa) +
+  geom_text(aes(Inf, Inf, label = 'b'), vjust = vjust_label, hjust = hjust_,  size = lsa) +
   xlab('Year') + ylab('Percentage') + 
   theme_classic(base_size = bs) +
-  theme(legend.position = c(0.3, 0.82), legend.title = element_blank())
+  theme(legend.position = c(0.285, 0.82), legend.title = element_blank(), legend.background = element_rect(fill = alpha('white', 0)))
 p1
 
 # ggplot_build(p1)$data # check used colors
@@ -350,7 +351,7 @@ p2 =
   geom_text(data = dss, aes(as.character(year_), as.POSIXct('2020-07-02 11:03:00'), label = N), vjust = 0, size = ls) +
   scale_y_datetime(breaks = c(as.POSIXct(c('2020-06-07', '2020-06-14', '2020-06-21', '2020-06-28'))), 
                    labels = c('7', '14', '21', '28')) +
-  geom_text(aes(Inf, as.POSIXct(c('2020-07-02')), label = 'c'), vjust = vjust_ - 1.5, hjust = hjust_,  size = lsa) +
+  geom_text(aes(Inf, as.POSIXct(c('2020-07-02')), label = 'c'), vjust = vjust_label - 1.5, hjust = hjust_,  size = lsa) +
   xlab('Year') + ylab('Clutch initiation date (June)') + 
   theme_classic(base_size = bs)
 p2
@@ -428,9 +429,9 @@ p3 =
   scale_linetype_manual(values = c('solid', 'dotted'), name = NULL) +
   scale_x_discrete(labels = c('single', 'first', 'second', 'third')) +
   scale_y_continuous(breaks = c(-14, -7, 0, 7, 14), limits = c(-18, 18), expand = c(0, 0)) +
-  geom_text(aes(Inf, Inf, label = 'd'), vjust = vjust_, hjust = hjust_,  size = lsa) +
+  geom_text(aes(Inf, Inf, label = 'd'), vjust = vjust_label, hjust = hjust_,  size = lsa) +
   xlab('Clutch type') + ylab('Clutch initiation date (standardized)') +
-  geom_text(data = dss, aes(clutch_identity, Inf, label = sample_size), vjust = 1, size = ls) +
+  geom_text(data = dss, aes(clutch_identity, Inf, label = sample_size), vjust = vjust_, size = ls) +
   theme_classic_edit(base_size = bs, lp = c(0.85, 0.08)) +
   theme(legend.background = element_rect(fill = alpha('white', 0)),
         legend.key.size = unit(0.5, 'lines'))
@@ -463,7 +464,7 @@ ds[clutch_identity == 'third', .(initiation_st)]
 ds = d[!is.na(initiation) & !is.na(anyEPY)]
 ds = ds[, .(year_, nestID, initiation_y, anyEPY, study_site = as.character(study_site))]
 ds[study_site == TRUE, study_site := 'Intensive study']
-ds[study_site == FALSE, study_site := 'Other sources']
+ds[study_site == FALSE, study_site := 'Other data']
 
 # load Dale et al. data
 dale = read.csv2('./DATA/Dale_EPP.csv') %>% data.table
@@ -480,16 +481,16 @@ ds[, study_site := as.character(study_site)]
 dss = ds[, .(median = median(initiation_st), q25 = quantile(initiation_st, probs = c(0.25)), 
              q75 = quantile(initiation_st, probs = c(0.75)), .N), by = .(study_site, anyEPY)]
 
-dss2 = data.table(study_site = c(rep('Intensive study', 2), rep('Other sources', 2), rep('Dale et al.', 2)),
+dss2 = data.table(study_site = c(rep('Intensive study', 2), rep('Other data', 2), rep('Dale et al.', 2)),
                   sample_size = c('16', '165', '21', '167', '6', '18'),
                   anyEPY = c('1', '0', '1', '0', '1', '0'))
 
 # factor order
-ds[, study_site := factor(study_site, levels = c('Intensive study', 'Other sources', 'Dale et al.'))]
+ds[, study_site := factor(study_site, levels = c('Intensive study', 'Other data', 'Dale et al.'))]
 ds[, anyEPY := factor(anyEPY, levels = c('1', '0'))]
 
 dss2[, anyEPY := factor(anyEPY, levels = c('1', '0'))]
-dss2[, study_site := factor(study_site, levels = c('Intensive study', 'Other sources', 'Dale et al.'))]
+dss2[, study_site := factor(study_site, levels = c('Intensive study', 'Other data', 'Dale et al.'))]
 
 
 p4 = 
@@ -502,8 +503,8 @@ p4 =
              position = position_jitterdodge(jitter.width = 0.6, jitter.height = 0, dodge.width = 0.9)) +
   scale_fill_manual(values = c('black', 'white'), name = NULL, labels = c('EPY', 'no EPY')) +
   scale_y_continuous(breaks = c(-14, -7, 0, 7, 14), limits = c(-18, 18), expand = c(0, 0)) +
-  geom_text(data = dss2, aes(study_site, Inf, group = anyEPY, label = sample_size), position = position_dodge(width = 0.9), vjust = 1, size = ls) +
-  geom_text(aes(Inf, Inf, label = 'e'), vjust = vjust_, hjust = hjust_,  size = lsa) +
+  geom_text(data = dss2, aes(study_site, Inf, group = anyEPY, label = sample_size), position = position_dodge(width = 0.9), vjust = vjust_, size = ls) +
+  geom_text(aes(Inf, Inf, label = 'e'), vjust = vjust_label, hjust = hjust_,  size = lsa) +
   xlab('Data source') + ylab('Clutch initiation date (standardized)') + 
   theme_classic_edit(base_size = bs, lp = c(0.89, 0.08)) +
   theme(legend.background = element_rect(fill = alpha('white', 0)), 
