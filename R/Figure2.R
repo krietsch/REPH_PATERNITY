@@ -427,7 +427,7 @@ p3 =
               shape = 21, size = ps, height = 0, width = 0.3) +
   scale_fill_manual(values = c('white', 'black'), name = NULL, labels = c('no EPY', 'EPY'), guide = FALSE) +
   scale_linetype_manual(values = c('solid', 'dotted'), name = NULL) +
-  scale_x_discrete(labels = c('single', 'first', 'second', 'third')) +
+  scale_x_discrete(labels = c('Single', 'First', 'Second', 'Third')) +
   scale_y_continuous(breaks = c(-14, -7, 0, 7, 14), limits = c(-18, 18), expand = c(0, 0)) +
   geom_text(aes(Inf, Inf, label = 'd'), vjust = vjust_label, hjust = hjust_,  size = lsa) +
   xlab('Clutch type') + ylab('Clutch initiation date (standardized)') +

@@ -310,14 +310,15 @@ t_margin = 0
 # plot settings
 bs = 11 # basesize
 ls = 3 # label size
-lsa = 4 # label size annotation
+lsa = 5 # label size annotation
 vline = 0.7 # size of vertical line
 width_ = 1
 grey_ = 'grey75'
 bar_line = 'grey20'
 bar_line_thickness = 0.1
 margin_ = unit(c(0, 8, 2, 0), "pt")
-vjust_ = 1.5 # vjust of text
+vjust_ = 1.7 # vjust of text
+vjust_label = 1.2
 
 # colors in legend scale
 c_active = '#A6D854'
@@ -384,7 +385,7 @@ p1 =
   scale_fill_manual(values = c(grey_, c_active, c_failed)) +
   xlab('') + ylab('') +
   geom_text(aes(-9.5, Inf, label = sample_size1), vjust = vjust_, size = ls) +
-  geom_text(aes(20, Inf, label = 'a'), vjust = vjust_, size = lsa) +
+  geom_text(aes(22, Inf, label = 'a'), vjust = vjust_label, size = lsa) +
   theme_classic(base_size = bs) +
   theme(legend.position = 'none', plot.margin = margin_, axis.title.x = element_blank(), axis.text.x=element_blank()) # legend.position = c(0.9, 0.9), legend.title = element_blank()
 
@@ -438,7 +439,7 @@ p2 =
   scale_fill_manual(values = c(grey_, c_active, c_failed)) +
   xlab('') + ylab('Number of male-female interactions') + 
   geom_text(aes(-9.5, Inf, label = sample_size3), vjust = vjust_, size = ls) +
-  geom_text(aes(20, Inf, label = 'c'), vjust = vjust_, size = lsa) +
+  geom_text(aes(22, Inf, label = 'c'), vjust = vjust_label, size = lsa) +
   theme_classic(base_size = bs) +
   theme(legend.position = 'none', plot.margin = margin_, axis.title.x = element_blank(), axis.text.x=element_blank())
 p2
@@ -492,9 +493,9 @@ p3 =
   scale_x_continuous(limits = c(-13, 23), expand = c(0.02, 0.02)) +
   scale_y_continuous(limits = c(0, 22), labels = c('0', '','10', '','20'), expand = c(0, 0)) +
   scale_fill_manual(values = c(grey_, c_active, c_previous, c_next)) + 
-  xlab('Day relative to clutch initiation (=0)') + ylab('') +
+  xlab('Day relative to clutch initiation (= 0)') + ylab('') +
   geom_text(aes(-9.5, Inf, label = sample_size2), vjust = vjust_, size = ls) +
-  geom_text(aes(20, Inf, label = 'e'), vjust = vjust_, size = lsa) +
+  geom_text(aes(22, Inf, label = 'e'), vjust = vjust_label, size = lsa) +
   theme_classic(base_size = bs) +
   theme(legend.position = 'none', plot.background = element_rect(fill = 'transparent'),
         plot.margin = margin_) # legend.position = c(0.8, 0.9), legend.title = element_blank()
@@ -598,7 +599,7 @@ p4 =
   scale_fill_manual(values = c(grey_, c_active, c_failed)) +
   xlab('') + ylab('') +
   geom_text(aes(-10, Inf, label = sample_size4), vjust = vjust_, size = ls) +
-  geom_text(aes(20, Inf, label = 'b'), vjust = vjust_, size = lsa) +
+  geom_text(aes(22, Inf, label = 'b'), vjust = vjust_label, size = lsa) +
   theme_classic(base_size = bs) +
   theme(legend.position = 'none', plot.margin = margin_, axis.title.x = element_blank(), axis.text.x=element_blank())
 p4 
@@ -650,9 +651,9 @@ p5 =
   scale_x_continuous(limits = c(-13, 23), labels = NULL, expand = c(0.02, 0.02)) +
   scale_y_continuous(limits = c(0, 11), breaks = c(0, 2.5, 5, 7.5, 10), labels = c('', '', '5', '', '10'), expand = c(0, 0)) +
   scale_fill_manual(values = c(grey_, c_active, c_failed)) +
-  xlab('') + ylab('Number of copulations and copulation attempts') +
+  xlab('') + ylab('Number of copulation attempts') +
   geom_text(aes(-10, Inf, label = sample_size6), vjust = vjust_, size = ls) +
-  geom_text(aes(20, Inf, label = 'd'), vjust = vjust_, size = lsa) +
+  geom_text(aes(22, Inf, label = 'd'), vjust = vjust_label, size = lsa) +
   theme_classic(base_size = bs) +
   theme(legend.position = 'none', plot.margin = margin_, axis.title.x = element_blank(), axis.text.x=element_blank())
 p5
@@ -712,9 +713,9 @@ p6 =
   scale_x_continuous(limits = c(-13, 23), expand = c(0.02, 0.02)) +
   scale_y_continuous(limits = c(0, 11), breaks = c(0, 2.5, 5, 7.5, 10), labels = c('0', '', '5', '', '10'), expand = c(0, 0)) +
   scale_fill_manual(values = c(grey_, c_active, c_previous, c_next)) + 
-  xlab('Day relative to clutch initiation (=0)') + ylab('') +
+  xlab('Day relative to clutch initiation (= 0)') + ylab('') +
   geom_text(aes(-10, Inf, label = sample_size5), vjust = vjust_, size = ls) +
-  geom_text(aes(20, Inf, label = 'f'), vjust = vjust_, size = lsa) +
+  geom_text(aes(22, Inf, label = 'f'), vjust = vjust_label, size = lsa) +
   theme_classic(base_size = bs) +
   theme(legend.position = 'none', plot.background = element_rect(fill = 'transparent'), 
         plot.margin = margin_)
