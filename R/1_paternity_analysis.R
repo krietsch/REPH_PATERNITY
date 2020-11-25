@@ -833,7 +833,8 @@ matrix(c(3, 0, 11, 15), ncol = 2) %>% fisher.test()
 matrix(c(3, 0, 11, 21), ncol = 2) %>% fisher.test() 
 
 # Oring
-matrix(c(3, 3, 10, 9), ncol = 2) %>% fisher.test() 
+matrix(c(1, 5, 5, 12), ncol = 2) %>% fisher.test() 
+matrix(c(1, 6, 5, 29), ncol = 2) %>% fisher.test() # assuming unclear nests were all monogamous
 
 # Schamel
 matrix(c(3, 0, 6, 40), ncol = 2) %>% fisher.test() 
