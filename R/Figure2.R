@@ -482,7 +482,7 @@ dss = ds[, .(median = median(initiation_st), q25 = quantile(initiation_st, probs
              q75 = quantile(initiation_st, probs = c(0.75)), .N), by = .(study_site, anyEPY)]
 
 dss2 = data.table(study_site = c(rep('Intensive study', 2), rep('Other data', 2), rep('Dale et al.', 2)),
-                  sample_size = c('16', '165', '21', '167', '6', '18'),
+                  sample_size = c('16', '149', '21', '146', '6', '12'),
                   anyEPY = c('1', '0', '1', '0', '1', '0'))
 
 # factor order
