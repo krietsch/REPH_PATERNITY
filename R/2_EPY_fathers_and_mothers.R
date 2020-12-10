@@ -103,6 +103,13 @@ d[is.na(female_id), N_female_clutch := 1]
 # 1. Known EPY fathers
 #------------------------------------------------------------------------------------------------------------------------
 
+# known fathers
+dp[, father_identified := !is.na(IDfather)]
+dp[, .N, by = .(father_identified, study_site)]
+dp[, .N, by = .( study_site)]
+587/600*100 # fathers assigned in study site
+553/582*100 # fathers assigned out of study site
+
 # double check N nests & eggs with EPY
 dps = dp[EPY == 1]
 dps[, IDfather_identified := !is.na(IDfather)]
