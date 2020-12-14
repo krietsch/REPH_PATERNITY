@@ -147,7 +147,12 @@ dc[study_site == TRUE, data_type := 'study_site']
 dc[study_site == FALSE & external == 0, data_type := 'own_off_site']
 dc[external == 1, data_type := 'survey_plot']
 
+# assign first capture
+dc[, caught_time := as.POSIXct(caught_time)]
+dc[, first_cap := caught_time == min(caught_time), by = ID]
+dc = dc[first_cap == TRUE]
 
+# N by category
 dcs = dc[, .N, by = .(year_, sex_observed, data_type)]
 
 dcs_m = dcs[sex_observed == 'M']
@@ -163,11 +168,6 @@ dcs[is.na(N_females), N_females := 0]
 
 setorder(dcs, -year_, data_type)
 dcs
-
-
-
-
-
 
 #------------------------------------------------------------------------------------------------------------------------
 # 4. Paternity data
@@ -222,8 +222,8 @@ ds[data_type == 'survey_plot', data_type := 'long-term monitoring']
 ds[data_type == 'clutch_removal_exp', data_type := 'renesting experiment']
 
 ds = ds[, .(Year = year_, `Data type` = data_type, `% EPY` = EPY_eggs_per, `N EPY` = EPY_eggs_N, `% nests with EPY` = EPY_nests_per, 
-            `N nests with EPY` = EPY_nests_N, `N males genotyped` = N_males, `N females genotyped` = N_females)]
+            `N nests with EPY` = EPY_nests_N, `N adult males genotyped` = N_males, `N adult females genotyped` = N_females)]
 setorder(ds,  -Year, `Data type`)
 ds
 
-# openxlsx::write.xlsx(ds, './REPORTS/EPY_frequency/EPY_summary_table_all_data_types.xlsx')
+# openxlsx::write.xlsx(ds, './REPORTS/EPY_frequency/TableS1.xlsx')
