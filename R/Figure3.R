@@ -391,6 +391,13 @@ p1 =
 
 p1 
 
+
+# N interactions before clutch complete 
+dss[diff_obs_initiation < 4] %>% nrow
+dss[type2 == 'active nest' & diff_obs_initiation > 3] %>% nrow
+dss %>% nrow
+
+
 # male 
 ds1 = ds[seen_with_other_than_1st_partner == TRUE & same_sex == 0 & ID1sex == 'M', 
          .(ID1, ID2, diff_obs_initiation = diff_obs_1st_initiation, type = '1st', datetime_)]
@@ -443,6 +450,14 @@ p2 =
   theme_classic(base_size = bs) +
   theme(legend.position = 'none', plot.margin = margin_, axis.title.x = element_blank(), axis.text.x=element_blank())
 p2
+
+
+
+# N interactions while active clutch
+dss[type2 == 'active nest'] %>% nrow
+dss %>% nrow
+
+
 
 # female 
 ds1 = ds[seen_with_other_than_1st_partner == TRUE & same_sex == 0 & ID1sex == 'F', 
@@ -501,6 +516,16 @@ p3 =
         plot.margin = margin_) # legend.position = c(0.8, 0.9), legend.title = element_blank()
 p3
 
+
+# N interactin with next partner while laying
+dss[type == 'next partner' & diff_obs_initiation < 4]$ID1 %>% unique %>% length
+
+# N females interacting with male with active nest
+dss[type == 'active nest' & diff_obs_initiation > -1 & diff_obs_initiation < 4]$ID1 %>% unique %>% length
+
+# Unknown status males that females interacted with during laying
+dss[type == 'unknown' & diff_obs_initiation > -1 & diff_obs_initiation < 4]$ID2 %>% unique %>% length
+dss[diff_obs_initiation > -1 & diff_obs_initiation < 4]$ID2 %>% unique %>% length
 
 # # additional ask which males had an active nest
 # da = dss[diff_obs_initiation > 0]
@@ -604,6 +629,12 @@ p4 =
   theme(legend.position = 'none', plot.margin = margin_, axis.title.x = element_blank(), axis.text.x=element_blank())
 p4 
 
+# N interactions before clutch complete 
+dss[diff_obs_initiation < 4] %>% nrow
+dss[type2 == 'active nest' & diff_obs_initiation > 3] %>% nrow
+dss %>% nrow
+
+dss[type2 == 'active nest' & diff_obs_initiation > 3]
 
 # male 
 ds1 = ds[copAS_not_1st_partner == TRUE & ID1sex == 'M', 
@@ -720,6 +751,11 @@ p6 =
   theme(legend.position = 'none', plot.background = element_rect(fill = 'transparent'), 
         plot.margin = margin_)
 p6
+
+# N interactin with next partner while laying
+dss[type == 'next partner' & diff_obs_initiation < 4]$ID1 %>% unique %>% length
+
+
 
 # legend
 ds = data.table(type = c('with active nest', 'with failed nest', 'next partner', 'previous partner'),
