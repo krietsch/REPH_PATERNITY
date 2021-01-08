@@ -19,6 +19,7 @@ PROJ = '+proj=laea +lat_0=90 +lon_0=-156.653428 +x_0=0 +y_0=0 +datum=WGS84 +unit
 # Database
 con = dbcon('jkrietsch', db = 'REPHatBARROW')  
 d = dbq(con, 'select * FROM CAPTURES')
+dg = dbq(con, 'select * FROM SEX')
 DBI::dbDisconnect(con)
 
 # Change projection
@@ -41,7 +42,6 @@ d[study_site == TRUE, data_type := 'study_site']
 d[study_site == FALSE & external == 0, data_type := 'own_off_site']
 d[external == 1, data_type := 'survey_plot']
 
-
 # check data
 bm = create_bm(d[study_site == TRUE], buffer = 500)
 bm +
@@ -59,16 +59,22 @@ setorder(d, year_, caught_time)
 d[, capture_id := seq_len(.N), by = ID]
 d[, .N, capture_id]
 
-# banded each year on and off plot by us
-ds = d[external == 0 & capture_id == 1 & year_ > 2016]
-
 # subset years relevant for this study 
 d = d[year_ %in% c(2003:2006, 2014, 2017:2019)]
 
+# subset only adults that were genotyped from long-term monitoring data
+dg[, genotyped := TRUE]
+d[, ID := as.character(ID)]
+d = merge(d, dg[, .(ID, genotyped, sex)], by = 'ID', all.x = TRUE)
+d[is.na(genotyped), genotyped := FALSE]
+d = d[!(genotyped == FALSE & external == 1)]
 
+# subset data relevant for this study
+d = d[, .(external, data_type, year_, ID, UL, UR, LL, LR, sex, lat, lon, caught_time, dead)]
 
+# save data
+write.table(d, './DATA/CAPTURES.txt', quote = TRUE, sep = '\t', row.names = FALSE)
 
-d = d[, .(external, data_type, year_, ID, UL, UR, LL, LR, sex_observed, lat, lon, caught_time, genotyped)]
 
 
 #------------------------------------------------------------------------------------------------------------------------
@@ -109,6 +115,7 @@ d = d[, .(year_, nestID, IDchick, IDmother, IDfather, EPY, comment)]
 
 # save data
 saveRDS(d, './DATA/PATERNITY.rds')
+# write.table(d, './DATA/PATERNITY.txt', quote = TRUE, sep = '\t', row.names = FALSE)
 
 
 
