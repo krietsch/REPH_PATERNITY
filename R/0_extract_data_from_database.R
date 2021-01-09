@@ -82,7 +82,7 @@ bm +
 d = d[, .(external, data_type, year_, ID, UL, UR, LL, LR, sex, lat = lat_dec, lon = lon_dec, caught_time, dead)]
 
 # save data
-# write.table(d, './DATA/CAPTURES.txt', quote = TRUE, sep = '\t', row.names = FALSE)
+write.table(d, './DATA/CAPTURES.txt', quote = TRUE, sep = '\t', row.names = FALSE)
 
 #------------------------------------------------------------------------------------------------------------------------
 # 2. Nests
@@ -164,7 +164,8 @@ bm +
 
 # subset data relevant for this study
 d = d[, .(external, data_type, year_, nestID, male_id, female_id, male_assigned, male_field, female_assigned, 
-          female_field, found_datetime, collected_datetime, last_checked_datetime, lat = lat_dec, lon = lon_dec, anyEPY, N_parentage, N_EPY)]
+          female_field, found_datetime, collected_datetime, est_hatching_datetime, hatching_datetime, chicks_back, 
+          last_checked_datetime, nest_state_date, nest_state_date, lat = lat_dec, lon = lon_dec, parentage, anyEPY, N_parentage, N_EPY)]
 
 # save data
 write.table(d, './DATA/NESTS.txt', quote = TRUE, sep = '\t', row.names = FALSE)
