@@ -191,53 +191,120 @@ dp[, N_EPY := sum(EPY, na.rm = TRUE), by = nestID]
 dp[N_EPY > 1] # nestID == R409_19 had one identified and one unknown EPY sire 
 
 
+
+
+#------------------------------------------------------------------------------------------------------------------------
 # Figure 2a
+#------------------------------------------------------------------------------------------------------------------------
 
-
-
-# rates of social polyandry
-setorder(d, year_, initiation)
-
-# first and second clutches by females
+# unique ID's by year
 d[, female_id_year := paste0(female_id, '_', substr(year_, 3,4 ))]
-d[, N_female_clutch := .N, by = female_id]
-d[, female_clutch := seq_len(.N), by = .(female_id, year_)]
-d[is.na(female_id), female_clutch := 1]
-d[!is.na(female_id), N_female_clutch := max(female_clutch), by = .(female_id, year_)]
-d[is.na(female_id), N_female_clutch := 1]
-d[, .N, by = .(year_, female_clutch)]
-d[, .N, by = .(female_clutch, external)]
+d[, male_id_year := paste0(male_id, '_', substr(year_, 3,4 ))]
 
-# polyandrous clutches (second clutch with different partner)
-ID2c = d[female_clutch == 2]$female_id_year
-dx = d[female_id_year %in% ID2c]
+### unique ID's
+d[is.na(male_id), male_id_year := NA]
+d[, male_id_year_NA := male_id_year]
+d[is.na(male_id), male_id_year_NA := paste0(seq_len(.N), '_', substr(year_, 3,4)), by = male_id_year_NA]
 
-dr = merge(dx[female_clutch == 1, .(year1 = year_, nestID1 = nestID, female_id_year, m1 = male_id, anyEPY1 = anyEPY, 
-                                    ss1 = study_site, initiation1 = initiation)], 
-           dx[female_clutch == 2, .(year2 = year_, nestID2 = nestID, female_id_year, m2 = male_id, anyEPY2 = anyEPY, 
-                                    ss2 = study_site, initiation2 = initiation)],  
-           by = 'female_id_year', all = TRUE)
+d[is.na(female_id), female_id_year := NA]
+d[, female_id_year_NA := female_id_year]
+d[is.na(female_id), female_id_year_NA := paste0(seq_len(.N), '_', substr(year_, 3,4)), by = female_id_year_NA]
 
-dr[, same_male := m1 == m2]
-dr[is.na(same_male), same_male := FALSE]
-dr[, both_study_site := ss1 == ss2]
-dr[, diff_initiation := difftime(initiation2, initiation1, units = 'days') %>% as.numeric]
-setorder(dr, female_id_year)
-dr
+# subset study site
+ds = d[external == 0 & data_type == 'study_site']
+dss = ds[, .(N_nests = .N), by = year_]
+setorder(dss, year_)
 
-# timing of second clutches
-dr[, .(.N, mean = mean(diff_initiation), min = min(diff_initiation), max = max(diff_initiation))]
-dr[same_male == FALSE, .(.N, mean = mean(diff_initiation), min = min(diff_initiation), max = max(diff_initiation))]
-dr[same_male == TRUE, .(.N, mean = mean(diff_initiation), min = min(diff_initiation), max = max(diff_initiation))]
+# unassigned males and females
+ds[is.na(male_id)]
+ds[is.na(female_id)]
+
+# males
+dsm = unique(ds, by = 'male_id_year_NA')
+dsm[, .N, by = male_assigned]
+dssm = dsm[, .(unique_males = .N), by = year_]
+
+# renesting males
+dsmr = dsm[renesting_male == TRUE, .(renesting_males = .N), by = year_]
+dsmr_NARL = dsm[renesting_study_site == TRUE, .(renesting_study_site = .N), by = year_]
+
+# females
+dsf = unique(ds, by = 'female_id_year_NA')
+dsf[, .N, by = female_assigned]
+dssf = dsf[, .(unique_females = .N), by = year_]
 
 # polyandrous females
-dr = dr[same_male == FALSE, .(female_id_year, polyandrous = TRUE, polyandry_study_site = both_study_site)]
-d = merge(d, dr, by = 'female_id_year', all.x = TRUE)
+dsfp = dsf[polyandrous == TRUE, .(polyandrous_females = .N), by = year_]
+dsfp_NARL = dsf[polyandry_study_site == TRUE, .(polyandrous_study_site = .N), by = year_]
 
-setorder(d, year_, initiation)
+# combine data
+dss = merge(dss, dssm, by = 'year_', all.x = TRUE)
+dss = merge(dss, dsmr, by = 'year_', all.x = TRUE)
+dss = merge(dss, dsmr_NARL, by = 'year_', all.x = TRUE)
+dss = merge(dss, dssf, by = 'year_', all.x = TRUE)
+dss = merge(dss, dsfp, by = 'year_', all.x = TRUE)
+dss = merge(dss, dsfp_NARL, by = 'year_', all.x = TRUE)
+dss[is.na(dss)] = 0
+
+# percent renesting / polyandrous
+dss[, renesting_males_per          := round(renesting_males / unique_males * 100, 1)]
+dss[, renesting_males_NARL_per     := round(renesting_study_site / unique_males * 100, 1)]
+dss[, polyandrous_females_per      := round(polyandrous_females / unique_females * 100, 1)]
+dss[, polyandrous_females_NARL_per := round(polyandrous_study_site / unique_females * 100, 1)]
+
+# add EPY on plot
+dspe = ds[!is.na(N_parentage), .(N_parentage_sum = sum(N_parentage), N_EPY = sum(N_EPY)), by = year_]
+dspe[, EPY_per := round(N_EPY / N_parentage_sum * 100, 1)]
+dss = merge(dss, dspe, by = 'year_')
+
+dsp = ds[!is.na(N_parentage), .(N_parentage = .N), by = year_]
+dspn = ds[!is.na(N_parentage) & anyEPY == TRUE, .(N_anyEPY = .N), by = year_]
+dsp = merge(dsp, dspn, by = 'year_')
+dsp[, EPY_nests_per := round(N_anyEPY / N_parentage * 100, 1)]
+dsp[, EPY := paste0(EPY_nests_per, '% (', N_anyEPY, '/', N_parentage, ')')]
+dss = merge(dss, dsp, by = 'year_')
+
+# plot EPP, polyandry and renesting
+ds = rbindlist(list(dss[, .(year_, x = EPY_per, n = N_EPY, N = N_parentage_sum, type = 'EPY', study_site = TRUE)],
+                    dss[, .(year_, x = EPY_nests_per, n = N_anyEPY, N = N_parentage, type = 'EPP', study_site = TRUE)],
+                    dss[, .(year_, x = polyandrous_females_NARL_per, n = polyandrous_study_site, N = unique_females, type = 'polyandry', study_site = TRUE)],
+                    dss[, .(year_, x = renesting_males_NARL_per, n = renesting_study_site, N = unique_males,  type = 'renesting', study_site = TRUE)],
+                    dss[, .(year_, x = EPY_per, n = N_EPY, N = N_parentage_sum, type = 'EPY', study_site = FALSE)],
+                    dss[, .(year_, x = EPY_nests_per, n = N_anyEPY, N = N_parentage, type = 'EPP', study_site = FALSE)],
+                    dss[, .(year_, x = polyandrous_females_per, n = polyandrous_females, N = unique_females,  type = 'polyandry', study_site = FALSE)],
+                    dss[, .(year_, x = renesting_males_per, n = renesting_males, N = unique_males,  type = 'renesting', study_site = FALSE)]))
+
+ds[, year_ := as.factor(year_)]
+ds[, sample_size := as.character(N)]
+ds[year_ == '2019' & type %in% c('polyandry', 'renesting'), sample_size := paste0(sample_size, '*')]
+
+ds[, type := factor(type, levels = c('EPY', 'EPP', 'polyandry', 'renesting'))]
+
+p1 = 
+  ggplot(data = ds[study_site == FALSE], aes(year_, x, fill = type, label = sample_size)) +
+  geom_bar(stat = "identity", position = 'dodge', width = 0.9) +
+  geom_text(position = position_dodge(width = 0.9), size = ls, vjust = -0.5, hjust = 0.5) + # text horizontal
+  # geom_text(position = position_dodge(width = 0.9), size = ls, hjust = -0.1, angle = 90) +
+  # scale_fill_manual(values = c('grey85', 'grey50','firebrick4', '#33638DFF'), 
+  #                   labels = c('EPY', 'nests with EPY', 'polyandrous females', 'renesting males')) +
+  scale_fill_grey(labels = c('EPY', 'nests with EPY', 'polyandrous females', 'renesting males')) +
+  scale_y_continuous(breaks = c(0, 5, 10, 15), limits = c(0, 16), expand = c(0, 0)) +
+  geom_text(aes(Inf, Inf, label = 'b'), vjust = vjust_label, hjust = hjust_,  size = lsa) +
+  xlab('Year') + ylab('Percentage') + 
+  theme_classic(base_size = bs) +
+  theme(legend.position = c(0.285, 0.82), legend.title = element_blank(), legend.background = element_rect(fill = alpha('white', 0)))
+p1
 
 
-
+ggplot(data = ds[study_site == FALSE], aes(type, x, fill = year_, label = sample_size)) +
+  geom_bar(stat = "identity", position = 'dodge', width = 0.9) +
+  geom_text(position = position_dodge(width = 0.9), size = ls, vjust = -0.5, hjust = 0.5) +
+  scale_fill_grey(start = 0.8, end = 0.3, labels = c('2017', '2018', '2019')) +
+  scale_y_continuous(breaks = c(0, 5, 10, 15), limits = c(0, 16), expand = c(0, 0)) +
+  geom_text(aes(Inf, Inf, label = 'b'), vjust = vjust_label, hjust = hjust_,  size = lsa) +
+  xlab('Type') + ylab('Percentage') + 
+  theme_classic(base_size = bs) +
+  theme(legend.position = c(0.285, 0.82), legend.title = element_blank(), legend.background = element_rect(fill = alpha('white', 0)))
 
 
 
