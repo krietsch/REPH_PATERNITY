@@ -155,17 +155,78 @@ bm = create_bm(d, buffer = 500)
 bm +
   geom_point(data = d, aes(lon, lat, color = data_type))
 
+# rates of social polyandry
+d[, initiation := as.POSIXct(initiation)]
+setorder(d, year_, initiation)
 
+# first and second clutches by females
+d[, female_id_year := paste0(female_id, '_', substr(year_, 3,4 ))]
+d[, N_female_clutch := .N, by = female_id]
+d[, female_clutch := seq_len(.N), by = .(female_id, year_)]
+d[is.na(female_id), female_clutch := 1]
+d[!is.na(female_id), N_female_clutch := max(female_clutch), by = .(female_id, year_)]
+d[is.na(female_id), N_female_clutch := 1]
+d[, .N, by = .(year_, female_clutch)]
+d[, .N, by = .(female_clutch, external)]
 
+# polyandrous clutches (second clutch with different partner)
+ID2c = d[female_clutch == 2]$female_id_year
+dx = d[female_id_year %in% ID2c]
 
+dr = merge(dx[female_clutch == 1, .(year1 = year_, nestID1 = nestID, female_id_year, m1 = male_id, anyEPY1 = anyEPY, 
+                                    ss1 = study_site, initiation1 = initiation)], 
+           dx[female_clutch == 2, .(year2 = year_, nestID2 = nestID, female_id_year, m2 = male_id, anyEPY2 = anyEPY, 
+                                    ss2 = study_site, initiation2 = initiation)],  
+           by = 'female_id_year', all = TRUE)
 
+dr[, same_male := m1 == m2]
+dr[is.na(same_male), same_male := FALSE]
+dr[, both_study_site := ss1 == ss2]
+dr[, diff_initiation := difftime(initiation2, initiation1, units = 'days') %>% as.numeric]
+setorder(dr, female_id_year)
+dr
 
+# polyandrous females
+dr = dr[same_male == FALSE, .(female_id_year, polyandrous = TRUE, polyandry_study_site = both_study_site)]
+d = merge(d, dr, by = 'female_id_year', all.x = TRUE)
+
+# males renesting
+d[, male_id_year := paste0(male_id, '_', substr(year_, 3,4 ))]
+d[, N_male_clutch := .N, by = male_id]
+d[, male_clutch := seq_len(.N), by = male_id_year]
+d[is.na(male_id), male_clutch := 1]
+d[!is.na(male_id), N_male_clutch := max(male_clutch), by = male_id_year]
+d[is.na(male_id), N_male_clutch := 1]
+d[, .N, by = .(year_, male_clutch)]
+d[, .N, by = .(male_clutch, external)]
+
+# males renesting with same or different partner
+ID2c = d[male_clutch == 2]$male_id_year
+dx = d[male_id_year %in% ID2c]
+
+dr = merge(dx[male_clutch == 1, .(year1 = year_, nestID1 = nestID, male_id_year, f1 = female_id, anyEPY1 = anyEPY, 
+                                  mfc1 = male_clutch, ss1 = study_site, initiation1 = initiation)], 
+           dx[male_clutch == 2, .(year2 = year_, nestID2 = nestID, male_id_year, f2 = female_id, anyEPY2 = anyEPY, 
+                                  fc2 = male_clutch, ss2 = study_site, initiation2= initiation)],  
+           by = 'male_id_year', all = TRUE)
+
+dr[, same_female := f1 == f2]
+dr[is.na(same_female), same_female := FALSE]
+dr[, both_study_site := ss1 == ss2]
+dr[, diff_initiation := difftime(initiation2, initiation1, units = 'days') %>% as.numeric]
+setorder(dr, male_id_year)
+dr
+
+# renesting males
+dr = dr[, .(male_id_year, renesting_male = TRUE, same_female, renesting_study_site = both_study_site)]
+d = merge(d, dr, by = 'male_id_year', all.x = TRUE)
 
 
 # subset data relevant for this study
 d = d[, .(external, data_type, year_, nestID, male_id, female_id, male_assigned, male_field, female_assigned, 
           female_field, found_datetime, collected_datetime, initiation, est_hatching_datetime, hatching_datetime, chicks_back, 
-          last_checked_datetime, nest_state_date, nest_state_date, lat = lat_dec, lon = lon_dec, parentage, anyEPY, N_parentage, N_EPY)]
+          last_checked_datetime, nest_state_date, nest_state_date, lat = lat_dec, lon = lon_dec, parentage, anyEPY, N_parentage, N_EPY,
+          female_clutch, N_female_clutch, polyandrous, polyandry_study_site, male_clutch, N_male_clutch, renesting_male, renesting_study_site)]
 
 # save data
 write.table(d, './DATA/NESTS.txt', quote = TRUE, sep = '\t', row.names = FALSE)
