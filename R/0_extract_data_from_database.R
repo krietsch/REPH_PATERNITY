@@ -164,7 +164,7 @@ bm +
 
 # subset data relevant for this study
 d = d[, .(external, data_type, year_, nestID, male_id, female_id, male_assigned, male_field, female_assigned, 
-          female_field, found_datetime, collected_datetime, est_hatching_datetime, hatching_datetime, chicks_back, 
+          female_field, found_datetime, collected_datetime, initiation, est_hatching_datetime, hatching_datetime, chicks_back, 
           last_checked_datetime, nest_state_date, nest_state_date, lat = lat_dec, lon = lon_dec, parentage, anyEPY, N_parentage, N_EPY)]
 
 # save data

@@ -16,7 +16,7 @@ PROJ = '+proj=laea +lat_0=90 +lon_0=-156.653428 +x_0=0 +y_0=0 +datum=WGS84 +unit
 # METHODS
 #------------------------------------------------------------------------------------------------------------------------
 
-# load data
+# Load data
 d = read.table('./DATA/NESTS.txt', sep = '\t',header = TRUE) %>% data.table
 dc = read.table('./DATA/CAPTURES.txt', sep = '\t',header = TRUE) %>% data.table
 
@@ -149,18 +149,98 @@ ds[age_found_complete < 3] %>%  nrow/ 174
 # RESULTS
 #------------------------------------------------------------------------------------------------------------------------
 
+# load data
+d = read.table('./DATA/NESTS.txt', sep = '\t',header = TRUE) %>% data.table
+dp = read.table('./DATA/PATERNITY.txt', sep = '\t',header = TRUE) %>% data.table
 
 ### Frequency of extra-pair paternity, social polyandry and renesting -----
 
-# EPY in nests and eggs
+# EPY in nests
+d[parentage == TRUE & anyEPY == 1, .N]
+d[parentage == TRUE, .N]
+d[parentage == TRUE & anyEPY == 1, .N] / d[parentage == TRUE, .N] * 100 
+
+# EPY in eggs
+d[parentage == TRUE, sum(N_EPY)]
+d[parentage == TRUE, sum(N_parentage)]
+d[parentage == TRUE, sum(N_EPY)] /d[parentage == TRUE, sum(N_parentage)] * 100
 
 # EPY difference between years?
+ds = d[parentage == TRUE & data_type == 'study_site']
+ds[, YEAR_ := as.character(year_)]
+
+fm = glm(anyEPY ~ YEAR_, data = ds, family = binomial)
+summary(fm)
+Anova(fm)
+
+# EPY difference between study sites?
+ds = d[parentage == TRUE]
+ds[, YEAR_ := as.character(year_)]
+ds[, data_type2 := ifelse(data_type == 'study_site', 'study_site', 'other_sources')]
+
+fm = glm(anyEPY ~ data_type2, data = ds, family = binomial)
+summary(fm)
+Anova(fm)
+
+# Number of EPY in each clutch
+d[anyEPY == 1] %>% nrow
+d[anyEPY == 1, .N, N_EPY]
+
+# Any nests with multiple EPP sires
+dp[, N_EPY := sum(EPY, na.rm = TRUE), by = nestID]
+dp[N_EPY > 1] # nestID == R409_19 had one identified and one unknown EPY sire 
+
 
 # Figure 2a
 
-# Number of EPY in each clutch
+
 
 # rates of social polyandry
+setorder(d, year_, initiation)
+
+# first and second clutches by females
+d[, female_id_year := paste0(female_id, '_', substr(year_, 3,4 ))]
+d[, N_female_clutch := .N, by = female_id]
+d[, female_clutch := seq_len(.N), by = .(female_id, year_)]
+d[is.na(female_id), female_clutch := 1]
+d[!is.na(female_id), N_female_clutch := max(female_clutch), by = .(female_id, year_)]
+d[is.na(female_id), N_female_clutch := 1]
+d[, .N, by = .(year_, female_clutch)]
+d[, .N, by = .(female_clutch, external)]
+
+# polyandrous clutches (second clutch with different partner)
+ID2c = d[female_clutch == 2]$female_id_year
+dx = d[female_id_year %in% ID2c]
+
+dr = merge(dx[female_clutch == 1, .(year1 = year_, nestID1 = nestID, female_id_year, m1 = male_id, anyEPY1 = anyEPY, 
+                                    ss1 = study_site, initiation1 = initiation)], 
+           dx[female_clutch == 2, .(year2 = year_, nestID2 = nestID, female_id_year, m2 = male_id, anyEPY2 = anyEPY, 
+                                    ss2 = study_site, initiation2 = initiation)],  
+           by = 'female_id_year', all = TRUE)
+
+dr[, same_male := m1 == m2]
+dr[is.na(same_male), same_male := FALSE]
+dr[, both_study_site := ss1 == ss2]
+dr[, diff_initiation := difftime(initiation2, initiation1, units = 'days') %>% as.numeric]
+setorder(dr, female_id_year)
+dr
+
+# timing of second clutches
+dr[, .(.N, mean = mean(diff_initiation), min = min(diff_initiation), max = max(diff_initiation))]
+dr[same_male == FALSE, .(.N, mean = mean(diff_initiation), min = min(diff_initiation), max = max(diff_initiation))]
+dr[same_male == TRUE, .(.N, mean = mean(diff_initiation), min = min(diff_initiation), max = max(diff_initiation))]
+
+# polyandrous females
+dr = dr[same_male == FALSE, .(female_id_year, polyandrous = TRUE, polyandry_study_site = both_study_site)]
+d = merge(d, dr, by = 'female_id_year', all.x = TRUE)
+
+setorder(d, year_, initiation)
+
+
+
+
+
+
 
 # Figure 2b
 
