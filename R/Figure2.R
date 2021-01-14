@@ -325,6 +325,27 @@ p1 =
   theme(legend.position = c(0.285, 0.82), legend.title = element_blank(), legend.background = element_rect(fill = alpha('white', 0)))
 p1
 
+
+
+ds[, sample_size_N := paste0(n, '/', N)]
+ds[year_ == '2019' & type %in% c('polyandry', 'renesting'), sample_size_N := paste0(sample_size_N, '*')]
+
+p1 = 
+  ggplot(data = ds[study_site == FALSE], aes(year_, x, fill = type, label = sample_size_N)) +
+  geom_bar(stat = "identity", position = 'dodge', width = 0.9) +
+  geom_text(position = position_dodge(width = 0.9), size = ls, hjust = -0.1, angle = 90) +
+  # scale_fill_manual(values = c('grey85', 'grey50','firebrick4', '#33638DFF'), 
+  #                   labels = c('EPY', 'nests with EPY', 'polyandrous females', 'renesting males')) +
+  scale_fill_grey(labels = c('EPY', 'nests with EPY', 'polyandrous females', 'renesting males')) +
+  scale_y_continuous(breaks = c(0, 5, 10, 15), limits = c(0, 16), expand = c(0, 0)) +
+  geom_text(aes(Inf, Inf, label = 'b'), vjust = vjust_label, hjust = hjust_,  size = lsa) +
+  xlab('Year') + ylab('Percentage') + 
+  theme_classic(base_size = bs) +
+  theme(legend.position = c(0.285, 0.82), legend.title = element_blank(), legend.background = element_rect(fill = alpha('white', 0)))
+p1
+
+
+
 # ggplot_build(p1)$data # check used colors
 
 #------------------------------------------------------------------------------------------------------------------------
@@ -348,10 +369,10 @@ p2 =
   geom_linerange(data = dss, aes(x = as.character(year_), ymin = q75, ymax = q25), size = 0.5) +
   geom_point(data = ds[year_ == 2017 & initiation_y < as.POSIXct('2020-06-16')], aes(as.character(year_), initiation_y), 
              shape = 4, size = 1, stroke = 1.3) +
-  geom_text(data = dss, aes(as.character(year_), as.POSIXct('2020-07-02 11:03:00'), label = N), vjust = 0, size = ls) +
-  scale_y_datetime(breaks = c(as.POSIXct(c('2020-06-07', '2020-06-14', '2020-06-21', '2020-06-28'))), 
+  geom_text(data = dss, aes(as.character(year_), as.POSIXct('2021-07-02 11:03:00'), label = N), vjust = 0, size = ls) +
+  scale_y_datetime(breaks = c(as.POSIXct(c('2021-06-07', '2021-06-14', '2021-06-21', '2021-06-28'))), 
                    labels = c('7', '14', '21', '28')) +
-  geom_text(aes(Inf, as.POSIXct(c('2020-07-02')), label = 'c'), vjust = vjust_label - 1.5, hjust = hjust_,  size = lsa) +
+  geom_text(aes(Inf, as.POSIXct(c('2021-07-02')), label = 'c'), vjust = vjust_label - 1.5, hjust = hjust_,  size = lsa) +
   xlab('Year') + ylab('Clutch initiation date (June)') + 
   theme_classic(base_size = bs)
 p2
@@ -524,14 +545,6 @@ summary(fm)
 # Save
 #------------------------------------------------------------------------------------------------------------------------
 
-# without inital overview
-
-# p1 + p2 + p3 + p4 + plot_layout(ncol = 2, nrow = 2) +
-#   plot_annotation(tag_levels = 'a')
-# 
-# ggsave('./REPORTS/FIGURES/Figure2.tiff', plot = last_plot(),  width = 177, height = 177, units = c('mm'), dpi = 'print')
-
-
 
 layout <- "
 AAAA
@@ -546,9 +559,11 @@ p0 + p1 + p2 + p3 + p4 + plot_layout(design = layout)
 ggsave('./REPORTS/FIGURES/Figure2_.tiff', plot = last_plot(),  width = 177, height = 238, units = c('mm'), dpi = 'print')
 
 
+# without inital overview
 
+p1 + p2 + p3 + p4 + plot_layout(ncol = 2, nrow = 2) 
 
-
+ggsave('./REPORTS/FIGURES/Figure2.tiff', plot = last_plot(),  width = 177, height = 177, units = c('mm'), dpi = 'print')
 
 
 
