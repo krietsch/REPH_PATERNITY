@@ -1,13 +1,31 @@
 #========================================================================================================================
-# Extract all for the parentage study relevant data & prepare them for analysis
+# R script of data analysis & figures for
+# Extra-pair paternity in a sequentially polyandrous shorebird: limited evidence for the sperm-storage hypothesis
 #========================================================================================================================
 
-# Summary
-# 0. Prepare data for analysis
+### Description
+# This script contains all steps to get from the data to the presented results and figures presented in this study. 
+# The order follows the appearance in the manuscript. 
+# Data were extracted from our database (see script) and are in the DATA folder
+
+### Summary
+# METHODS 
+# Study species, study site and general procedures
+# Field procedures
+# Parentage analysis
+#
+# RESULTS
+# Frequency of extra-pair paternity, social polyandry and renesting
+# Extra-pair paternity and clutch order
+# Extra-pair paternity and breeding phenology
+# Characteristics of the extra-pair sires
+# Frequency and timing of copulations and other male-female interactions
 
 # Packages
-sapply( c('data.table', 'magrittr', 'sdb', 'sf', 'auksRuak', 'ggplot2', 'ggnewscale'),
+sapply( c('data.table', 'magrittr', 'sf', 'auksRuak', 'ggplot2', 'ggnewscale'),
         function(x) suppressPackageStartupMessages(require(x , character.only = TRUE, quietly = TRUE)))
+
+# auksRuak can be found at https://github.com/krietsch/auksRuak (includes study site polygon and functions to create maps)
 
 # Projection
 PROJ = '+proj=laea +lat_0=90 +lon_0=-156.653428 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0 '
@@ -17,8 +35,8 @@ PROJ = '+proj=laea +lat_0=90 +lon_0=-156.653428 +x_0=0 +y_0=0 +datum=WGS84 +unit
 #------------------------------------------------------------------------------------------------------------------------
 
 # Load data
-d = read.table('./DATA/NESTS.txt', sep = '\t',header = TRUE) %>% data.table
-dc = read.table('./DATA/CAPTURES.txt', sep = '\t',header = TRUE) %>% data.table
+d = read.table('./DATA/NESTS.txt', sep = '\t', header = TRUE) %>% data.table
+dc = read.table('./DATA/CAPTURES.txt', sep = '\t', header = TRUE) %>% data.table
 
 # Intensive study site
 st_area(study_site) %>% as.numeric/ 1000000 # in km²
