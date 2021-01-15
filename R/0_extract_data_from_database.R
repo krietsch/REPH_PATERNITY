@@ -2,8 +2,14 @@
 # Extract all for the parentage study relevant data & prepare them for analysis
 #========================================================================================================================
 
-# Summary
-# 0. Prepare data for analysis
+### Description
+
+
+### Summary
+# CAPTURES
+# NESTS
+# RESIGHTINGS
+# PATERNITY
 
 # Packages
 sapply( c('data.table', 'magrittr', 'sdb', 'sf', 'auksRuak', 'ggplot2'),
@@ -13,7 +19,7 @@ sapply( c('data.table', 'magrittr', 'sdb', 'sf', 'auksRuak', 'ggplot2'),
 PROJ = '+proj=laea +lat_0=90 +lon_0=-156.653428 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0 '
 
 #------------------------------------------------------------------------------------------------------------------------
-# 1. Captures
+# CAPTURES
 #------------------------------------------------------------------------------------------------------------------------
 
 # Database
@@ -85,7 +91,7 @@ d = d[, .(external, data_type, year_, ID, UL, UR, LL, LR, sex, lat = lat_dec, lo
 write.table(d, './DATA/CAPTURES.txt', quote = TRUE, sep = '\t', row.names = FALSE)
 
 #------------------------------------------------------------------------------------------------------------------------
-# 2. Nests
+# NESTS
 #------------------------------------------------------------------------------------------------------------------------
 
 # Database
@@ -221,10 +227,32 @@ dr
 dr = dr[, .(male_id_year, renesting_male = TRUE, same_female, renesting_study_site = both_study_site)]
 d = merge(d, dr, by = 'male_id_year', all.x = TRUE)
 
+# incubation period in incubator
+d[, found_incomplete := initial_clutch_size < clutch_size]
+d[, inc_period := difftime(hatching_datetime, c(initiation + clutch_size * 3600*24 - 3600*24), units = 'days') %>% as.numeric]
+
+ds = d[!is.na(inc_period) & found_incomplete == TRUE]
+mean(ds[external == 0]$inc_period, na.rm = TRUE) # 17.2 days is based on eggs
+nrow(ds[external == 0]) 
+
+# not in incubator
+mean(ds[external == 1]$inc_period, na.rm = TRUE)
+nrow(ds[external == 1])
+mean(ds[external == 1 & inc_period < 25]$inc_period, na.rm = TRUE) # excluding outliers
+
+# initiation date methods
+d[found_incomplete == TRUE, initiation_method := 'found_incomplete']
+d[is.na(initiation_method) & !is.na(hatching_datetime), initiation_method := 'hatching_datetime']
+d[is.na(initiation_method) & !is.na(est_hatching_datetime), initiation_method := 'est_hatching_datetime']
+d[is.na(initiation_method) & !is.na(initiation), initiation_method := 'est_hatching_datetime']
+d[is.na(initiation_method), initiation_method := 'none']
+
+# check NA
+d[study_site == TRUE & initiation_method == 'none', .(year_, nest)]
 
 # subset data relevant for this study
 d = d[, .(external, data_type, year_, nestID, male_id, female_id, male_assigned, male_field, female_assigned, 
-          female_field, found_datetime, collected_datetime, initiation, est_hatching_datetime, hatching_datetime, chicks_back, 
+          female_field, found_datetime, clutch_size, collected_datetime, initiation, initiation_method, est_hatching_datetime, hatching_datetime, chicks_back, 
           last_checked_datetime, nest_state_date, nest_state_date, lat = lat_dec, lon = lon_dec, parentage, anyEPY, N_parentage, N_EPY,
           female_clutch, N_female_clutch, polyandrous, polyandry_study_site, male_clutch, N_male_clutch, renesting_male, renesting_study_site)]
 
@@ -234,7 +262,7 @@ write.table(d, './DATA/NESTS.txt', quote = TRUE, sep = '\t', row.names = FALSE)
 
 
 #------------------------------------------------------------------------------------------------------------------------
-# 3. Behavioural observations
+# RESIGHTINGS
 #------------------------------------------------------------------------------------------------------------------------
 
 # Database
@@ -515,7 +543,7 @@ di[, diff_obs_2nd_initiation := difftime(datetime_, second_initiation, units = '
 invisible(lapply(names(di),function(.name) set(di, which(is.infinite(di[[.name]])), j = .name,value = NA)))
 
 #------------------------------------------------------------------------------------------------------------------------
-# 4. Paternity
+# PATERNITY
 #------------------------------------------------------------------------------------------------------------------------
 
 # Database
