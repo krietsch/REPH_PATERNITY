@@ -1,10 +1,12 @@
 #========================================================================================================================
 # R script of data analysis & figures for
-# Extra-pair paternity in a sequentially polyandrous shorebird: limited evidence for the sperm-storage hypothesis
+# Extra-pair paternity in a sequentially polyandrous shorebird: 
+# limited evidence for the sperm-storage hypothesis
 #========================================================================================================================
 
 ### Description
-# This script contains all steps to get from the data to the presented results and figures presented in this study. 
+# This script contains all steps to get from the data to the presented results 
+# and figures presented in this study. 
 # The order follows the appearance in the manuscript. 
 # Data were extracted from our database (see script) and are in the DATA folder
 # Each section in the summary below can be run independently. 
@@ -23,10 +25,11 @@
 # Frequency and timing of copulations and other male-female interactions
 
 # Packages
-sapply( c('data.table', 'magrittr', 'sf', 'auksRuak', 'ggplot2', 'ggnewscale', 'car'),
-        function(x) suppressPackageStartupMessages(require(x , character.only = TRUE, quietly = TRUE)))
+sapply(c('data.table', 'magrittr', 'sf', 'auksRuak', 'ggplot2', 'ggnewscale', 'car'),
+       function(x) suppressPackageStartupMessages(require(x , character.only = TRUE, quietly = TRUE)))
 
-# auksRuak can be found at https://github.com/krietsch/auksRuak (includes study site polygon and functions to create maps)
+# auksRuak can be found at https://github.com/krietsch/auksRuak 
+# (includes study site polygon and functions to create maps)
 
 # Projection
 PROJ = '+proj=laea +lat_0=90 +lon_0=-156.653428 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0 '
@@ -62,27 +65,22 @@ ds[, N_parentage := paste0(round(N_parentage / N_nests * 100, 0), '% (', N_paren
 ds
 
 ### Frequency of extra-pair paternity for each year and data source - Table 1
-# captures
-# assign first capture
+
+# Assign first capture
 dc[, caught_time := as.POSIXct(caught_time)]
 dc[, first_cap := caught_time == min(caught_time), by = ID]
 dc = dc[first_cap == TRUE]
 
 # N by category
 dcs = dc[, .N, by = .(year_, sex, data_type)]
-
 dcs_m = dcs[sex == 'M']
 dcs_f = dcs[sex == 'F']
-
 dcs = merge(dcs_m[, .(year_, data_type, N_males = N)], dcs_f[, .(year_, data_type, N_females = N)], by = c('year_', 'data_type'), all.x = TRUE)
 dcs[is.na(N_females), N_females := 0]
-
 setorder(dcs, -year_, data_type)
 dcs
 
-
-
-# split in intense study and other data types
+# Data overview
 ds = d[, .(N_nests = .N), by = .(year_, data_type)]
 ds2 = d[parentage == TRUE, .(N_parentage = .N), by = .(year_, data_type)]
 ds3 = d[anyEPY == TRUE, .(N_EPY = .N), by = .(year_, data_type)]
@@ -97,7 +95,7 @@ ds[, EPY_eggs_per  := round(N_eggs_EPY / N_eggs * 100, 1)]
 ds[, EPY_nests_N   := paste0(N_EPY, '/', N_parentage)]
 ds[, EPY_eggs_N    := paste0(N_eggs_EPY, '/', N_eggs)]
 
-# merge with adults
+# Merge with captures
 ds = merge(ds, dcs, by = c('year_', 'data_type'), all.x = TRUE)
 
 # subset and rename table
@@ -111,7 +109,7 @@ ds = ds[, .(Year = year_, `Data type` = data_type, `% EPY` = EPY_eggs_per, `N EP
 setorder(ds,  -Year, `Data type`)
 ds
 
-
+# save table
 # openxlsx::write.xlsx(ds, './REPORTS/EPY_frequency/TableS1.xlsx')
 
 #------------------------------------------------------------------------------------------------------------------------
@@ -122,52 +120,41 @@ ds
 d = read.table('./DATA/NESTS.txt', sep = '\t', header = TRUE) %>% data.table
 dc = read.table('./DATA/CAPTURES.txt', sep = '\t', header = TRUE) %>% data.table
 
-
-
-# Number of captures 
-
-# load data
-d = read.table('./DATA/CAPTURES.txt', sep = '\t',header = TRUE) %>% data.table
-
-# assign first capture
+# Assign first capture
 dc[, caught_time := as.POSIXct(caught_time)]
 setorder(dc, year_, caught_time)
 dc[, capture_id := seq_len(.N), by = ID]
 dc[, .N, capture_id]
 
-# banded each year on and off plot by us
-ds = dc[external == 0 & capture_id == 1 & year_ > 2016]
-
+# Banded each year in intensive study site
+ds = dc[data_type == 'study_site' & capture_id == 1]
 ds[, .N, .(year_)]
 
-
-bm = create_bm(d, buffer = 500)
+# Plot capture locations
+st_transform_DT(ds)
+bm = create_bm(ds, buffer = 500)
 bm +
   geom_sf(data = study_site, color = 'red') +
   coord_sf(expand = FALSE) +
-  geom_point(data = d, aes(lon, lat, color = data_type))
+  geom_point(data = ds, aes(lon, lat, color = as.character(year_)), alpha = 0.3)
 
-
-
-
-# Initiation date method
-
-
-ds = d[data_type == 'intensive_study' & parentage == TRUE, .N, initiation_method]
-ds[, N_nests := nrow(d[data_type == 'study_site' & parentage == TRUE])]
-ds[, initiation_method_percent := N / N_nests * 100]
-ds
-
-# age when found
+# Nest age when found
+d[, initiation := as.POSIXct(initiation)]
+d[, initiation_y := as.POSIXct(format(initiation, format = '%m-%d %H:%M:%S'), format = '%m-%d %H:%M:%S')]
 ds = d[data_type == 'study_site' ]
 ds[, complete := initiation + clutch_size*86400]
 
 ds[, age_found := difftime(found_datetime, initiation, units = 'days') %>% as.numeric]
 ds[, age_found_complete := difftime(found_datetime, complete, units = 'days') %>% as.numeric]
-ds[age_found < 5] %>% nrow/ 174
 ds[age_found_complete < 3] %>%  nrow/ 174
 
+# Number of males unbanded when clutch found ############################################################################ TODO
 
+# Initiation date method
+ds = d[data_type == 'study_site' & parentage == TRUE, .N, initiation_method]
+ds[, N_nests := nrow(d[data_type == 'study_site' & parentage == TRUE])]
+ds[, initiation_method_percent := N / N_nests * 100]
+ds
 
 #------------------------------------------------------------------------------------------------------------------------
 # Parentage analysis
@@ -176,35 +163,31 @@ ds[age_found_complete < 3] %>%  nrow/ 174
 # Load data
 d = read.table('./DATA/NESTS.txt', sep = '\t', header = TRUE) %>% data.table
 dc = read.table('./DATA/CAPTURES.txt', sep = '\t', header = TRUE) %>% data.table
+dp = read.table('./DATA/PATERNITY.txt', sep = '\t', header = TRUE) %>% data.table
+
+# Clutch size of nests with genotype
+ds = d[parentage == TRUE]
+ds[, mean(clutch_size, na.rm = TRUE)]
+ds[, min(clutch_size, na.rm = TRUE)]
+ds[, max(clutch_size, na.rm = TRUE)]
+
+# N offspring sampled overall
+ds[clutch_size == N_parentage] %>% nrow
+ds[clutch_size == N_parentage] %>% nrow / ds %>% nrow *100
+
+# N offspring sampled intensive study site
+ds = d[parentage == TRUE & data_type == 'study_site']
+ds[clutch_size == N_parentage] %>% nrow
+ds[clutch_size == N_parentage] %>% nrow / ds %>% nrow *100
+
+# Undeveloped eggs ###################################################################################################### TODO
 
 
 
 
 
-
-
-#------------------------------------------------------------------------------------------------------------------------
-# Table 1 - Samples available 
-#------------------------------------------------------------------------------------------------------------------------
-
-
-
-
-
-
-
-
-### Parentage analysis 
-
-# mean clutch size
-
-# N offspring sampled
-
-# undeveloped eggs
-
-
-
-
+# Number of mothers and fathers assigned ################################################################################ TODO
+dp[!is.na(EPY) & !is.na(IDmother)]
 
 #========================================================================================================================
 # RESULTS
