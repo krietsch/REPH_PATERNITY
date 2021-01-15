@@ -7,22 +7,23 @@
 # This script contains all steps to get from the data to the presented results and figures presented in this study. 
 # The order follows the appearance in the manuscript. 
 # Data were extracted from our database (see script) and are in the DATA folder
+# Each section in the summary below can be run independently. 
 
 ### Summary
 # METHODS 
-# Study species, study site and general procedures
+# Study species, study site and general procedures - Table 1
 # Field procedures
 # Parentage analysis
 #
 # RESULTS
-# Frequency of extra-pair paternity, social polyandry and renesting
+# Frequency of extra-pair paternity, social polyandry and renesting - Figure 2a
 # Extra-pair paternity and clutch order
 # Extra-pair paternity and breeding phenology
 # Characteristics of the extra-pair sires
 # Frequency and timing of copulations and other male-female interactions
 
 # Packages
-sapply( c('data.table', 'magrittr', 'sf', 'auksRuak', 'ggplot2', 'ggnewscale'),
+sapply( c('data.table', 'magrittr', 'sf', 'auksRuak', 'ggplot2', 'ggnewscale', 'car'),
         function(x) suppressPackageStartupMessages(require(x , character.only = TRUE, quietly = TRUE)))
 
 # auksRuak can be found at https://github.com/krietsch/auksRuak (includes study site polygon and functions to create maps)
@@ -30,15 +31,27 @@ sapply( c('data.table', 'magrittr', 'sf', 'auksRuak', 'ggplot2', 'ggnewscale'),
 # Projection
 PROJ = '+proj=laea +lat_0=90 +lon_0=-156.653428 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0 '
 
-#------------------------------------------------------------------------------------------------------------------------
+# Figure 2 settings
+bs = 11 # basesize
+ps = 1 # point size
+ls = 3 # label size
+lsa = 5 # label size annotation
+vjust_ = 1.5 # vjust of text
+vjust_label = 1
+hjust_ = 1.5 # hjust of text
+
+#========================================================================================================================
 # METHODS
+#========================================================================================================================
+#------------------------------------------------------------------------------------------------------------------------
+# Study species, study site and general procedures
 #------------------------------------------------------------------------------------------------------------------------
 
 # Load data
 d = read.table('./DATA/NESTS.txt', sep = '\t', header = TRUE) %>% data.table
 dc = read.table('./DATA/CAPTURES.txt', sep = '\t', header = TRUE) %>% data.table
 
-# Intensive study site
+# Intensive study site size
 st_area(study_site) %>% as.numeric/ 1000000 # in km²
 
 # N nests with parentage
@@ -48,10 +61,7 @@ ds = merge(ds, ds2, by = c('data_type'), all.x = TRUE)
 ds[, N_parentage := paste0(round(N_parentage / N_nests * 100, 0), '% (', N_parentage, '/', N_nests, ')')]
 ds
 
-#------------------------------------------------------------------------------------------------------------------------
-# Table 1 - Samples available 
-#------------------------------------------------------------------------------------------------------------------------
-
+### Frequency of extra-pair paternity for each year and data source - Table 1
 # captures
 # assign first capture
 dc[, caught_time := as.POSIXct(caught_time)]
@@ -104,6 +114,15 @@ ds
 
 # openxlsx::write.xlsx(ds, './REPORTS/EPY_frequency/TableS1.xlsx')
 
+#------------------------------------------------------------------------------------------------------------------------
+# Field procedures
+#------------------------------------------------------------------------------------------------------------------------
+
+# Load data
+d = read.table('./DATA/NESTS.txt', sep = '\t', header = TRUE) %>% data.table
+dc = read.table('./DATA/CAPTURES.txt', sep = '\t', header = TRUE) %>% data.table
+
+
 
 # Number of captures 
 
@@ -129,6 +148,8 @@ bm +
   geom_point(data = d, aes(lon, lat, color = data_type))
 
 
+
+
 # Initiation date method
 
 
@@ -148,6 +169,28 @@ ds[age_found_complete < 3] %>%  nrow/ 174
 
 
 
+#------------------------------------------------------------------------------------------------------------------------
+# Parentage analysis
+#------------------------------------------------------------------------------------------------------------------------
+
+# Load data
+d = read.table('./DATA/NESTS.txt', sep = '\t', header = TRUE) %>% data.table
+dc = read.table('./DATA/CAPTURES.txt', sep = '\t', header = TRUE) %>% data.table
+
+
+
+
+
+
+
+#------------------------------------------------------------------------------------------------------------------------
+# Table 1 - Samples available 
+#------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
 
 
 
@@ -163,15 +206,16 @@ ds[age_found_complete < 3] %>%  nrow/ 174
 
 
 
-#------------------------------------------------------------------------------------------------------------------------
+#========================================================================================================================
 # RESULTS
+#========================================================================================================================
+#------------------------------------------------------------------------------------------------------------------------
+# Frequency of extra-pair paternity, social polyandry and renesting - Figure 2a
 #------------------------------------------------------------------------------------------------------------------------
 
 # load data
 d = read.table('./DATA/NESTS.txt', sep = '\t',header = TRUE) %>% data.table
 dp = read.table('./DATA/PATERNITY.txt', sep = '\t',header = TRUE) %>% data.table
-
-### Frequency of extra-pair paternity, social polyandry and renesting -----
 
 # EPY in nests
 d[parentage == TRUE & anyEPY == 1, .N]
@@ -206,14 +250,11 @@ d[anyEPY == 1, .N, N_EPY]
 
 # Any nests with multiple EPP sires
 dp[, N_EPY := sum(EPY, na.rm = TRUE), by = nestID]
-dp[N_EPY > 1] # nestID == R409_19 had one identified and one unknown EPY sire 
+ds = unique(dp, by = c('nestID', 'IDfather'))
+ds[, N_fathers := .N, by = nestID]
+ds[, .N, by = N_fathers] # nestID == R409_19 had one identified and one unknown EPY sire 
 
-
-
-
-#------------------------------------------------------------------------------------------------------------------------
-# Figure 2a
-#------------------------------------------------------------------------------------------------------------------------
+### Rates of polyandry and renesting - Figure 2a and 2b -----
 
 # unique ID's by year
 d[, female_id_year := paste0(female_id, '_', substr(year_, 3,4 ))]
@@ -317,6 +358,7 @@ p1
 ds[, sample_size_N := paste0(n, '/', N)]
 ds[year_ == '2019' & type %in% c('polyandry', 'renesting'), sample_size_N := paste0(sample_size_N, '*')]
 
+#  Figure 2a
 p1 = 
   ggplot(data = ds[study_site == FALSE], aes(year_, x, fill = type, label = sample_size_N)) +
   geom_bar(stat = "identity", position = 'dodge', width = 0.9) +
@@ -333,23 +375,23 @@ p1
 
 
 
-#------------------------------------------------------------------------------------------------------------------------
-# 2. Nests on plot
-#------------------------------------------------------------------------------------------------------------------------
-
+### Clutch initiation between years - Figure 2b -----
 d[, initiation := as.POSIXct(initiation)]
 d[, initiation_y := as.POSIXct(format(initiation, format = '%m-%d %H:%M:%S'), format = '%m-%d %H:%M:%S')]
 
+# Subset data from intensive study site with initiation date
 ds = d[data_type == 'study_site' & !is.na(initiation_y)]
-
 ds[, initiation_date := as.Date(initiation)]
+
+# Nests at peak
 y = ds[, .N, by = .(year_, initiation_date)]
 y[, max(N), by = year_]
 
+# Sample size
 dss = ds[, .(median = median(initiation_y), q25 = quantile(initiation_y, probs = c(0.25)), 
              q75 = quantile(initiation_y, probs = c(0.75)), .N, max = max(initiation_y)), by = year_]
 
-
+#  Figure 2b
 p2 = 
   ggplot(data = ds) +
   geom_violin(aes(as.character(year_), initiation_y), show.legend = FALSE, fill = 'grey85') +
@@ -366,13 +408,18 @@ p2 =
 p2
 
 
-
-
-
-
 #------------------------------------------------------------------------------------------------------------------------
-# 3. Timing of multiple clutches vs. single clutches
+# Extra-pair paternity and clutch order
 #------------------------------------------------------------------------------------------------------------------------
+
+# load data
+d = read.table('./DATA/NESTS.txt', sep = '\t',header = TRUE) %>% data.table
+dp = read.table('./DATA/PATERNITY.txt', sep = '\t',header = TRUE) %>% data.table
+
+# format
+d[, initiation := as.POSIXct(initiation)]
+d[, initiation_y := as.POSIXct(format(initiation, format = '%m-%d %H:%M:%S'), format = '%m-%d %H:%M:%S')]
+d[, female_id_year := paste0(female_id, '_', substr(year_, 3,4 ))]
 
 # assign clutch identity
 d[female_clutch == 3, clutch_identity := 'third']
@@ -480,12 +527,14 @@ ds[clutch_identity == 'single', mean(initiation_st)] - ds[clutch_identity == 'se
 
 ds[clutch_identity == 'third', .(initiation_st)] 
 
-# other timings see polyandry / renesting above
-
 
 #------------------------------------------------------------------------------------------------------------------------
-# 4. EPY and timing 
+# Extra-pair paternity and breeding phenology
 #------------------------------------------------------------------------------------------------------------------------
+
+# load data
+d = read.table('./DATA/NESTS.txt', sep = '\t',header = TRUE) %>% data.table
+dp = read.table('./DATA/PATERNITY.txt', sep = '\t',header = TRUE) %>% data.table
 
 # subset all multiple clutches or in study site
 ds = d[!is.na(initiation) & !is.na(anyEPY)]
@@ -548,14 +597,28 @@ fm = glm(anyEPY ~ initiation_st, data = ds[data_type == 'Other data'], family = 
 summary(fm)
 
 
-# Figure 2b
-
-# rates pf renesting
-
-# correlation EPY ~ season lenght or polyandry
+#------------------------------------------------------------------------------------------------------------------------
+# Characteristics of the extra-pair sires
+#------------------------------------------------------------------------------------------------------------------------
 
 
-### Extra-pair paternity and clutch order -----
+#------------------------------------------------------------------------------------------------------------------------
+# Frequency and timing of copulations and other male-female interactions
+#------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
