@@ -241,7 +241,7 @@ ds = unique(dp, by = c('nestID', 'IDfather'))
 ds[, N_fathers := .N, by = nestID]
 ds[, .N, by = N_fathers] # nestID == R409_19 had one identified and one unknown EPY sire 
 
-### Rates of polyandry and renesting - Figure 2a and 2b -----
+### Rates of polyandry and renesting - Figure 2a -----
 
 # unique ID's by year
 d[, female_id_year := paste0(female_id, '_', substr(year_, 3,4 ))]
@@ -394,6 +394,38 @@ p2 =
   theme_classic(base_size = bs)
 p2
 
+# Length of the clutch initiation period 
+ds = d[data_type == 'study_site' & !is.na(initiation_y)]
+ds = ds[!(year_ == 2017 & initiation_y < as.POSIXct('2021-06-16'))] # exclude to outliers in 2017
+dss = ds[, .(min = min(initiation_y), max = max(initiation_y)), by = year_]
+dss[, season_length := difftime(max, min, units = 'days') %>% as.numeric]
+dss
+
+dss[, polyandry := c(2.9, 5.4, 8.8)]
+dss[, N_nests := c(35, 39, 100)]
+dss[, N_birds := c(138, 203, 319)]
+
+# EPY difference between years due to season
+ds = d[parentage == TRUE & data_type == 'study_site']
+ds[, YEAR_ := as.character(year_)]
+
+ds = merge(ds, dss[, .(year_, season_length, polyandry, N_nests, N_birds)], by = 'year_', all.x = TRUE)
+
+fm = glm(anyEPY ~ season_length, data = ds, family = binomial)
+summary(fm)
+Anova(fm)
+
+fm = glm(anyEPY ~ polyandry, data = ds, family = binomial)
+summary(fm)
+Anova(fm)
+
+fm = glm(anyEPY ~ N_nests, data = ds, family = binomial)
+summary(fm)
+Anova(fm)
+
+fm = glm(anyEPY ~ N_birds, data = ds, family = binomial)
+summary(fm)
+Anova(fm)
 
 #------------------------------------------------------------------------------------------------------------------------
 # Extra-pair paternity and clutch order
