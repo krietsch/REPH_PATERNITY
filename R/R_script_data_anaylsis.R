@@ -25,7 +25,7 @@
 # Frequency and timing of copulations and other male-female interactions
 
 # Packages
-sapply(c('data.table', 'magrittr', 'sf', 'auksRuak', 'ggplot2', 'ggnewscale', 'car'),
+sapply(c('data.table', 'magrittr', 'sf', 'auksRuak', 'ggplot2', 'ggnewscale', 'car', 'emmeans'),
        function(x) suppressPackageStartupMessages(require(x , character.only = TRUE, quietly = TRUE)))
 
 # auksRuak can be found at https://github.com/krietsch/auksRuak 
@@ -217,6 +217,10 @@ ds[, YEAR_ := as.character(year_)]
 fm = glm(anyEPY ~ YEAR_, data = ds, family = binomial)
 summary(fm)
 Anova(fm)
+
+# Post-hoc test
+marginal = emmeans(fm, ~ YEAR_)
+pairs(marginal)
 
 # EPY difference between study sites?
 ds = d[parentage == TRUE]
