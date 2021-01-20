@@ -354,7 +354,7 @@ p1 =
   #                   labels = c('EPY', 'nests with EPY', 'polyandrous females', 'renesting males')) +
   scale_fill_grey(labels = c('EPY', 'nests with EPY', 'polyandrous females', 'renesting males')) +
   scale_y_continuous(breaks = c(0, 5, 10, 15), limits = c(0, 16), expand = c(0, 0)) +
-  # geom_text(aes(Inf, Inf, label = 'b'), vjust = vjust_label, hjust = hjust_,  size = lsa) +
+  geom_text(aes(Inf, Inf, label = 'a'), vjust = vjust_label, hjust = hjust_,  size = lsa) +
   xlab('Year') + ylab('Percentage') + 
   theme_classic(base_size = bs) +
   theme(legend.position = c(0.285, 0.82), legend.title = element_blank(), legend.background = element_rect(fill = alpha('white', 0)))
@@ -389,7 +389,7 @@ p2 =
   geom_text(data = dss, aes(as.character(year_), as.POSIXct('2021-07-02 11:03:00'), label = N), vjust = 0, size = ls) +
   scale_y_datetime(breaks = c(as.POSIXct(c('2021-06-07', '2021-06-14', '2021-06-21', '2021-06-28'))), 
                    labels = c('7', '14', '21', '28')) +
-  geom_text(aes(Inf, as.POSIXct(c('2021-07-02')), label = 'c'), vjust = vjust_label - 1.5, hjust = hjust_,  size = lsa) +
+  geom_text(aes(Inf, as.POSIXct(c('2021-07-02')), label = 'b'), vjust = vjust_label - 1.3, hjust = hjust_,  size = lsa) +
   xlab('Year') + ylab('Clutch initiation date (June)') + 
   theme_classic(base_size = bs)
 p2
@@ -521,7 +521,7 @@ p3 =
   scale_linetype_manual(values = c('solid', 'dotted'), name = NULL) +
   scale_x_discrete(labels = c('Single', 'First', 'Second', 'Third')) +
   scale_y_continuous(breaks = c(-14, -7, 0, 7, 14), limits = c(-18, 18), expand = c(0, 0)) +
-  geom_text(aes(Inf, Inf, label = 'd'), vjust = vjust_label, hjust = hjust_,  size = lsa) +
+  geom_text(aes(Inf, Inf, label = 'c'), vjust = vjust_label, hjust = hjust_,  size = lsa) +
   xlab('Clutch type') + ylab('Clutch initiation date (standardized)') +
   geom_text(data = dss, aes(clutch_identity, Inf, label = sample_size), vjust = vjust_, size = ls) +
   theme_classic_edit(base_size = bs, lp = c(0.85, 0.08)) +
@@ -599,7 +599,7 @@ p4 =
   scale_fill_manual(values = c('black', 'white'), name = NULL, labels = c('EPY', 'no EPY')) +
   scale_y_continuous(breaks = c(-14, -7, 0, 7, 14), limits = c(-18, 18), expand = c(0, 0)) +
   geom_text(data = dss2, aes(data_type, Inf, group = anyEPY, label = sample_size), position = position_dodge(width = 0.9), vjust = vjust_, size = ls) +
-  geom_text(aes(Inf, Inf, label = 'e'), vjust = vjust_label, hjust = hjust_,  size = lsa) +
+  geom_text(aes(Inf, Inf, label = 'd'), vjust = vjust_label, hjust = hjust_,  size = lsa) +
   xlab('Data source') + ylab('Clutch initiation date (standardized)') + 
   theme_classic_edit(base_size = bs, lp = c(0.89, 0.08)) +
   theme(legend.background = element_rect(fill = alpha('white', 0)), 
@@ -614,6 +614,12 @@ summary(fm)
 
 fm = glm(anyEPY ~ initiation_st, data = ds[data_type == 'Other data'], family = binomial)
 summary(fm)
+
+
+# save Figure 2
+p1 + p2 + p3 + p4 + plot_layout(ncol = 2, nrow = 2) 
+
+ggsave('./REPORTS/FIGURES/Figure2.tiff', plot = last_plot(),  width = 177, height = 177, units = c('mm'), dpi = 'print')
 
 
 #------------------------------------------------------------------------------------------------------------------------
