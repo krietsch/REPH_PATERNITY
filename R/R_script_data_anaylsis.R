@@ -227,12 +227,28 @@ ds[undeveloped == 1] %>% nrow # all
 ds[undeveloped == 1 & !is.na(EPY)] %>% nrow # undeveloped eggs
 ds[undeveloped == 1 & !is.na(EPY)] %>% nrow / ds[undeveloped == 1] %>% nrow  * 100
 
-# total potential unfertile eggs
+# total potential infertile eggs
 ds[undeveloped == 1 & is.na(EPY)] %>% nrow 
 ds[undeveloped == 1 & is.na(EPY)] %>% nrow / ds %>% nrow * 100
 
-# Number of mothers and fathers assigned ################################################################################ TODO
-dp[!is.na(EPY) & !is.na(IDmother)]
+# Number of mothers assigned
+ds[IDmother > 100000]$nestID %>% unique %>% length # >100000 to exclude uncaught birds
+ds[IDmother > 100000]$nestID %>% unique %>% length / ds$nestID %>% unique %>% length * 100
+
+# Number of fathers assigned
+ds[IDfather > 100000] %>% nrow # >100000 to exclude uncaught birds
+ds[IDfather > 100000] %>% nrow / ds[!is.na(EPY)] %>% nrow * 100
+
+# Other sources 
+ds = dp[data_type != 'study_site']
+
+# Number of mothers assigned
+ds[IDmother > 100000]$nestID %>% unique %>% length # >100000 to exclude uncaught birds
+ds[IDmother > 100000]$nestID %>% unique %>% length / ds$nestID %>% unique %>% length * 100
+
+# Number of fathers assigned
+ds[IDfather > 100000] %>% nrow # >100000 to exclude uncaught birds
+ds[IDfather > 100000] %>% nrow / ds[!is.na(EPY)] %>% nrow * 100
 
 #========================================================================================================================
 # RESULTS
