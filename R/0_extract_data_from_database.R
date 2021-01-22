@@ -549,18 +549,26 @@ invisible(lapply(names(di),function(.name) set(di, which(is.infinite(di[[.name]]
 # Database
 con = dbcon('jkrietsch', db = 'REPHatBARROW')  
 d = dbq(con, 'select * FROM PATERNITY')
+de = dbq(con, 'select * FROM EGGS')
 DBI::dbDisconnect(con)
 
 # nestID
 d[, nestID := paste0(nest, '_', substr(year_, 3,4 ))]
+de[, nestID := paste0(nest, '_', substr(year_, 3,4 ))]
 
 # subset nests with paternity data for at least one offspring
 d[!is.na(EPY), parentage := 1]
 d[, offspring_sampled := sum(parentage, na.rm = TRUE), by = nestID]
 d = d[offspring_sampled > 0]
 
+# assign developed or undeveloped eggs
+d = merge(d, de[, .(ID, undeveloped)], by.x = 'IDchick', by.y = 'ID', all.x = TRUE)
+
+d[is.na(undeveloped) & !is.na(EPY), undeveloped := 0]
+d[undeveloped == 1]$nestID %>% unique %>% length
+
 # select columns of interest
-d = d[, .(year_, nestID, IDchick, IDmother, IDfather, EPY, comment)]
+d = d[, .(year_, nestID, IDchick, IDmother, IDfather, EPY, undeveloped, comment)]
 
 # save data
 write.table(d, './DATA/PATERNITY.txt', quote = TRUE, sep = '\t', row.names = FALSE)
