@@ -146,9 +146,31 @@ ds[, complete := initiation + clutch_size*86400]
 
 ds[, age_found := difftime(found_datetime, initiation, units = 'days') %>% as.numeric]
 ds[, age_found_complete := difftime(found_datetime, complete, units = 'days') %>% as.numeric]
-ds[age_found_complete < 3] %>%  nrow/ 174
+ds[age_found_complete < 1] %>%  nrow/ ds %>% nrow
+ds[age_found_complete < 5] %>%  nrow/ ds %>% nrow
 
-# Number of males unbanded when clutch found ############################################################################ TODO
+# Number of males and females unbanded when clutch found
+d = merge(d, dc[capture_id == 1, .(ID, caught_time_male = caught_time)], by.x = 'male_id', by.y = 'ID', all.x = TRUE)
+d[, diff_found_caugth_male := difftime(found_datetime, caught_time_male, units = 'days') %>% as.numeric]
+d = merge(d, dc[capture_id == 1, .(ID, caught_time_female = caught_time)], by.x = 'female_id', by.y = 'ID', all.x = TRUE)
+d[, diff_found_caugth_female := difftime(found_datetime, caught_time_female, units = 'days') %>% as.numeric]
+
+ds = d[data_type == 'study_site']
+ds[diff_found_caugth_male < 0 | is.na(diff_found_caugth_male)] %>% nrow /ds %>% nrow * 100 # males
+ds[diff_found_caugth_female < 0 | is.na(diff_found_caugth_female)] %>% nrow /ds %>% nrow * 100 # females
+
+# Mean incubation period of collected clutches with known initiation date
+ds = d[!is.na(collected_datetime) & initiation_method == 'found_incomplete' & !is.na(hatching_datetime)]
+ds[, initiation := as.POSIXct(initiation)]
+ds[, start_incubation := initiation + clutch_size*3600*24 - 3600*24]
+ds[is.na(hatching_datetime), based_on_est_hdt := TRUE]
+ds[, incubation_period := difftime(hatching_datetime, start_incubation, units = 'days') %>% as.numeric]
+
+ds$incubation_period %>% length
+ds$incubation_period %>% mean
+ds$incubation_period %>% sd
+ds$incubation_period %>% min
+ds$incubation_period %>% max
 
 # Initiation date method
 ds = d[data_type == 'study_site' & parentage == TRUE, .N, initiation_method]
@@ -168,6 +190,7 @@ dp = read.table('./DATA/PATERNITY.txt', sep = '\t', header = TRUE) %>% data.tabl
 # Clutch size of nests with genotype
 ds = d[parentage == TRUE]
 ds[, mean(clutch_size, na.rm = TRUE)]
+ds[, sd(clutch_size, na.rm = TRUE)]
 ds[, min(clutch_size, na.rm = TRUE)]
 ds[, max(clutch_size, na.rm = TRUE)]
 
@@ -234,6 +257,7 @@ Anova(fm)
 # Number of EPY in each clutch
 d[anyEPY == 1] %>% nrow
 d[anyEPY == 1, .N, N_EPY]
+d[anyEPY == 1, .N, clutch_size]
 
 # Any nests with multiple EPP sires
 dp[, N_EPY := sum(EPY, na.rm = TRUE), by = nestID]
