@@ -181,6 +181,16 @@ p3 =
 p3
 
 
+dss = ds2[data_type_parentage == 'all', .(median = median(initiation_y, na.rm = TRUE), q25 = quantile(initiation_y, probs = c(0.25), na.rm = TRUE), 
+                                          q75 = quantile(initiation_y, probs = c(0.75), na.rm = TRUE), .N, max = max(initiation_y, na.rm = TRUE)), by = year_]
+
+
+
+ggplot(data = ds2[data_type_parentage == 'all']) +
+  geom_violin(aes(as.character(year_), initiation_y), show.legend = FALSE, fill = 'grey85') +
+  geom_point(data = dss, aes(as.character(year_), median), size = 2) +
+  geom_linerange(data = dss, aes(x = as.character(year_), ymin = q75, ymax = q25), size = 0.5) +
+
 
 p1 + p2 + p3 + plot_layout(nrow = 3, heights = c(1, 1 ,2))
 
