@@ -203,11 +203,33 @@ ds = d[parentage == TRUE & data_type == 'study_site']
 ds[clutch_size == N_parentage] %>% nrow
 ds[clutch_size == N_parentage] %>% nrow / ds %>% nrow *100
 
-# Undeveloped eggs ###################################################################################################### TODO
+# Undeveloped eggs
+dp = merge(dp, d[, .(nestID, data_type)], by = 'nestID', all.x = TRUE)
 
+# collected clutches within study site
+dp[data_type == 'study_site']$nestID %>% unique %>% length 
 
+# undeveloped eggs in study site
+ds = dp[data_type == 'study_site']
 
+# nests
+ds$nestID %>% unique %>% length # all
+ds[undeveloped == 1]$nestID %>% unique %>% length # nests with undeveloped eggs
+ds[undeveloped == 1]$nestID %>% unique %>% length / ds$nestID %>% unique %>% length * 100
 
+# eggs
+ds %>% nrow # all
+ds[undeveloped == 1] %>% nrow # undeveloped eggs
+ds[undeveloped == 1] %>% nrow  / ds %>% nrow  * 100
+
+# undeveloped and DNA extracted
+ds[undeveloped == 1] %>% nrow # all
+ds[undeveloped == 1 & !is.na(EPY)] %>% nrow # undeveloped eggs
+ds[undeveloped == 1 & !is.na(EPY)] %>% nrow / ds[undeveloped == 1] %>% nrow  * 100
+
+# total potential unfertile eggs
+ds[undeveloped == 1 & is.na(EPY)] %>% nrow 
+ds[undeveloped == 1 & is.na(EPY)] %>% nrow / ds %>% nrow * 100
 
 # Number of mothers and fathers assigned ################################################################################ TODO
 dp[!is.na(EPY) & !is.na(IDmother)]
