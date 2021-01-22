@@ -104,13 +104,45 @@ hist(d[is.na(collected_datetime)]$incubation_period)
 d[is.na(collected_datetime) & incubation_period  > 19, .(nestID, initial_clutch_size, clutch_size, found_incomplete, initiation, incubation_period)]
 
 
+# know initiation
+ds = d[is.na(collected_datetime) & !is.na(initiation), .(nestID, plot, initial_clutch_size, clutch_size, start_incubation, found_incomplete, initiation, 
+                                                         est_hatching_datetime, hatching_datetime, incubation_period, pk)]
 
-d[is.na(collected_datetime) & !is.na(initiation), .(nestID, initial_clutch_size, clutch_size, found_incomplete, initiation, hatching_datetime, incubation_period)]
+ds[, est_hatching_datetime := as.POSIXct(est_hatching_datetime)]
+ds[found_incomplete == TRUE, est_hatching_datetime := initiation + 3600*24*19 + clutch_size*3600*24 - 3600*24]
+ds[, start_incubation := initiation + clutch_size*3600*24 - 3600*24]
+ds[, incubation_period := difftime(est_hatching_datetime, start_incubation, units = 'days') %>% as.numeric]
+ds
 
 
+# update db
+dt = ds[found_incomplete == TRUE, .(pk, est_hatching_datetime_updated = as.character(est_hatching_datetime))]
 
+# save new values from d in a temp table
+dbWriteTable(con, 'temp', dt , row.names = FALSE)
 
+# update target table based on values in temp table
+dbExecute(con, "update NESTS n, temp t set n.est_hatching_datetime = t.est_hatching_datetime_updated where n.pk = t.pk")
+dbExecute(con,"drop table temp")
 
+# known hatching
+ds = d[is.na(collected_datetime) & !is.na(initiation), .(nestID, plot, initial_clutch_size, clutch_size, start_incubation, found_incomplete, initiation, 
+                                                         est_hatching_datetime, hatching_datetime, incubation_period, pk)]
+ds = ds[incubation_period == 17.2]
+ds[, hatching_datetime := as.POSIXct(hatching_datetime)]
+ds[, initiation := hatching_datetime - 3600*24*19 - clutch_size*3600*24 + 3600*24]
+ds[, start_incubation := initiation + clutch_size*3600*24 - 3600*24]
+ds[, incubation_period := difftime(hatching_datetime, start_incubation, units = 'days') %>% as.numeric]
+ds
 
+# update db
+dt = ds[, .(pk, initiation_updated = as.character(initiation))]
+
+# save new values from d in a temp table
+dbWriteTable(con, 'temp', dt , row.names = FALSE)
+
+# update target table based on values in temp table
+dbExecute(con, "update NESTS n, temp t set n.initiation = t.initiation_updated where n.pk = t.pk")
+dbExecute(con,"drop table temp")
 
 
