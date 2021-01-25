@@ -1,3 +1,8 @@
+#' ```{r set-options, echo=FALSE, cache=FALSE}
+#' options(width = 1000)
+#' ```
+
+
 #========================================================================================================================
 # R script of data analysis & figures for
 # Extra-pair paternity in a sequentially polyandrous shorebird: 
@@ -12,11 +17,12 @@
 # Each section in the summary below can be run independently. 
 
 ### Summary
+
 # METHODS 
 # Study species, study site and general procedures - Table 1
 # Field procedures
 # Parentage analysis
-#
+
 # RESULTS
 # Frequency of extra-pair paternity, social polyandry and renesting - Figure 2a
 # Extra-pair paternity and clutch order
@@ -34,7 +40,12 @@ sapply(c('data.table', 'magrittr', 'sf', 'auksRuak', 'ggplot2', 'ggnewscale', 'c
 # Projection
 PROJ = '+proj=laea +lat_0=90 +lon_0=-156.653428 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0 '
 
-# Figure 2 settings
+# Functions
+source('./R/FUNCTIONS.R')
+
+# Settings 
+
+# Figure 2
 bs = 11 # basesize
 ps = 1 # point size
 ls = 3 # label size
@@ -42,6 +53,10 @@ lsa = 5 # label size annotation
 vjust_ = 1.5 # vjust of text
 vjust_label = 1
 hjust_ = 1.5 # hjust of text
+
+# path to project or to compile file
+path = './DATA/'
+# path = '../DATA/'
 
 #========================================================================================================================
 # METHODS
@@ -51,8 +66,8 @@ hjust_ = 1.5 # hjust of text
 #------------------------------------------------------------------------------------------------------------------------
 
 # Load data
-d = read.table('./DATA/NESTS.txt', sep = '\t', header = TRUE) %>% data.table
-dc = read.table('./DATA/CAPTURES.txt', sep = '\t', header = TRUE) %>% data.table
+d = read.table(paste0(path, 'NESTS.txt'), sep = '\t', header = TRUE) %>% data.table
+dc = read.table(paste0(path, 'CAPTURES.txt'), sep = '\t', header = TRUE) %>% data.table
 
 # Intensive study site size
 st_area(study_site) %>% as.numeric/ 1000000 # in km²
@@ -63,6 +78,28 @@ ds2 = d[parentage == TRUE, .(N_parentage = .N), by =  data_type]
 ds = merge(ds, ds2, by = c('data_type'), all.x = TRUE)
 ds[, N_parentage := paste0(round(N_parentage / N_nests * 100, 0), '% (', N_parentage, '/', N_nests, ')')]
 ds
+
+# Map of nests with parentage
+ds = d[parentage == TRUE]
+
+# change projection
+st_transform_DT(ds)
+
+ds[, data_type := factor(data_type, levels = c('study_site', 'own_off_site', 'survey_plot', 'clutch_removal_exp'))]
+
+
+bm = create_bm(ds, buffer = 6000,  squared = TRUE)
+bm +
+  geom_point(data = ds, aes(lon, lat, shape = data_type, fill = data_type, size = data_type)) +
+  scale_shape_manual(name = '', values = c(21, 21, 24, 24), labels = c('Intensitve study', 'Outside plot', 'Long-term monit.', 'Renesting exp.')) +
+  scale_size_manual(name = '', values = c(1, 1, 1, 1), labels = c('Intensitve study', 'Outside plot', 'Long-term monit.', 'Renesting exp.')) +
+  scale_fill_manual(name = '', values = c('white', 'black', 'white', 'black'), labels = c('Intensitve study', 'Outside plot', 'Long-term monit.', 'Renesting exp.')) +
+  theme(legend.position = c(0.81, 0.95))
+
+
+# ggsave('./REPORTS/FIGURES/Map_nests.tiff', plot = last_plot(),  width = 85, height = 85, units = c('mm'), dpi = 'print')
+
+
 
 ### Frequency of extra-pair paternity for each year and data source - Table 1
 
@@ -117,8 +154,8 @@ ds
 #------------------------------------------------------------------------------------------------------------------------
 
 # Load data
-d = read.table('./DATA/NESTS.txt', sep = '\t', header = TRUE) %>% data.table
-dc = read.table('./DATA/CAPTURES.txt', sep = '\t', header = TRUE) %>% data.table
+d = read.table(paste0(path, 'NESTS.txt'), sep = '\t', header = TRUE) %>% data.table
+dc = read.table(paste0(path, 'CAPTURES.txt'), sep = '\t', header = TRUE) %>% data.table
 
 # Assign first capture
 dc[, caught_time := as.POSIXct(caught_time)]
@@ -183,9 +220,9 @@ ds
 #------------------------------------------------------------------------------------------------------------------------
 
 # Load data
-d = read.table('./DATA/NESTS.txt', sep = '\t', header = TRUE) %>% data.table
-dc = read.table('./DATA/CAPTURES.txt', sep = '\t', header = TRUE) %>% data.table
-dp = read.table('./DATA/PATERNITY.txt', sep = '\t', header = TRUE) %>% data.table
+d = read.table(paste0(path, 'NESTS.txt'), sep = '\t', header = TRUE) %>% data.table
+dc = read.table(paste0(path, 'CAPTURES.txt'), sep = '\t', header = TRUE) %>% data.table
+dp = read.table(paste0(path, 'PATERNITY.txt'), sep = '\t', header = TRUE) %>% data.table
 
 # Clutch size of nests with genotype
 ds = d[parentage == TRUE]
@@ -258,8 +295,8 @@ ds[IDfather > 100000] %>% nrow / ds[!is.na(EPY)] %>% nrow * 100
 #------------------------------------------------------------------------------------------------------------------------
 
 # load data
-d = read.table('./DATA/NESTS.txt', sep = '\t',header = TRUE) %>% data.table
-dp = read.table('./DATA/PATERNITY.txt', sep = '\t',header = TRUE) %>% data.table
+d = read.table(paste0(path, 'NESTS.txt'), sep = '\t',header = TRUE) %>% data.table
+dp = read.table(paste0(path, 'PATERNITY.txt'), sep = '\t',header = TRUE) %>% data.table
 
 # EPY in nests
 d[parentage == TRUE & anyEPY == 1, .N]
@@ -494,8 +531,8 @@ Anova(fm)
 #------------------------------------------------------------------------------------------------------------------------
 
 # load data
-d = read.table('./DATA/NESTS.txt', sep = '\t',header = TRUE) %>% data.table
-dp = read.table('./DATA/PATERNITY.txt', sep = '\t',header = TRUE) %>% data.table
+d = read.table(paste0(path, 'NESTS.txt'), sep = '\t',header = TRUE) %>% data.table
+dp = read.table(paste0(path, 'PATERNITY.txt'), sep = '\t',header = TRUE) %>% data.table
 
 # format
 d[, initiation := as.POSIXct(initiation)]
@@ -547,14 +584,14 @@ ds[, clutch_identity := factor(clutch_identity, levels = c('single', 'first', 's
 ds[, anyEPY := factor(anyEPY, levels = c('0', '1'))]
 
 
-theme_classic_edit = function (base_size = 11, base_family = "", base_line_size = base_size/22, 
-                               base_rect_size = base_size/22, lp = c(0.8, 0.2)) 
+theme_classic_edit = function (base_size = 11, base_family = "", base_line_size = base_size/22,
+                               base_rect_size = base_size/22, lp = c(0.8, 0.2))
 {
-  theme_bw(base_size = base_size, base_family = base_family, 
-           base_line_size = base_line_size, base_rect_size = base_rect_size) %+replace% 
-    theme(panel.border = element_blank(), panel.grid.major = element_blank(), 
-          panel.grid.minor = element_blank(), 
-          axis.line = element_line(colour = "black", size = rel(1)), legend.key = element_blank(), 
+  theme_bw(base_size = base_size, base_family = base_family,
+           base_line_size = base_line_size, base_rect_size = base_rect_size) %+replace%
+    theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          axis.line = element_line(colour = "black", size = rel(1)), legend.key = element_blank(),
           strip.background = element_rect(fill = "white", colour = "black", size = rel(2)), complete = TRUE,
           legend.position = lp)
 }
@@ -568,7 +605,7 @@ ds[clutch_identity == 'first' & next_clutch == 'renesting']
 dss = data.table(clutch_identity = c('single', 'first', 'second', 'third'),
                  sample_size = c('138', '15', '15', '2'))
 
-p3 = 
+p3 =
   ggplot() +
   geom_hline(yintercept = 0, color = 'grey70') +
   geom_boxplot(data = ds, aes(clutch_identity, initiation_st), fill = 'grey85', outlier.alpha = 0) +
@@ -577,7 +614,7 @@ p3 =
              shape = 21, size = 1) +
   geom_point(data = ds[clutch_identity != 'single' & anyEPY == '1'], aes(clutch_identity, initiation_st, fill = anyEPY),
              shape = 21, size = 1) +
-  geom_jitter(data = ds[clutch_identity == 'single'], aes(clutch_identity, initiation_st, fill = anyEPY), 
+  geom_jitter(data = ds[clutch_identity == 'single'], aes(clutch_identity, initiation_st, fill = anyEPY),
               shape = 21, size = ps, height = 0, width = 0.3) +
   scale_fill_manual(values = c('white', 'black'), name = NULL, labels = c('no EPY', 'EPY'), guide = FALSE) +
   scale_linetype_manual(values = c('solid', 'dotted'), name = NULL) +
@@ -599,14 +636,14 @@ ds = ds[!(female_id_year_NA %in% c('270170935_19', '19222_19'))]
 ds[, .N, clutch_identity]
 
 # initiation first clutch compared to single clutch
-ds[clutch_identity == 'single', mean(initiation_st)] - ds[clutch_identity == 'first', mean(initiation_st)] 
+ds[clutch_identity == 'single', mean(initiation_st)] - ds[clutch_identity == 'first', mean(initiation_st)]
 
 # second clutches compared to single
-ds[clutch_identity == 'single', mean(initiation_st)] - ds[clutch_identity == 'second', mean(initiation_st)] 
-ds[clutch_identity == 'single', mean(initiation_st)] - ds[clutch_identity == 'second' & polyandrous == TRUE, mean(initiation_st)] 
-ds[clutch_identity == 'single', mean(initiation_st)] - ds[clutch_identity == 'second' & polyandrous != TRUE, mean(initiation_st)] 
+ds[clutch_identity == 'single', mean(initiation_st)] - ds[clutch_identity == 'second', mean(initiation_st)]
+ds[clutch_identity == 'single', mean(initiation_st)] - ds[clutch_identity == 'second' & polyandrous == TRUE, mean(initiation_st)]
+ds[clutch_identity == 'single', mean(initiation_st)] - ds[clutch_identity == 'second' & polyandrous != TRUE, mean(initiation_st)]
 
-ds[clutch_identity == 'third', .(initiation_st)] 
+ds[clutch_identity == 'third', .(initiation_st)]
 
 
 #------------------------------------------------------------------------------------------------------------------------
@@ -614,8 +651,8 @@ ds[clutch_identity == 'third', .(initiation_st)]
 #------------------------------------------------------------------------------------------------------------------------
 
 # load data
-d = read.table('./DATA/NESTS.txt', sep = '\t',header = TRUE) %>% data.table
-dp = read.table('./DATA/PATERNITY.txt', sep = '\t',header = TRUE) %>% data.table
+d = read.table(paste0(path, 'NESTS.txt'), sep = '\t',header = TRUE) %>% data.table
+dp = read.table(paste0(path, 'PATERNITY.txt'), sep = '\t',header = TRUE) %>% data.table
 
 # subset all multiple clutches or in study site
 ds = d[!is.na(initiation) & !is.na(anyEPY)]
@@ -635,7 +672,7 @@ ds[, initiation_st := difftime(initiation_y, mean_initiation, units = 'days') %>
 ds[, anyEPY := as.character(anyEPY)]
 ds[, study_site := as.character(study_site)]
 
-dss = ds[, .(median = median(initiation_st), q25 = quantile(initiation_st, probs = c(0.25)), 
+dss = ds[, .(median = median(initiation_st), q25 = quantile(initiation_st, probs = c(0.25)),
              q75 = quantile(initiation_st, probs = c(0.75)), .N), by = .(data_type, anyEPY)]
 
 dss2 = data.table(data_type = c(rep('Intensive study', 2), rep('Other data', 2), rep('Dale et al.', 2)),
@@ -650,7 +687,7 @@ dss2[, anyEPY := factor(anyEPY, levels = c('1', '0'))]
 dss2[, data_type := factor(data_type, levels = c('Intensive study', 'Other data', 'Dale et al.'))]
 
 
-p4 = 
+p4 =
   ggplot(data = ds, aes(data_type, initiation_st, fill = anyEPY)) +
   geom_hline(yintercept = 0, color = 'grey70') +
   geom_boxplot(position = position_dodge(width = 0.9), outlier.alpha = 0, show.legend = FALSE) +
@@ -662,9 +699,9 @@ p4 =
   scale_y_continuous(breaks = c(-14, -7, 0, 7, 14), limits = c(-18, 18), expand = c(0, 0)) +
   geom_text(data = dss2, aes(data_type, Inf, group = anyEPY, label = sample_size), position = position_dodge(width = 0.9), vjust = vjust_, size = ls) +
   geom_text(aes(Inf, Inf, label = 'd'), vjust = vjust_label, hjust = hjust_,  size = lsa) +
-  xlab('Data source') + ylab('Clutch initiation date (standardized)') + 
+  xlab('Data source') + ylab('Clutch initiation date (standardized)') +
   theme_classic_edit(base_size = bs, lp = c(0.89, 0.08)) +
-  theme(legend.background = element_rect(fill = alpha('white', 0)), 
+  theme(legend.background = element_rect(fill = alpha('white', 0)),
         legend.key.size = unit(0.5, 'lines'))
 
 
@@ -679,9 +716,9 @@ summary(fm)
 
 
 # save Figure 2
-p1 + p2 + p3 + p4 + plot_layout(ncol = 2, nrow = 2) 
+p1 + p2 + p3 + p4 + plot_layout(ncol = 2, nrow = 2)
 
-ggsave('./REPORTS/FIGURES/Figure2.tiff', plot = last_plot(),  width = 177, height = 177, units = c('mm'), dpi = 'print')
+# ggsave('./REPORTS/FIGURES/Figure2.tiff', plot = last_plot(),  width = 177, height = 177, units = c('mm'), dpi = 'print')
 
 
 #------------------------------------------------------------------------------------------------------------------------
