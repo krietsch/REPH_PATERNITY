@@ -818,7 +818,7 @@ patchwork[[4]] <- patchwork[[4]] + plot_layout(widths = c(0.5, 2))
 patchwork + plot_layout(heights = c(3, 2, 2, 0.2)) 
 
 
-ggsave('./REPORTS/FIGURES/Figure3_icon.tiff', plot = last_plot(),  width = 177, height = 177, units = c('mm'), dpi = 'print')
+ggsave('./REPORTS/FIGURES/Figure3_icon_new.tiff', plot = last_plot(),  width = 177, height = 177, units = c('mm'), dpi = 'print')
 
 
 

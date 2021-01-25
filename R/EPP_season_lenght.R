@@ -154,6 +154,8 @@ ds3[, data_type_parentage := 'with_parentage']
 
 ds2 = rbind(ds2, ds3)
 
+ds2[, .N, year_]
+
 p3 = 
 ggplot(data = ds2) +
   geom_boxplot(aes(as.character(year_), initiation_y , color = data_type_parentage), show.legend = FALSE) +
