@@ -85,7 +85,8 @@ create_bm = function(DT, lat = 'lat', lon = 'lon', buffer = 1000, sc_dist, squar
             axis.ticks.x = element_blank(), axis.ticks.y = element_blank(),
             axis.title = element_blank(), plot.margin = unit(c(0, 0, -0.2, -0.2), "lines"),
             legend.background = element_rect(fill = 'transparent'), legend.key = element_blank(),
-            legend.key.size = unit(0.5, 'lines')
+            legend.key.size = unit(0.5, 'lines'), legend.text = element_text(size = 8.5),
+            legend.spacing.x = unit(0.06, 'cm')
             )
     
     setnames(DT, c('lat', 'lon'), c(lat, lon))
