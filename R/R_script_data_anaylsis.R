@@ -658,6 +658,83 @@ ds[clutch_identity == 'third', .(initiation_st)]
 #--------------------------------------------------------------------------------------------------------------
 #' ### Extra-pair paternity and breeding phenology
 #--------------------------------------------------------------------------------------------------------------
+
+# load data
+d = read.table(paste0(path, 'NESTS.txt'), sep = '\t',header = TRUE) %>% data.table
+dp = read.table(paste0(path, 'PATERNITY.txt'), sep = '\t',header = TRUE) %>% data.table
+
+# 
+d[, initiation := as.POSIXct(initiation)]
+d[, initiation_y := as.POSIXct(format(initiation, format = '%m-%d %H:%M:%S'), format = '%m-%d %H:%M:%S')]
+
+# subset all multiple clutches or in study site
+ds = d[!is.na(initiation) & !is.na(anyEPY)]
+ds = ds[, .(year_, nestID, initiation_y, anyEPY, data_type)]
+ds[data_type == 'study_site', data_type := 'Intensive study']
+ds[data_type != 'Intensive study', data_type := 'Other data']
+
+# load Dale et al. data
+dale = read.csv2(paste0(path, 'Dale_EPP.csv')) %>% data.table
+dale[, initiation_y := as.POSIXct(as.Date(initiation_doy, origin = '1993-01-01'))]
+
+ds = rbind(ds, dale[, .(year_ = YEAR_, nestID, initiation_y, anyEPY, data_type = 'Dale et al.')])
+
+
+ds[, mean_initiation := mean(initiation_y, na.rm = TRUE), by = year_]
+ds[, initiation_st := difftime(initiation_y, mean_initiation, units = 'days') %>% as.numeric]
+ds[, anyEPY := as.character(anyEPY)]
+ds[, study_site := as.character(study_site)]
+
+dss = ds[, .(median = median(initiation_st), q25 = quantile(initiation_st, probs = c(0.25)),
+             q75 = quantile(initiation_st, probs = c(0.75)), .N), by = .(data_type, anyEPY)]
+
+dss2 = data.table(data_type = c(rep('Intensive study', 2), rep('Other data', 2), rep('Dale et al.', 2)),
+                  sample_size = c('16', '149', '21', '146', '6', '12'),
+                  anyEPY = c('1', '0', '1', '0', '1', '0'))
+
+# factor order
+ds[, data_type := factor(data_type, levels = c('Intensive study', 'Other data', 'Dale et al.'))]
+ds[, anyEPY := factor(anyEPY, levels = c('1', '0'))]
+
+dss2[, anyEPY := factor(anyEPY, levels = c('1', '0'))]
+dss2[, data_type := factor(data_type, levels = c('Intensive study', 'Other data', 'Dale et al.'))]
+
+
+p4 =
+  ggplot(data = ds, aes(data_type, initiation_st, fill = anyEPY)) +
+  geom_hline(yintercept = 0, color = 'grey70') +
+  geom_boxplot(position = position_dodge(width = 0.9), outlier.alpha = 0, show.legend = FALSE) +
+  scale_fill_manual(values = c('#818181', 'white'), labels = c('0', '1')) +
+  new_scale_fill() +
+  geom_point(data = ds, aes(data_type, initiation_st, fill = anyEPY), shape = 21, size = ps,
+             position = position_jitterdodge(jitter.width = 0.6, jitter.height = 0, dodge.width = 0.9)) +
+  scale_fill_manual(values = c('black', 'white'), name = NULL, labels = c('EPY', 'no EPY')) +
+  scale_y_continuous(breaks = c(-14, -7, 0, 7, 14), limits = c(-18, 18), expand = c(0, 0)) +
+  geom_text(data = dss2, aes(data_type, Inf, group = anyEPY, label = sample_size), position = position_dodge(width = 0.9), vjust = vjust_, size = ls) +
+  geom_text(aes(Inf, Inf, label = 'd'), vjust = vjust_label, hjust = hjust_,  size = lsa) +
+  xlab('Data source') + ylab('Clutch initiation date (standardized)') +
+  theme_classic_edit(base_size = bs, lp = c(0.89, 0.08)) +
+  theme(legend.background = element_rect(fill = alpha('white', 0)),
+        legend.key.size = unit(0.5, 'lines'))
+
+
+p4
+
+# statistics
+fm = glm(anyEPY ~ initiation_st, data = ds[data_type == 'Intensive study'], family = binomial)
+summary(fm)
+
+fm = glm(anyEPY ~ initiation_st, data = ds[data_type == 'Other data'], family = binomial)
+summary(fm)
+
+
+# save Figure 2
+p1 + p2 + p3 + p4 + plot_layout(ncol = 2, nrow = 2)
+
+# ggsave('./REPORTS/FIGURES/Figure2.tiff', plot = last_plot(),  width = 177, height = 177, units = c('mm'), dpi = 'print')
+
+
+
 #--------------------------------------------------------------------------------------------------------------
 #' ### Characteristics of the extra-pair sires
 #--------------------------------------------------------------------------------------------------------------
@@ -752,6 +829,11 @@ ds$distance_between_nests %>% median
 ds$distance_between_nests %>% min
 ds$distance_between_nests %>% max
 
+# Sources of EPP within study site
+8/17 * 100 # identified
+1/17 * 100 # previous social male
+5/17 * 100 # not previous social male
+11/17 * 100 # unknown
 
 #------------------------------------------------------------------------------------------------------------------------
 #' ### Frequency and timing of copulations and other male-female interactions
