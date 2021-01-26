@@ -18,7 +18,7 @@
 
 
 # Packages
-sapply(c('data.table', 'magrittr', 'sf', 'auksRuak', 'ggplot2', 'ggnewscale', 'car', 'emmeans', 'knitr'),
+sapply(c('data.table', 'magrittr', 'sf', 'auksRuak', 'ggplot2', 'ggnewscale', 'car', 'emmeans', 'knitr', 'patchwork', 'cowplot'),
        function(x) suppressPackageStartupMessages(require(x , character.only = TRUE, quietly = TRUE)))
 
 # auksRuak can be found at https://github.com/krietsch/auksRuak 
@@ -835,11 +835,554 @@ ds$distance_between_nests %>% max
 5/17 * 100 # not previous social male
 11/17 * 100 # unknown
 
-#------------------------------------------------------------------------------------------------------------------------
+#--------------------------------------------------------------------------------------------------------------
 #' ### Frequency and timing of copulations and other male-female interactions
+#--------------------------------------------------------------------------------------------------------------
+
+# load data
+di = read.table(paste0(path, 'OBSERVATIONS.txt'), sep = '\t',header = TRUE) %>% data.table
+dn = read.table(paste0(path, 'NESTS.txt'), sep = '\t',header = TRUE) %>% data.table
+
+# unique by day
+di[, datetime_ := as.POSIXct(datetime_)]
+di[, date_ := as.POSIXct(format(datetime_, format = '%y-%m-%d'), format = '%y-%m-%d')]
+ds = unique(di, by = c('ID1', 'ID2', 'date_'))
+
+# unique nest information by ID
+dn[!is.na(male_id), male_id_year := paste0(male_id, '_', substr(year_, 3,4 ))]
+dn[!is.na(female_id), female_id_year := paste0(female_id, '_', substr(year_, 3,4 ))]
+
+
+dm = dn[, .(year_, nestID, ID_year = male_id_year, study_site, initiation, nest_state_date)]
+df = dn[, .(year_, nestID, ID_year = female_id_year, study_site, initiation, nest_state_date)]
+
+dnID = rbind(dm, df)
+dnID = dnID[!is.na(ID_year) & year_ > 2000]
+dnID[!is.na(ID_year) & !is.na(initiation), first_initiation := min(initiation, na.rm = TRUE), by = ID_year]
+dnID[!is.na(ID_year) & !is.na(initiation) & initiation != first_initiation, 
+     second_initiation := min(initiation, na.rm = TRUE), by = ID_year]
+dnID[, second_initiation := min(second_initiation, na.rm = TRUE), by = ID_year]
+dnID[!is.na(ID_year) & !is.na(nest_state_date), first_nest_state_date := min(nest_state_date, na.rm = TRUE), by = ID_year]
+dnID[!is.na(ID_year) & !is.na(nest_state_date) & nest_state_date != first_nest_state_date, 
+     second_nest_state_date := min(nest_state_date, na.rm = TRUE), by = ID_year]
+dnID[, second_nest_state_date := min(second_nest_state_date, na.rm = TRUE), by = ID_year]
+
+dnID[, N_clutches := .N, by = ID_year]
+dnID = unique(dnID, by = 'ID_year')
+
+
+# plot settings
+t_margin = 0
+bs = 11 # basesize
+ls = 3 # label size
+lsa = 5 # label size annotation
+vline = 0.7 # size of vertical line
+width_ = 1
+grey_ = 'grey75'
+bar_line = 'grey20'
+bar_line_thickness = 0.1
+margin_ = unit(c(0, 8, 2, 0), "pt")
+vjust_ = 1.7 # vjust of text
+vjust_label = 1.2
+
+# colors in legend scale
+c_active = '#A6D854'
+c_failed = '#D53E4F'
+c_previous = '#2B83BA'
+c_next = '#FDAE61'
+
+# colors in legend scale
+# c_active = '#95D840FF'
+# c_failed = '#33638DFF'
+# c_previous = 'orange'
+# c_next = 'firebrick3'
+
+### interactions
+
+# within pair
+ds1 = ds[ID2 == ID1_1st_partner & ID1sex == 'M', .(ID1, ID2, diff_obs_initiation = diff_obs_1st_initiation, type = '1st', datetime_)]
+ds2 = ds[ID2 == ID1_2nd_partner & ID1sex == 'M', .(ID1, ID2, diff_obs_initiation = diff_obs_2nd_initiation, type = '2nd', datetime_)]
+dss = rbind(ds1, ds2)
+sample_size1 = paste0('N = ', nrow(dss))
+
+# color for birds with more than one clutch 
+dss = merge(dss, dnID[, .(ID_year, N_clutches)], by.x = 'ID1', by.y = 'ID_year', all.x = TRUE)
+dnpu = unique(dnp, by = 'ID1')
+
+dss = merge(dss, dnpu[, .(ID1, ID1_1st_partner)], by = 'ID1', all.x = TRUE)
+
+
+dss[N_clutches == 2 & ID1_1st_partner == ID2, int_with_first := TRUE]
+dss[int_with_first == TRUE, type := '2nd_same']
+
+# within pair interactions while clutch active?
+da = dss[diff_obs_initiation >= 0]
+
+da = merge(da, dn[, .(male_id_year, female_id_year, nest_state_date)], 
+           by.x = c('ID1', 'ID2'), by.y = c('male_id_year', 'female_id_year'), all.x = TRUE)
+
+da = unique(da, by = c('ID1', 'ID2', 'datetime_'))
+
+da[, nest_still_active := difftime(nest_state_date, datetime_, units = 'days') %>% as.numeric]
+
+da[nest_still_active > 0, nest_still_active_factor := TRUE]
+da[nest_still_active < 0, nest_still_active_factor := FALSE]
+
+dss = merge(dss, da[, .(ID1, ID2, datetime_, nest_still_active_factor)], by = c('ID1', 'ID2', 'datetime_'), all.x = TRUE)
+
+dss[diff_obs_initiation >= 0 & nest_still_active_factor == TRUE, type2 := 'active nest']
+dss[diff_obs_initiation >= 0 & nest_still_active_factor == FALSE, type2 := 'failed nest']
+
+dss[is.na(type2), type2 := 'aabefore']
+
+# dss = merge(dss, da[, .(ID1, ID2, datetime_, nest_still_active)], by = c('ID1', 'ID2', 'datetime_'), all.x = TRUE)
+# 
+# dss[diff_obs_initiation > 0 & type != '2nd_same', type2 := 'renesting']
+# dss[diff_obs_initiation > 0 & type == '2nd_same', type2 := 'active nest']
+# dss[is.na(type2), type2 := 'paired']
+
+p1 = 
+  ggplot(data = dss) +
+  geom_bar(aes(diff_obs_initiation, fill = type2), width = width_, color = bar_line, size = bar_line_thickness) +
+  geom_vline(aes(xintercept = 3), linetype = 'dotted', size = vline) + 
+  scale_x_continuous(limits = c(-13, 23), labels = NULL, expand = c(0.02, 0.02)) +
+  scale_y_continuous(limits = c(0, 54), labels = c('', '','20', '','40', ''), expand = c(0, 0)) +
+  scale_fill_manual(values = c(grey_, c_active, c_failed)) +
+  xlab('') + ylab('') +
+  geom_text(aes(-9.5, Inf, label = sample_size1), vjust = vjust_, size = ls) +
+  geom_text(aes(22, Inf, label = 'a'), vjust = vjust_label, size = lsa) +
+  theme_classic(base_size = bs) +
+  theme(legend.position = 'none', plot.margin = margin_, axis.title.x = element_blank(), axis.text.x=element_blank()) # legend.position = c(0.9, 0.9), legend.title = element_blank()
+
+p1 
+
+
+# N interactions before clutch complete 
+dss[diff_obs_initiation < 4] %>% nrow
+dss[type2 == 'active nest' & diff_obs_initiation > 3] %>% nrow
+dss %>% nrow
+
+# male 
+ds1 = ds[seen_with_other_than_1st_partner == TRUE & same_sex == 0 & ID1sex == 'M', 
+         .(ID1, ID2, diff_obs_initiation = diff_obs_1st_initiation, type = '1st', datetime_)]
+ds2 = ds[seen_with_other_than_2nd_partner == TRUE & same_sex == 0 & ID1sex == 'M', 
+         .(ID1, ID2, diff_obs_initiation = diff_obs_2nd_initiation, type = '2nd', datetime_)]
+dss = rbind(ds1, ds2)
+sample_size3 = paste0('N = ', nrow(dss))
+
+# 1st interacting with second partner
+dnpu = unique(dnp, by = 'ID1')
+dss = merge(dss, dnpu[, .(ID1, ID1_1st_partner, ID1_2nd_partner)], by = 'ID1', all.x = TRUE)
+
+dss[type == '1st' & ID2 == ID1_2nd_partner, type := 'next_partner']
+
+# interaction with previous partner
+dss[type == '2nd' & ID2 == ID1_1st_partner, type := 'previous_partner']
+
+# factor order
+dss[, type := factor(type, levels = c('1st', '2nd', 'previous_partner', 'next_partner'))]
+
+# within pair interactions while clutch active?
+da = dss[diff_obs_initiation >= 0]
+
+da = merge(da, dn[, .(male_id_year, female_id_year, nest_state_date)], 
+           by.x = c('ID1', 'ID1_1st_partner'), by.y = c('male_id_year', 'female_id_year'), all.x = TRUE)
+
+da = unique(da, by = c('ID1', 'ID2', 'datetime_'))
+
+da[, nest_still_active := difftime(nest_state_date, datetime_, units = 'days') %>% as.numeric]
+da[nest_still_active > 0, nest_still_active_factor := TRUE]
+da[nest_still_active < 0, nest_still_active_factor := FALSE]
+
+dss = merge(dss, da[, .(ID1, ID2, datetime_, nest_still_active_factor)], by = c('ID1', 'ID2', 'datetime_'), all.x = TRUE)
+
+
+dss[diff_obs_initiation >= 0 & nest_still_active_factor == TRUE, type2 := 'active nest']
+dss[diff_obs_initiation >= 0 & nest_still_active_factor == FALSE, type2 := 'failed nest']
+dss[is.na(type2), type2 := 'aabefore']
+
+p2 = 
+  ggplot(data = dss) +
+  geom_bar(aes(diff_obs_initiation, fill = type2, width = width_), width = width_, color = bar_line, size = bar_line_thickness) +
+  geom_vline(aes(xintercept = 3), linetype = 'dotted', size = vline) + 
+  scale_x_continuous(limits = c(-13, 23), labels = NULL, expand = c(0.02, 0.02)) +
+  scale_y_continuous(limits = c(0, 22), labels = c('', '','10', '','20'), expand = c(0, 0)) +
+  scale_fill_manual(values = c(grey_, c_active, c_failed)) +
+  xlab('') + ylab('Number of male-female interactions') + 
+  geom_text(aes(-9.5, Inf, label = sample_size3), vjust = vjust_, size = ls) +
+  geom_text(aes(22, Inf, label = 'c'), vjust = vjust_label, size = lsa) +
+  theme_classic(base_size = bs) +
+  theme(legend.position = 'none', plot.margin = margin_, axis.title.x = element_blank(), axis.text.x=element_blank())
+p2
+
+
+
+# N interactions while active clutch
+dss[type2 == 'active nest'] %>% nrow
+dss %>% nrow
+
+
+
+# female 
+ds1 = ds[seen_with_other_than_1st_partner == TRUE & same_sex == 0 & ID1sex == 'F', 
+         .(ID1, ID2, diff_obs_initiation = diff_obs_1st_initiation, type = '1st', datetime_)]
+ds2 = ds[seen_with_other_than_2nd_partner == TRUE & same_sex == 0 & ID1sex == 'F', 
+         .(ID1, ID2, diff_obs_initiation = diff_obs_2nd_initiation, type = '2nd', datetime_)]
+dss = rbind(ds1, ds2)
+sample_size2 = paste0('N = ', nrow(dss))
+
+# 1st interacting with second partner
+dnpu = unique(dnp, by = 'ID1')
+dss = merge(dss, dnpu[, .(ID1, ID1_1st_partner, ID1_2nd_partner)], by = 'ID1', all.x = TRUE)
+
+dss[type == '1st' & ID2 == ID1_2nd_partner, type := 'next partner']
+
+# interaction with previous partner
+dss[type == '2nd' & ID2 == ID1_1st_partner, type := 'previous partner']
+
+# additional ask which males had an active nest
+da = dss
+
+da = merge(da, dnID[, .(ID_year, first_initiation, second_initiation, first_nest_state_date, second_nest_state_date)], 
+           by.x = c('ID2'), by.y = c('ID_year'), all.x = TRUE)
+
+da = unique(da, by = c('ID1', 'ID2', 'datetime_'))
+
+# nest active?
+da[, active_nest1 := datetime_%between% c(first_initiation, first_nest_state_date), by = 1:nrow(da)]
+da[is.na(second_initiation), active_nest1 := NA]
+da[, active_nest2 := datetime_%between% c(second_initiation, second_nest_state_date), by = 1:nrow(da)]
+da[is.na(second_initiation), active_nest2 := NA]
+da[, active_nest := any(active_nest1 == TRUE | active_nest2 == TRUE), by = 1:nrow(da)]
+da[is.na(first_initiation), no_nest := TRUE]
+
+dss = merge(dss, da[, .(ID1, ID2, datetime_, active_nest, no_nest)], by = c('ID1', 'ID2', 'datetime_'), all.x = TRUE)
+dss[type %in% c('1st', '2nd') & active_nest == TRUE, type := 'active nest']
+# dss[diff_obs_initiation > 0 & type %in% c('1st', '2nd') & active_nest == FALSE, type := 'not active nest']
+# dss[diff_obs_initiation > 0 & type %in% c('1st', '2nd') & no_nest == TRUE, type := 'no nest']
+
+# factor order
+dss[!(type %in% c('previous partner', 'next partner', 'active nest')), type := 'unknown']
+dss[, type := factor(type, levels = c('unknown', 'active nest', 'previous partner', 'next partner'))]
+
+p3 = 
+  ggplot(data = dss) +
+  geom_bar(aes(diff_obs_initiation, fill = type), width = width_, color = bar_line, size = bar_line_thickness) +
+  geom_vline(aes(xintercept = 3), linetype = 'dotted', size = vline) + 
+  scale_x_continuous(limits = c(-13, 23), expand = c(0.02, 0.02)) +
+  scale_y_continuous(limits = c(0, 22), labels = c('0', '','10', '','20'), expand = c(0, 0)) +
+  scale_fill_manual(values = c(grey_, c_active, c_previous, c_next)) + 
+  xlab('Day relative to clutch initiation (= 0)') + ylab('') +
+  geom_text(aes(-9.5, Inf, label = sample_size2), vjust = vjust_, size = ls) +
+  geom_text(aes(22, Inf, label = 'e'), vjust = vjust_label, size = lsa) +
+  theme_classic(base_size = bs) +
+  theme(legend.position = 'none', plot.background = element_rect(fill = 'transparent'),
+        plot.margin = margin_) # legend.position = c(0.8, 0.9), legend.title = element_blank()
+p3
+
+
+# N interactin with next partner while laying
+dss[type == 'next partner' & diff_obs_initiation < 4]$ID1 %>% unique %>% length
+
+# N females interacting with male with active nest
+dss[type == 'active nest' & diff_obs_initiation > -1 & diff_obs_initiation < 4]$ID1 %>% unique %>% length
+
+# Unknown status males that females interacted with during laying
+dss[type == 'unknown' & diff_obs_initiation > -1 & diff_obs_initiation < 4]$ID2 %>% unique %>% length
+dss[diff_obs_initiation > -1 & diff_obs_initiation < 4]$ID2 %>% unique %>% length
+
+# # additional ask which males had an active nest
+# da = dss[diff_obs_initiation > 0]
+# 
+# da = merge(da, dnID[, .(ID_year, first_initiation, second_initiation, first_nest_state_date, second_nest_state_date)], 
+#            by.x = c('ID2'), by.y = c('ID_year'), all.x = TRUE)
+# 
+# da = unique(da, by = c('ID1', 'ID2', 'datetime_'))
+# 
+# # nest active?
+# da[, active_nest1 := datetime_%between% c(first_initiation, first_nest_state_date), by = 1:nrow(da)]
+# da[is.na(second_initiation), active_nest1 := NA]
+# da[, active_nest2 := datetime_%between% c(second_initiation, second_nest_state_date), by = 1:nrow(da)]
+# da[is.na(second_initiation), active_nest2 := NA]
+# da[, active_nest := any(active_nest1 == TRUE | active_nest2 == TRUE), by = 1:nrow(da)]
+# da[is.na(first_initiation), no_nest := TRUE]
+# 
+# dss = merge(dss, da[, .(ID1, ID2, datetime_, active_nest, no_nest)], by = c('ID1', 'ID2', 'datetime_'), all.x = TRUE)
+# 
+# dss[diff_obs_initiation > 0 & type %in% c('1st', '2nd') & active_nest == TRUE, type := 'active nest']
+# dss[diff_obs_initiation > 0 & type %in% c('1st', '2nd') & no_nest == TRUE, type := 'no nest']
+# dss[diff_obs_initiation > 0 & type %in% c('1st', '2nd') & active_nest == FALSE, type := 'not active nest']
+# 
+# 
+# p3b =
+#   ggplot(data = dss) +
+#   geom_bar(aes(diff_obs_initiation, fill = type), width = width_, color = bar_line, size = bar_line_thickness) +
+#   geom_vline(aes(xintercept = 3), linetype = 'dotted', size = 1.2) +
+#   scale_x_continuous(limits = c(-13, 23), expand = c(0.02, 0.02)) +
+#   scale_y_continuous(limits = c(0, 22), labels = c('0', '','10', '','20'), expand = c(0, 0)) +
+#   scale_fill_manual(values = c(grey_, 'black', 'orange', 'orangered2', 'green', 'blue', 'yellow')) +
+#   xlab('Day relative to clutch initiation') + ylab('') +
+#   geom_text(aes(-10, Inf, label = sample_size2), vjust = 1, size = ls) +
+#   geom_text(aes(17, Inf, label = 'females with\nextra-pair males'), vjust = 1, size = 6) +
+#   theme_classic(base_size = bs) +
+#   theme(panel.spacing = unit(0, "cm"), plot.margin = margin_,
+#         axis.title.x = element_blank()) # legend.position = c(0.8, 0.9), legend.title = element_blank()
+# p3b
+# 
+# dss[type == '1st']
+
+
 #------------------------------------------------------------------------------------------------------------------------
+### copulations
+ds = unique(di[ID1copAS == 1 & ID2copAS == 1 & !is.na(ID2)], by = c('ID1', 'ID2', 'date_'))
+
+# within pair
+ds1 = ds[ID2 == ID1_1st_partner & ID1copAS == 1 & ID1sex == 'M', 
+         .(ID1, ID2, diff_obs_initiation = diff_obs_1st_initiation, type = '1st', datetime_)]
+ds2 = ds[ID2 == ID1_2nd_partner & ID1copAS == 1 & ID1sex == 'M', 
+         .(ID1, ID2, diff_obs_initiation = diff_obs_2nd_initiation, type = '2nd'), datetime_]
+dss = rbind(ds1, ds2)
+sample_size4 = paste0('N = ', nrow(dss))
 
 
+dss = merge(dss, dnID[, .(ID_year, N_clutches)], by.x = 'ID1', by.y = 'ID_year', all.x = TRUE)
+dnpu = unique(dnp, by = 'ID1')
+
+dss = merge(dss, dnpu[, .(ID1, ID1_1st_partner)], by = 'ID1', all.x = TRUE)
+
+
+dss[N_clutches == 2 & ID1_1st_partner == ID2, int_with_first := TRUE]
+dss[int_with_first == TRUE, type := '2nd_same']
+
+dss[diff_obs_initiation > 4 & type != '2nd_same']
+
+# within pair interactions while clutch active?
+da = dss[diff_obs_initiation >= 0]
+
+da = merge(da, dn[, .(male_id_year, female_id_year, nest_state_date)], 
+           by.x = c('ID1', 'ID2'), by.y = c('male_id_year', 'female_id_year'), all.x = TRUE)
+
+da = unique(da, by = c('ID1', 'ID2', 'datetime_'))
+
+da[, nest_still_active := difftime(nest_state_date, datetime_, units = 'days') %>% as.numeric]
+
+da[nest_still_active > 0, nest_still_active_factor := TRUE]
+da[nest_still_active < 0, nest_still_active_factor := FALSE]
+
+dss = merge(dss, da[, .(ID1, ID2, datetime_, nest_still_active_factor)], by = c('ID1', 'ID2', 'datetime_'), all.x = TRUE)
+
+dss[diff_obs_initiation >= 0 & nest_still_active_factor == TRUE, type2 := 'active nest']
+dss[diff_obs_initiation >= 0 & nest_still_active_factor == FALSE, type2 := 'failed nest']
+
+dss[is.na(type2), type2 := 'aabefore']
+
+dss[diff_obs_initiation > 2]
+
+
+p4 = 
+  ggplot(data = dss) +
+  geom_bar(aes(diff_obs_initiation, fill = type2), width = width_, color = bar_line, size = bar_line_thickness) +
+  geom_vline(aes(xintercept = 3), linetype = 'dotted', size = vline) + 
+  scale_x_continuous(limits = c(-13, 23), labels = NULL, expand = c(0.02, 0.02)) +
+  scale_y_continuous(limits = c(0, 27), breaks = c(0, 5, 10, 15, 20, 25), labels = c('', '', '10', '', '20', ''), expand = c(0, 0)) +
+  scale_fill_manual(values = c(grey_, c_active, c_failed)) +
+  xlab('') + ylab('') +
+  geom_text(aes(-10, Inf, label = sample_size4), vjust = vjust_, size = ls) +
+  geom_text(aes(22, Inf, label = 'b'), vjust = vjust_label, size = lsa) +
+  theme_classic(base_size = bs) +
+  theme(legend.position = 'none', plot.margin = margin_, axis.title.x = element_blank(), axis.text.x=element_blank())
+p4 
+
+# N interactions before clutch complete 
+dss[diff_obs_initiation < 4] %>% nrow
+dss[type2 == 'active nest' & diff_obs_initiation > 3] %>% nrow
+dss %>% nrow
+
+dss[type2 == 'active nest' & diff_obs_initiation > 3]
+
+# male 
+ds1 = ds[copAS_not_1st_partner == TRUE & ID1sex == 'M', 
+         .(ID1, ID2, diff_obs_initiation = diff_obs_1st_initiation, type = '1st', datetime_)]
+ds2 = ds[copAS_not_2nd_partner == TRUE & ID1sex == 'M', 
+         .(ID1, ID2, diff_obs_initiation = diff_obs_2nd_initiation, type = '2nd', datetime_)]
+dss = rbind(ds1, ds2)
+sample_size6 = paste0('N = ', nrow(dss))
+
+# 1st interacting with second partner
+dnpu = unique(dnp, by = 'ID1')
+dss = merge(dss, dnpu[, .(ID1, ID1_1st_partner, ID1_2nd_partner)], by = 'ID1', all.x = TRUE)
+
+dss[type == '1st' & ID2 == ID1_2nd_partner, type := 'next_partner']
+
+# interaction with previous partner
+dss[type == '2nd' & ID2 == ID1_1st_partner, type := 'previous_partner']
+
+# within pair interactions while clutch active?
+da = dss[diff_obs_initiation >= 0]
+
+da = merge(da, dn[, .(male_id_year, female_id_year, nest_state_date)], 
+           by.x = c('ID1', 'ID1_1st_partner'), by.y = c('male_id_year', 'female_id_year'), all.x = TRUE)
+
+da = unique(da, by = c('ID1', 'ID2', 'datetime_'))
+
+da[, nest_still_active := difftime(nest_state_date, datetime_, units = 'days') %>% as.numeric]
+da[nest_still_active > 0, nest_still_active_factor := TRUE]
+da[nest_still_active < 0, nest_still_active_factor := FALSE]
+
+dss = merge(dss, da[, .(ID1, ID2, datetime_, nest_still_active_factor)], by = c('ID1', 'ID2', 'datetime_'), all.x = TRUE)
+
+
+dss[diff_obs_initiation >= 0 & nest_still_active_factor == TRUE, type2 := 'active nest']
+dss[diff_obs_initiation >= 0 & nest_still_active_factor == FALSE, type2 := 'failed nest']
+dss[is.na(type2), type2 := 'aabefore']
+
+dss[, .N, type2]
+dss[diff_obs_initiation < 0]
+
+p5 = 
+  ggplot(data = dss) +
+  geom_bar(aes(diff_obs_initiation, fill = type2), width = width_, color = bar_line, size = bar_line_thickness) +
+  geom_vline(aes(xintercept = 3), linetype = 'dotted', size = vline) + 
+  scale_x_continuous(limits = c(-13, 23), labels = NULL, expand = c(0.02, 0.02)) +
+  scale_y_continuous(limits = c(0, 11), breaks = c(0, 2.5, 5, 7.5, 10), labels = c('', '', '5', '', '10'), expand = c(0, 0)) +
+  scale_fill_manual(values = c(grey_, c_active, c_failed)) +
+  xlab('') + ylab('Number of copulation attempts') +
+  geom_text(aes(-10, Inf, label = sample_size6), vjust = vjust_, size = ls) +
+  geom_text(aes(22, Inf, label = 'd'), vjust = vjust_label, size = lsa) +
+  theme_classic(base_size = bs) +
+  theme(legend.position = 'none', plot.margin = margin_, axis.title.x = element_blank(), axis.text.x=element_blank())
+p5
+
+
+# female 
+ds1 = ds[copAS_not_1st_partner == TRUE & ID1sex == 'F', 
+         .(ID1, ID2, diff_obs_initiation = diff_obs_1st_initiation, type = '1st', datetime_)]
+ds2 = ds[copAS_not_2nd_partner == TRUE & ID1sex == 'F', 
+         .(ID1, ID2, diff_obs_initiation = diff_obs_2nd_initiation, type = '2nd', datetime_)]
+dss = rbind(ds1, ds2)
+sample_size5 = paste0('N = ', nrow(dss))
+
+# 1st interacting with second partner
+dnpu = unique(dnp, by = 'ID1')
+dss = merge(dss, dnpu[, .(ID1, ID1_1st_partner, ID1_2nd_partner)], by = 'ID1', all.x = TRUE)
+
+dss[type == '1st' & ID2 == ID1_2nd_partner, type := 'next partner']
+
+# interaction with previous partner
+dss[type == '2nd' & ID2 == ID1_1st_partner, type := 'previous partner']
+
+dss[diff_obs_initiation > 0 & type == 'previous partner']
+
+# additional ask which males had an active nest
+da = dss
+
+da = merge(da, dnID[, .(ID_year, first_initiation, second_initiation, first_nest_state_date, second_nest_state_date)], 
+           by.x = c('ID2'), by.y = c('ID_year'), all.x = TRUE)
+
+da = unique(da, by = c('ID1', 'ID2', 'datetime_'))
+
+# nest active?
+da[, active_nest1 := datetime_%between% c(first_initiation, first_nest_state_date), by = 1:nrow(da)]
+da[is.na(second_initiation), active_nest1 := NA]
+da[, active_nest2 := datetime_%between% c(second_initiation, second_nest_state_date), by = 1:nrow(da)]
+da[is.na(second_initiation), active_nest2 := NA]
+da[, active_nest := any(active_nest1 == TRUE | active_nest2 == TRUE), by = 1:nrow(da)]
+da[is.na(first_initiation), no_nest := TRUE]
+
+dss = merge(dss, da[, .(ID1, ID2, datetime_, active_nest, no_nest)], by = c('ID1', 'ID2', 'datetime_'), all.x = TRUE)
+dss[diff_obs_initiation > 0 & type %in% c('1st', '2nd') & active_nest == TRUE, type := 'active nest']
+# dss[diff_obs_initiation > 0 & type %in% c('1st', '2nd') & active_nest == FALSE, type := 'not active nest']
+# dss[diff_obs_initiation > 0 & type %in% c('1st', '2nd') & no_nest == TRUE, type := 'no nest']
+
+# factor order
+dss[!(type %in% c('previous partner', 'next partner', 'active nest')), type := 'unknown']
+dss[, type := factor(type, levels = c('unknown', 'active nest', 'previous partner', 'next partner'))]
+
+dss[type == 'active nest']
+
+
+p6 = 
+  ggplot(data = dss) +
+  geom_bar(aes(diff_obs_initiation, fill = type), width = width_, color = bar_line, size = bar_line_thickness) +
+  geom_vline(aes(xintercept = 3), linetype = 'dotted', size = vline) + 
+  scale_x_continuous(limits = c(-13, 23), expand = c(0.02, 0.02)) +
+  scale_y_continuous(limits = c(0, 11), breaks = c(0, 2.5, 5, 7.5, 10), labels = c('0', '', '5', '', '10'), expand = c(0, 0)) +
+  scale_fill_manual(values = c(grey_, c_active, c_previous, c_next)) + 
+  xlab('Day relative to clutch initiation (= 0)') + ylab('') +
+  geom_text(aes(-10, Inf, label = sample_size5), vjust = vjust_, size = ls) +
+  geom_text(aes(22, Inf, label = 'f'), vjust = vjust_label, size = lsa) +
+  theme_classic(base_size = bs) +
+  theme(legend.position = 'none', plot.background = element_rect(fill = 'transparent'), 
+        plot.margin = margin_)
+p6
+
+# N interactin with next partner while laying
+dss[type == 'next partner' & diff_obs_initiation < 4]$ID1 %>% unique %>% length
+
+
+
+# legend
+ds = data.table(type = c('with active nest', 'with failed nest', 'next partner', 'previous partner'),
+                N = c(rep(1, 4)))
+
+ds[, type := factor(type, levels =c('with active nest', 'with failed nest', 'previous partner', 'next partner'))]
+
+pl = 
+  ggplot(data = ds) +
+  geom_bar(aes(N, fill = type)) +
+  scale_fill_manual(name = 'Male', values = c(c_active, c_failed, c_previous, c_next)) + 
+  theme_classic(base_size = bs) +
+  theme(legend.position = 'top', legend.key.width = unit(0.4, 'cm'), legend.key.height = unit(0.4, 'cm'))
+
+legend = ggpubr::get_legend(pl)
+plgg = ggpubr::as_ggplot(legend)
+
+
+# plot 
+# patchwork <- (plot_spacer() + p1 + p4) / (plot_spacer() + p2 + p5) / (plot_spacer() + p3 + p6) / (plot_spacer() + plgg)
+# 
+# patchwork[[1]] <- patchwork[[1]] + plot_layout(tag_level = 'new') + plot_layout(widths = c(1, 2, 2))
+# patchwork[[2]] <- patchwork[[2]] + plot_layout(tag_level = 'new') + plot_layout(widths = c(1, 2, 2))
+# patchwork[[3]] <- patchwork[[3]] + plot_layout(tag_level = 'new') + plot_layout(widths = c(1, 2, 2))
+# patchwork[[4]] <- patchwork[[4]] + plot_layout(tag_level = 'new') + plot_layout(widths = c(0.5, 2))
+# patchwork + plot_layout(heights = c(3, 2, 2, 0.2)) 
+# 
+# 
+# ggsave('./REPORTS/FIGURES/Figure3_.tiff', plot = last_plot(),  width = 177, height = 177, units = c('mm'), dpi = 'print')
+
+
+# include icon
+
+pi1 = 
+  ggdraw() +
+  draw_image('./DATA/reph_icon1.tif') +
+  geom_text(aes(0.5, 0.5, label = 'Within-pair'), vjust = 3, size = 4) 
+pi1
+
+pi2 = 
+  ggdraw() +
+  draw_image('./DATA/reph_icon2.tif') +
+  geom_text(aes(0.5, 0.5, label = 'Extra-pair'), vjust = 3, size = 4) 
+pi2
+
+pi3 = 
+  ggdraw() +
+  draw_image('./DATA/reph_icon3.tif') +
+  geom_text(aes(0.5, 0.5, label = 'Extra-pair'), vjust = 3, size = 4) 
+pi3
+
+
+# plot with icon
+patchwork <- (pi1 + p1 + p4) / (pi2 + p2 + p5) / (pi3 + p3 + p6) / (plot_spacer() + plgg)
+
+patchwork[[1]] <- patchwork[[1]] + plot_layout(widths = c(1, 2, 2))
+patchwork[[2]] <- patchwork[[2]] + plot_layout(widths = c(1, 2, 2))
+patchwork[[3]] <- patchwork[[3]] + plot_layout(widths = c(1, 2, 2))
+patchwork[[4]] <- patchwork[[4]] + plot_layout(widths = c(0.5, 2))
+patchwork + plot_layout(heights = c(3, 2, 2, 0.2)) 
+
+
+# ggsave('./REPORTS/FIGURES/Figure3_icon_new.tiff', plot = last_plot(),  width = 177, height = 177, units = c('mm'), dpi = 'print')
 
 
 
