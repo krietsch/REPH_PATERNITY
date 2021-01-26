@@ -262,7 +262,7 @@ write.table(d, './DATA/NESTS.txt', quote = TRUE, sep = '\t', row.names = FALSE)
 
 
 #------------------------------------------------------------------------------------------------------------------------
-# RESIGHTINGS
+# OBSERVATIONS
 #------------------------------------------------------------------------------------------------------------------------
 
 # Database
@@ -541,6 +541,15 @@ di[, diff_obs_2nd_initiation := difftime(datetime_, second_initiation, units = '
 
 # turn inf values in NA
 invisible(lapply(names(di),function(.name) set(di, which(is.infinite(di[[.name]])), j = .name,value = NA)))
+
+# select columns of interest
+ds = di[, .(year_, datetime_, obs_id, ID1, ID2, ID1sex, ID2sex, ID1copAS, ID2copAS, same_sex, ID1_1st_partner, ID1_2nd_partner, 
+            diff_obs_1st_initiation, diff_obs_2nd_initiation, seen_with_other_than_1st_partner, 
+            seen_with_other_than_2nd_partner, copAS_not_1st_partner, copAS_not_2nd_partner)]
+
+# save data
+write.table(ds, './DATA/OBSERVATIONS.txt', quote = TRUE, sep = '\t', row.names = FALSE)
+
 
 #------------------------------------------------------------------------------------------------------------------------
 # PATERNITY
