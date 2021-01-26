@@ -253,7 +253,7 @@ d[study_site == TRUE & initiation_method == 'none', .(year_, nest)]
 # subset data relevant for this study
 d = d[, .(external, data_type, year_, nestID, male_id, female_id, male_assigned, male_field, female_assigned, 
           female_field, found_datetime, clutch_size, collected_datetime, initiation, initiation_method, est_hatching_datetime, hatching_datetime, chicks_back, 
-          last_checked_datetime, nest_state_date, nest_state_date, lat = lat_dec, lon = lon_dec, parentage, anyEPY, N_parentage, N_EPY,
+          last_checked_datetime, nest_state, nest_state_date, nest_state_date, lat = lat_dec, lon = lon_dec, parentage, anyEPY, N_parentage, N_EPY,
           female_clutch, N_female_clutch, polyandrous, polyandry_study_site, male_clutch, N_male_clutch, renesting_male, renesting_study_site)]
 
 # save data
@@ -563,6 +563,7 @@ d = d[offspring_sampled > 0]
 
 # assign developed or undeveloped eggs
 d = merge(d, de[, .(ID, undeveloped)], by.x = 'IDchick', by.y = 'ID', all.x = TRUE)
+d = unique(d, by = 'IDchick')
 
 d[is.na(undeveloped) & !is.na(EPY), undeveloped := 0]
 d[undeveloped == 1]$nestID %>% unique %>% length
