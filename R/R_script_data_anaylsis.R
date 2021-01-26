@@ -842,6 +842,8 @@ ds$distance_between_nests %>% max
 # load data
 di = read.table(paste0(path, 'OBSERVATIONS.txt'), sep = '\t',header = TRUE) %>% data.table
 dn = read.table(paste0(path, 'NESTS.txt'), sep = '\t',header = TRUE) %>% data.table
+dn[, initiation := as.POSIXct(initiation)]
+dn[, nest_state_date := as.POSIXct(nest_state_date)]
 
 # unique by day
 di[, datetime_ := as.POSIXct(datetime_)]
@@ -1355,19 +1357,19 @@ plgg = ggpubr::as_ggplot(legend)
 
 pi1 = 
   ggdraw() +
-  draw_image('./DATA/reph_icon1.tif') +
+  draw_image(paste0(path, 'reph_icon1.tif')) +
   geom_text(aes(0.5, 0.5, label = 'Within-pair'), vjust = 3, size = 4) 
 pi1
 
 pi2 = 
   ggdraw() +
-  draw_image('./DATA/reph_icon2.tif') +
+  draw_image(paste0(path, 'reph_icon2.tif')) +
   geom_text(aes(0.5, 0.5, label = 'Extra-pair'), vjust = 3, size = 4) 
 pi2
 
 pi3 = 
   ggdraw() +
-  draw_image('./DATA/reph_icon3.tif') +
+  draw_image(paste0(path, 'reph_icon3.tif')) +
   geom_text(aes(0.5, 0.5, label = 'Extra-pair'), vjust = 3, size = 4) 
 pi3
 
