@@ -201,6 +201,8 @@ ggplot() +
   facet_grid(.~year_) +
   theme_classic(base_size = 18)
 
+# ggsave('./REPORTS/FIGURES/working_effort_vs_observations.tiff', plot = last_plot(),  width = 300, height = 177, units = c('mm'), dpi = 'print')
+
 
 ds = du[, .(sum_obs = .N), by = .(year_, date_, sex)]
 ds[, date_y := as.Date(format(date_, format = '%m-%d'), format = '%m-%d')]
@@ -217,4 +219,6 @@ ggplot() +
   geom_hline(yintercept = 35) +
   facet_grid(.~year_) +
   theme_classic(base_size = 18)
+
+# ggsave('./REPORTS/FIGURES/working_effort_vs_observations.tiff', plot = last_plot(),  width = 300, height = 177, units = c('mm'), dpi = 'print')
 

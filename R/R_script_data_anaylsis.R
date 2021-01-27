@@ -19,7 +19,7 @@
 
 # Packages
 sapply(c('data.table', 'magrittr', 'sf', 'auksRuak', 'ggplot2', 'ggnewscale', 'car', 'emmeans', 'knitr', 
-         'patchwork', 'cowplot'),
+         'patchwork', 'cowplot', 'ggpubr'),
        function(x) suppressPackageStartupMessages(require(x , character.only = TRUE, quietly = TRUE)))
 
 # auksRuak can be found at https://github.com/krietsch/auksRuak 
@@ -29,12 +29,12 @@ sapply(c('data.table', 'magrittr', 'sf', 'auksRuak', 'ggplot2', 'ggnewscale', 'c
 PROJ = '+proj=laea +lat_0=90 +lon_0=-156.653428 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0 '
 
 # Functions
-source('./R/FUNCTIONS.R')
-# source('../R/FUNCTIONS.R')
+# source('./R/FUNCTIONS.R')
+source('../R/FUNCTIONS.R')
 
 # path to project or to compile file
-path = './DATA/'
-# path = '../DATA/'
+# path = './DATA/'
+path = '../DATA/'
 
 # Settings 
 options(warn = -1) # Supress warnings
@@ -1128,46 +1128,6 @@ dss[type == 'active nest' & diff_obs_initiation > -1 & diff_obs_initiation < 4]$
 dss[type == 'unknown' & diff_obs_initiation > -1 & diff_obs_initiation < 4]$ID2 %>% unique %>% length
 dss[diff_obs_initiation > -1 & diff_obs_initiation < 4]$ID2 %>% unique %>% length
 
-# # additional ask which males had an active nest
-# da = dss[diff_obs_initiation > 0]
-# 
-# da = merge(da, dnID[, .(ID_year, first_initiation, second_initiation, first_nest_state_date, second_nest_state_date)], 
-#            by.x = c('ID2'), by.y = c('ID_year'), all.x = TRUE)
-# 
-# da = unique(da, by = c('ID1', 'ID2', 'datetime_'))
-# 
-# # nest active?
-# da[, active_nest1 := datetime_%between% c(first_initiation, first_nest_state_date), by = 1:nrow(da)]
-# da[is.na(second_initiation), active_nest1 := NA]
-# da[, active_nest2 := datetime_%between% c(second_initiation, second_nest_state_date), by = 1:nrow(da)]
-# da[is.na(second_initiation), active_nest2 := NA]
-# da[, active_nest := any(active_nest1 == TRUE | active_nest2 == TRUE), by = 1:nrow(da)]
-# da[is.na(first_initiation), no_nest := TRUE]
-# 
-# dss = merge(dss, da[, .(ID1, ID2, datetime_, active_nest, no_nest)], by = c('ID1', 'ID2', 'datetime_'), all.x = TRUE)
-# 
-# dss[diff_obs_initiation > 0 & type %in% c('1st', '2nd') & active_nest == TRUE, type := 'active nest']
-# dss[diff_obs_initiation > 0 & type %in% c('1st', '2nd') & no_nest == TRUE, type := 'no nest']
-# dss[diff_obs_initiation > 0 & type %in% c('1st', '2nd') & active_nest == FALSE, type := 'not active nest']
-# 
-# 
-# p3b =
-#   ggplot(data = dss) +
-#   geom_bar(aes(diff_obs_initiation, fill = type), width = width_, color = bar_line, size = bar_line_thickness) +
-#   geom_vline(aes(xintercept = 3), linetype = 'dotted', size = 1.2) +
-#   scale_x_continuous(limits = c(-13, 23), expand = c(0.02, 0.02)) +
-#   scale_y_continuous(limits = c(0, 22), labels = c('0', '','10', '','20'), expand = c(0, 0)) +
-#   scale_fill_manual(values = c(grey_, 'black', 'orange', 'orangered2', 'green', 'blue', 'yellow')) +
-#   xlab('Day relative to clutch initiation') + ylab('') +
-#   geom_text(aes(-10, Inf, label = sample_size2), vjust = 1, size = ls) +
-#   geom_text(aes(17, Inf, label = 'females with\nextra-pair males'), vjust = 1, size = 6) +
-#   theme_classic(base_size = bs) +
-#   theme(panel.spacing = unit(0, "cm"), plot.margin = margin_,
-#         axis.title.x = element_blank()) # legend.position = c(0.8, 0.9), legend.title = element_blank()
-# p3b
-# 
-# dss[type == '1st']
-
 
 #------------------------------------------------------------------------------------------------------------------------
 ### copulations
@@ -1376,43 +1336,24 @@ pl =
   theme_classic(base_size = bs) +
   theme(legend.position = 'top', legend.key.width = unit(0.4, 'cm'), legend.key.height = unit(0.4, 'cm'))
 
-legend = ggpubr::get_legend(pl)
-plgg = ggpubr::as_ggplot(legend)
-
-
-# plot 
-# patchwork <- (plot_spacer() + p1 + p4) / (plot_spacer() + p2 + p5) / (plot_spacer() + p3 + p6) / (plot_spacer() + plgg)
-# 
-# patchwork[[1]] <- patchwork[[1]] + plot_layout(tag_level = 'new') + plot_layout(widths = c(1, 2, 2))
-# patchwork[[2]] <- patchwork[[2]] + plot_layout(tag_level = 'new') + plot_layout(widths = c(1, 2, 2))
-# patchwork[[3]] <- patchwork[[3]] + plot_layout(tag_level = 'new') + plot_layout(widths = c(1, 2, 2))
-# patchwork[[4]] <- patchwork[[4]] + plot_layout(tag_level = 'new') + plot_layout(widths = c(0.5, 2))
-# patchwork + plot_layout(heights = c(3, 2, 2, 0.2)) 
-# 
-# 
-# ggsave('./REPORTS/FIGURES/Figure3_.tiff', plot = last_plot(),  width = 177, height = 177, units = c('mm'), dpi = 'print')
-
+legend = get_legend(pl)
+plgg = as_ggplot(legend)
 
 # include icon
-
 pi1 = 
   ggdraw() +
   draw_image(paste0(path, 'reph_icon1.tif')) +
   geom_text(aes(0.5, 0.5, label = 'Within-pair'), vjust = 3, size = 4) 
-pi1
 
 pi2 = 
   ggdraw() +
   draw_image(paste0(path, 'reph_icon2.tif')) +
   geom_text(aes(0.5, 0.5, label = 'Extra-pair'), vjust = 3, size = 4) 
-pi2
 
 pi3 = 
   ggdraw() +
   draw_image(paste0(path, 'reph_icon3.tif')) +
   geom_text(aes(0.5, 0.5, label = 'Extra-pair'), vjust = 3, size = 4) 
-pi3
-
 
 # plot with icon
 patchwork <- (pi1 + p1 + p4) / (pi2 + p2 + p5) / (pi3 + p3 + p6) / (plot_spacer() + plgg)
