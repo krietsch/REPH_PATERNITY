@@ -6,6 +6,12 @@
 #'    html_document:
 #'      toc: true
 #'      highlight: tango
+#' run: 
+#'     R("""
+#'          library(knitr)
+#'          library(rmarkdown)
+#'          opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+#'      """)
 #' ---
 
 
@@ -16,6 +22,8 @@
 # Data were extracted from our database (see script) and are in the DATA folder
 # Each section in the summary below can be run independently. 
 
+# Line to run to create html output
+# rmarkdown::render('./R/2_R_script_data_anaylsis.R')
 
 # Packages
 sapply(c('data.table', 'magrittr', 'sf', 'auksRuak', 'ggplot2', 'ggnewscale', 'car', 'emmeans', 'knitr', 
@@ -30,17 +38,12 @@ PROJ = '+proj=laea +lat_0=90 +lon_0=-156.653428 +x_0=0 +y_0=0 +datum=WGS84 +unit
 
 # Functions
 source('./R/0_FUNCTIONS.R')
-# source('../R/0_FUNCTIONS.R')
-
-# path to project or to compile file
-path = './DATA/'
-# path = '../DATA/'
 
 # Settings 
-options(warn = -1) # Supress warnings
+options(warn = -1) # Suppress warnings
 
-# Figure 2
-bs = 11 # basesize
+# Figure adjustments
+bs = 11 # base size
 ps = 1 # point size
 ls = 3 # label size
 lsa = 5 # label size annotation
@@ -56,7 +59,7 @@ hjust_ = 1.5 # hjust of text
 #--------------------------------------------------------------------------------------------------------------
 
 # Load data
-d = read.table(paste0(path, 'NESTS.txt'), sep = '\t', header = TRUE) %>% data.table
+d = read.table('./DATA/NESTS.txt', sep = '\t', header = TRUE) %>% data.table
 
 # Intensive study site size
 st_area(study_site) %>% as.numeric/ 1000000 # in km²
@@ -96,8 +99,8 @@ bm +
 #--------------------------------------------------------------------------------------------------------------
 
 # Load data
-d = read.table(paste0(path, 'NESTS.txt'), sep = '\t', header = TRUE) %>% data.table
-dc = read.table(paste0(path, 'CAPTURES.txt'), sep = '\t', header = TRUE) %>% data.table
+d = read.table('./DATA/NESTS.txt', sep = '\t', header = TRUE) %>% data.table
+dc = read.table('./DATA/CAPTURES.txt', sep = '\t', header = TRUE) %>% data.table
 
 # Assign first capture
 dc[, caught_time := as.POSIXct(caught_time)]
@@ -164,9 +167,9 @@ kable(ds)
 #--------------------------------------------------------------------------------------------------------------
 
 # Load data
-d = read.table(paste0(path, 'NESTS.txt'), sep = '\t', header = TRUE) %>% data.table
-dc = read.table(paste0(path, 'CAPTURES.txt'), sep = '\t', header = TRUE) %>% data.table
-dp = read.table(paste0(path, 'PATERNITY.txt'), sep = '\t', header = TRUE) %>% data.table
+d = read.table('./DATA/NESTS.txt', sep = '\t', header = TRUE) %>% data.table
+dc = read.table('./DATA/CAPTURES.txt', sep = '\t', header = TRUE) %>% data.table
+dp = read.table('./DATA/PATERNITY.txt', sep = '\t', header = TRUE) %>% data.table
 
 # Clutch size of nests with genotype
 ds = d[parentage == TRUE]
@@ -239,9 +242,9 @@ ds[IDfather > 100000] %>% nrow / ds[!is.na(EPY)] %>% nrow * 100
 #--------------------------------------------------------------------------------------------------------------
 
 # load data
-d = read.table(paste0(path, 'NESTS.txt'), sep = '\t',header = TRUE) %>% data.table
-dc = read.table(paste0(path, 'CAPTURES.txt'), sep = '\t', header = TRUE) %>% data.table
-dp = read.table(paste0(path, 'PATERNITY.txt'), sep = '\t',header = TRUE) %>% data.table
+d = read.table('./DATA/NESTS.txt', sep = '\t',header = TRUE) %>% data.table
+dc = read.table('./DATA/CAPTURES.txt', sep = '\t', header = TRUE) %>% data.table
+dp = read.table('./DATA/PATERNITY.txt', sep = '\t',header = TRUE) %>% data.table
 
 # EPY in nests
 d[parentage == TRUE & anyEPY == 1, .N]
@@ -546,8 +549,8 @@ Anova(fm)
 #--------------------------------------------------------------------------------------------------------------
 
 # load data
-d = read.table(paste0(path, 'NESTS.txt'), sep = '\t',header = TRUE) %>% data.table
-dp = read.table(paste0(path, 'PATERNITY.txt'), sep = '\t',header = TRUE) %>% data.table
+d = read.table('./DATA/NESTS.txt', sep = '\t',header = TRUE) %>% data.table
+dp = read.table('./DATA/PATERNITY.txt', sep = '\t',header = TRUE) %>% data.table
 
 # format
 d[, initiation := as.POSIXct(initiation)]
@@ -684,8 +687,8 @@ ds[clutch_identity == 'third', .(initiation_st)]
 #--------------------------------------------------------------------------------------------------------------
 
 # load data
-d = read.table(paste0(path, 'NESTS.txt'), sep = '\t',header = TRUE) %>% data.table
-dp = read.table(paste0(path, 'PATERNITY.txt'), sep = '\t',header = TRUE) %>% data.table
+d = read.table('./DATA/NESTS.txt', sep = '\t',header = TRUE) %>% data.table
+dp = read.table('./DATA/PATERNITY.txt', sep = '\t',header = TRUE) %>% data.table
 
 # 
 d[, initiation := as.POSIXct(initiation)]
@@ -698,7 +701,7 @@ ds[data_type == 'study_site', data_type := 'Intensive study']
 ds[data_type != 'Intensive study', data_type := 'Other data']
 
 # load Dale et al. data
-dale = read.csv2(paste0(path, 'Dale_EPP.csv')) %>% data.table
+dale = read.csv2('./DATA/Dale_EPP.csv') %>% data.table
 dale[, initiation_y := as.POSIXct(as.Date(initiation_doy, origin = '1993-01-01'))]
 
 ds = rbind(ds, dale[, .(year_ = YEAR_, nestID, initiation_y, anyEPY, data_type = 'Dale et al.')])
@@ -765,8 +768,8 @@ p1 + p2 + p3 + p4 + plot_layout(ncol = 2, nrow = 2)
 #--------------------------------------------------------------------------------------------------------------
 
 # load data
-d = read.table(paste0(path, 'NESTS.txt'), sep = '\t',header = TRUE) %>% data.table
-dp = read.table(paste0(path, 'PATERNITY.txt'), sep = '\t',header = TRUE) %>% data.table
+d = read.table('./DATA/NESTS.txt', sep = '\t',header = TRUE) %>% data.table
+dp = read.table('./DATA/PATERNITY.txt', sep = '\t',header = TRUE) %>% data.table
 
 # change projection
 d = d[parentage == TRUE]
@@ -867,8 +870,8 @@ ds$distance_between_nests %>% max
 #--------------------------------------------------------------------------------------------------------------
 
 # load data
-di = read.table(paste0(path, 'OBSERVATIONS.txt'), sep = '\t',header = TRUE) %>% data.table
-dn = read.table(paste0(path, 'NESTS.txt'), sep = '\t',header = TRUE) %>% data.table
+di = read.table('./DATA/OBSERVATIONS.txt', sep = '\t',header = TRUE) %>% data.table
+dn = read.table('./DATA/NESTS.txt', sep = '\t',header = TRUE) %>% data.table
 dn[, initiation := as.POSIXct(initiation)]
 dn[, nest_state_date := as.POSIXct(nest_state_date)]
 
@@ -1332,17 +1335,17 @@ plgg = as_ggplot(legend)
 # include icon
 pi1 =
   ggdraw() +
-  draw_image(paste0(path, 'reph_icon1.tif')) +
+  draw_image('./DATA/reph_icon1.tif') +
   geom_text(aes(0.5, 0.5, label = 'Within-pair'), vjust = 3, size = 4)
 
 pi2 =
   ggdraw() +
-  draw_image(paste0(path, 'reph_icon2.tif')) +
+  draw_image('./DATA/reph_icon2.tif') +
   geom_text(aes(0.5, 0.5, label = 'Extra-pair'), vjust = 3, size = 4)
 
 pi3 =
   ggdraw() +
-  draw_image(paste0(path, 'reph_icon3.tif')) +
+  draw_image('./DATA/reph_icon3.tif') +
   geom_text(aes(0.5, 0.5, label = 'Extra-pair'), vjust = 3, size = 4)
 
 # plot with icon
@@ -1355,7 +1358,7 @@ patchwork[[4]] <- patchwork[[4]] + plot_layout(widths = c(0.5, 2))
 patchwork + plot_layout(heights = c(3, 2, 2, 0.2))
 
 
-ggsave('./REPORTS/FIGURES/Interactions.tiff', plot = last_plot(),  width = 177, height = 177, units = c('mm'), dpi = 'print')
+# ggsave('./REPORTS/FIGURES/Interactions.tiff', plot = last_plot(),  width = 177, height = 177, units = c('mm'), dpi = 'print')
 
 
 
