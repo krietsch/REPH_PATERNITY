@@ -15,12 +15,13 @@
 #' ---
 
 
-#' ## Description
-# This script contains all steps to get from the data to the presented results 
-# and figures presented in this study. 
-# The order follows the appearance in the manuscript. 
-# Data were extracted from our database (see script) and are in the DATA folder
-# Each section in the summary below can be run independently. 
+#' ## DESCRIPTION
+#' This script contains all steps to get from the data to the presented results
+#' and figures presented in this study.
+#' The order follows the appearance in the manuscript.
+#' Data were extracted from our database (see script) and are in the DATA folder.
+#' Outputs are written to the FIGURES or TABLES folder.
+#' Each section in the summary below can be run independently.
 
 # Line to run to create html output
 # rmarkdown::render('./R/2_R_script_data_anaylsis.R')
@@ -30,8 +31,8 @@ sapply(c('data.table', 'magrittr', 'sf', 'auksRuak', 'ggplot2', 'ggnewscale', 'c
          'patchwork', 'cowplot', 'ggpubr'),
        function(x) suppressPackageStartupMessages(require(x , character.only = TRUE, quietly = TRUE)))
 
-# auksRuak can be found at https://github.com/krietsch/auksRuak 
-# (includes study site polygon and functions to create maps)
+#' auksRuak can be found at [github](https://github.com/krietsch/auksRuak)
+#' (includes study site polygon and functions to create maps)
 
 # Projection
 PROJ = '+proj=laea +lat_0=90 +lon_0=-156.653428 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0 '
@@ -1361,11 +1362,15 @@ patchwork + plot_layout(heights = c(3, 2, 2, 0.2))
 # ggsave('./REPORTS/FIGURES/Interactions.tiff', plot = last_plot(),  width = 177, height = 177, units = c('mm'), dpi = 'print')
 
 
+#==============================================================================================================
+#' ## R PACKAGES 
+#==============================================================================================================
 
+sessionInfo()
 
-
-
-
+sapply(c('data.table', 'magrittr', 'sf', 'auksRuak', 'ggplot2', 'ggnewscale', 'car', 'emmeans', 'knitr', 
+         'patchwork', 'cowplot', 'ggpubr'),
+       function(x) suppressPackageStartupMessages(citation(x)))
 
 
 
