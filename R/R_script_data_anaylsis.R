@@ -29,12 +29,12 @@ sapply(c('data.table', 'magrittr', 'sf', 'auksRuak', 'ggplot2', 'ggnewscale', 'c
 PROJ = '+proj=laea +lat_0=90 +lon_0=-156.653428 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0 '
 
 # Functions
-# source('./R/FUNCTIONS.R')
-source('../R/FUNCTIONS.R')
+source('./R/FUNCTIONS.R')
+# source('../R/FUNCTIONS.R')
 
 # path to project or to compile file
-# path = './DATA/'
-path = '../DATA/'
+path = './DATA/'
+# path = '../DATA/'
 
 # Settings 
 options(warn = -1) # Supress warnings
@@ -89,7 +89,7 @@ bm +
   theme(legend.position = c(0.8, 0.95))
 
 
-# ggsave('./REPORTS/FIGURES/Map_nests.tiff', plot = last_plot(),  width = 85, height = 85, units = c('mm'), dpi = 'print')
+# ggsave('./REPORTS/FIGURES/Map_nests_with_parentage.tiff', plot = last_plot(),  width = 85, height = 85, units = c('mm'), dpi = 'print')
 
 #--------------------------------------------------------------------------------------------------------------
 #' ### Field procedures
@@ -235,7 +235,7 @@ ds[IDfather > 100000] %>% nrow / ds[!is.na(EPY)] %>% nrow * 100
 #' ## RESULTS
 #==============================================================================================================
 #--------------------------------------------------------------------------------------------------------------
-#' ### Frequency of extra-pair paternity, social polyandry and renesting - Figure 2a
+#' ### Frequency of extra-pair paternity, social polyandry and renesting
 #--------------------------------------------------------------------------------------------------------------
 
 # load data
@@ -253,7 +253,7 @@ d[parentage == TRUE, sum(N_EPY)]
 d[parentage == TRUE, sum(N_parentage)]
 d[parentage == TRUE, sum(N_EPY)] /d[parentage == TRUE, sum(N_parentage)] * 100
 
-#' #### Frequency of extra-pair paternity for each year and data source - Table 1
+#' #### Frequency of extra-pair paternity for each year and data source
 
 # Assign first capture
 dc[, caught_time := as.POSIXct(caught_time)]
@@ -302,7 +302,7 @@ setorder(ds,  -Year, `Data type`)
 kable(ds)
 
 # save table
-# openxlsx::write.xlsx(ds, './REPORTS/EPY_frequency/TableS1.xlsx')
+# openxlsx::write.xlsx(ds, './REPORTS/TABLES/EPY_frequency.xlsx')
 
 
 # EPY difference between years?
@@ -337,7 +337,7 @@ ds = unique(dp, by = c('nestID', 'IDfather'))
 ds[, N_fathers := .N, by = nestID]
 ds[, .N, by = N_fathers] # nestID == R409_19 had one identified and one unknown EPY sire
 
-#' #### Rates of polyandry and renesting - Figure 2a
+#' #### Rates of polyandry and renesting
 
 # unique ID's by year
 d[, female_id_year := paste0(female_id, '_', substr(year_, 3,4 ))]
@@ -451,11 +451,11 @@ p1
 ds[, sample_size_N := paste0(n, '/', N)]
 ds[year_ == '2019' & type %in% c('polyandry', 'renesting'), sample_size_N := paste0(sample_size_N, '*')]
 
-#  Figure 2a
+
 p1 =
   ggplot(data = ds[study_site == FALSE], aes(year_, x, fill = type, label = sample_size_N)) +
   geom_bar(stat = "identity", position = 'dodge', width = 0.9) +
-  geom_text(position = position_dodge(width = 0.9), size = lsa, hjust = -0.1, angle = 90) +
+  geom_text(position = position_dodge(width = 0.9), size = ls, hjust = -0.1, angle = 90) +
   # scale_fill_manual(values = c('grey85', 'grey50','firebrick4', '#33638DFF'),
   #                   labels = c('EPY', 'nests with EPY', 'polyandrous females', 'renesting males')) +
   scale_fill_grey(labels = c('EPY', 'nests with EPY', 'polyandrous females', 'renesting males')) +
@@ -469,7 +469,7 @@ p1
 
 
 
-#' #### Clutch initiation between years - Figure 2b -----
+#' #### Clutch initiation between years
 d[, initiation := as.POSIXct(initiation)]
 d[, initiation_y := as.POSIXct(format(initiation, format = '%m-%d %H:%M:%S'), format = '%m-%d %H:%M:%S')]
 
@@ -488,7 +488,7 @@ dss = ds[, .(median = median(initiation_y), q25 = quantile(initiation_y, probs =
 # current year
 y = format(Sys.Date(), "%Y")
 
-#  Figure 2b
+
 p2 =
   ggplot(data = ds) +
   geom_violin(aes(as.character(year_), initiation_y), show.legend = FALSE, fill = 'grey85') +
@@ -753,10 +753,10 @@ fm = glm(anyEPY ~ initiation_st, data = ds[data_type == 'Other data'], family = 
 summary(fm)
 
 
-# save Figure 2
+# save
 p1 + p2 + p3 + p4 + plot_layout(ncol = 2, nrow = 2)
 
-# ggsave('./REPORTS/FIGURES/Figure2.tiff', plot = last_plot(),  width = 177, height = 177, units = c('mm'), dpi = 'print')
+# ggsave('./REPORTS/FIGURES/Frequency_EPP_and_timing.tiff', plot = last_plot(),  width = 177, height = 177, units = c('mm'), dpi = 'print')
 
 
 
@@ -1365,7 +1365,7 @@ patchwork[[4]] <- patchwork[[4]] + plot_layout(widths = c(0.5, 2))
 patchwork + plot_layout(heights = c(3, 2, 2, 0.2)) 
 
 
-# ggsave('./REPORTS/FIGURES/Figure3_icon_new.tiff', plot = last_plot(),  width = 177, height = 177, units = c('mm'), dpi = 'print')
+# ggsave('./REPORTS/FIGURES/Interactions.tiff', plot = last_plot(),  width = 177, height = 177, units = c('mm'), dpi = 'print')
 
 
 
