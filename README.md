@@ -1,12 +1,15 @@
-# Data and R scripts for:
+# **Data and R scripts for:**
 
 ### Extra-pair paternity in a sequentially polyandrous shorebird: limited evidence for the sperm-storage hypothesis
 
-This repository contains the data sets and R scripts used for data analysis and figure production of this project and can also be found on the **Open Science Framework website** [DOI 10.17605/OSF.IO/V475T](https://osf.io/v475t/)
+This repository contains the data sets and R scripts used for data analysis and figure production of this project and can also be found on the **Open Science Framework website** [doi: 10.17605/OSF.IO/V475T](https://osf.io/v475t/)
 
-![Pair of red phalaropes. Illustration by Margherita Cragnolini](./DATA/ILLUSTRATIONS/reph_pair.jpg)
+![REPH](./DATA/ILLUSTRATIONS/reph_pair.jpg)  
+*Pair of red phalaropes. Illustration by Margherita Cragnolini*
 
-#### Repository Contents
+<p>&nbsp;</p>
+
+#### **Repository Contents**
 
 
 **`DATA/`**:
@@ -15,7 +18,7 @@ We extracted all project relevant data from our database (see script `R/`) of th
 the black arrows to see column definitions):
 
 <details>
-  <summary> <b><code>CAPTURES</code></b> – a table of all nests.</summary>
+  <summary> <b><code>CAPTURES</code></b> – a table of all captures.</summary>
   
   Columns are defined as:
 
@@ -78,7 +81,7 @@ the black arrows to see column definitions):
 
 
 <details>
-  <summary> <b><code>OBSERVATIONS</code></b> – a table of all nests.</summary>
+  <summary> <b><code>OBSERVATIONS</code></b> – a table of all observations.</summary>
   
   Columns are defined as:
 
@@ -105,7 +108,7 @@ the black arrows to see column definitions):
 
 
 <details>
-  <summary> <b><code>PATERNITY</code></b> – a table of all nests.</summary>
+  <summary> <b><code>PATERNITY</code></b> – a table of all paternity data.</summary>
   
   Columns are defined as:
 
