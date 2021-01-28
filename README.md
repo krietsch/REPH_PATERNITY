@@ -4,6 +4,7 @@
 
 This repository contains the data sets and R scripts used for data analysis and figure production of this project and can also be found on the **Open Science Framework website** [DOI 10.17605/OSF.IO/V475T](https://osf.io/v475t/)
 
+![Pair of red phalaropes. Illustration by Margherita Cragnolini](./DATA/ILLUSTRATIONS/reph_pair.jpg)
 
 #### Repository Contents
 
@@ -121,7 +122,7 @@ the black arrows to see column definitions):
 
 
 <details>
-  <summary> <b><code>Dale_et_al_1999_REPH_EPP</code></b> – a table with extra-pair paternity data extracted 
+  <summary> <b><code>Dale_et_al_1999_REPH_EPP</code></b> – a table with extra-pair paternity data extracted
   from [Dale et al. 1999 - figure 1](https://doi.org/10.1007/s002650050591) </summary>
   
   Columns are defined as:

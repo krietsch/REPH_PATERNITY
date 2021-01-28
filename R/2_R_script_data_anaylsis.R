@@ -24,7 +24,7 @@
 #' Each section in the summary below can be run independently.
 
 # Line to run to create html output
-# rmarkdown::render('./R/2_R_script_data_anaylsis.R')
+# rmarkdown::render('./R/2_R_script_data_anaylsis.R', output_dir = './REPORTS')
 
 # Packages
 sapply(c('data.table', 'magrittr', 'sf', 'auksRuak', 'ggplot2', 'ggnewscale', 'car', 'emmeans', 'knitr', 
