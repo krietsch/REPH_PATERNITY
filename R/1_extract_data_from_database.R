@@ -570,15 +570,19 @@ d[!is.na(EPY), parentage := 1]
 d[, offspring_sampled := sum(parentage, na.rm = TRUE), by = nestID]
 d = d[offspring_sampled > 0]
 
-# assign developed or undeveloped eggs
-d = merge(d, de[, .(ID, undeveloped)], by.x = 'IDchick', by.y = 'ID', all.x = TRUE)
+# assign developed/undeveloped eggs and fate
+d = merge(d, de[, .(ID, fate, undeveloped)], by.x = 'IDchick', by.y = 'ID', all.x = TRUE)
 d = unique(d, by = 'IDchick')
+d[, IDchick_num := as.numeric(IDchick)]
+d[is.na(fate) & !is.na(IDchick_num), fate := 'h'] # all with ID hatched
+d[is.na(fate) & nest %like% 'REPH', fate := 'u'] # external collected eggs
+d[is.na(fate), fate := 'h'] # unbanded chicks found in field
 
 d[is.na(undeveloped) & !is.na(EPY), undeveloped := 0]
 d[undeveloped == 1]$nestID %>% unique %>% length
 
 # select columns of interest
-d = d[, .(year_, nestID, IDchick, IDmother, IDfather, EPY, undeveloped, comment)]
+d = d[, .(year_, nestID, IDchick, IDmother, IDfather, EPY, fate, undeveloped, comment)]
 
 # save data
 write.table(d, './DATA/PATERNITY.txt', quote = TRUE, sep = '\t', row.names = FALSE)

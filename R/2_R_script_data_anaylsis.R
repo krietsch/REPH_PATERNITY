@@ -102,6 +102,7 @@ bm +
 # Load data
 d = read.table('./DATA/NESTS.txt', sep = '\t', header = TRUE) %>% data.table
 dc = read.table('./DATA/CAPTURES.txt', sep = '\t', header = TRUE) %>% data.table
+dp = read.table('./DATA/PATERNITY.txt', sep = '\t', header = TRUE) %>% data.table
 
 # Assign first capture
 dc[, caught_time := as.POSIXct(caught_time)]
@@ -143,6 +144,23 @@ d[, diff_found_caugth_female := difftime(found_datetime, caught_time_female, uni
 ds = d[data_type == 'study_site']
 ds[diff_found_caugth_male < 0 | is.na(diff_found_caugth_male)] %>% nrow /ds %>% nrow * 100 # males
 ds[diff_found_caugth_female < 0 | is.na(diff_found_caugth_female)] %>% nrow /ds %>% nrow * 100 # females
+
+# eggs dissected 
+dp = merge(dp, d[, .(nestID, data_type)], by = 'nestID', all.x = TRUE)
+dp = dp[data_type == 'study_site']
+
+# total offspring sampled
+dp %>% nrow
+
+# unhatched eggs
+dp[fate == 'u'] %>% nrow
+dp[fate == 'u'] %>% nrow / dp %>% nrow * 100
+dp[fate == 'u']$nestID %>% unique %>% length
+
+# frozen eggs
+dp[fate == 'f'] %>% nrow
+dp[fate == 'f'] %>% nrow / dp %>% nrow * 100
+dp[fate == 'f']$nestID %>% unique %>% length
 
 # Mean incubation period of collected clutches with known initiation date
 ds = d[!is.na(collected_datetime) & initiation_method == 'found_incomplete' & !is.na(hatching_datetime)]
@@ -203,7 +221,6 @@ ds[undeveloped == 1]$nestID %>% unique %>% length # nests with undeveloped eggs
 ds[undeveloped == 1]$nestID %>% unique %>% length / ds$nestID %>% unique %>% length * 100
 
 # eggs
-ds %>% nrow # all
 ds[undeveloped == 1] %>% nrow # undeveloped eggs
 ds[undeveloped == 1] %>% nrow  / ds %>% nrow  * 100
 
@@ -223,9 +240,13 @@ ds[IDmother > 100000]$nestID %>% unique %>% length / ds$nestID %>% unique %>% le
 # Number of fathers assigned
 ds[IDfather > 100000] %>% nrow # >100000 to exclude uncaught birds
 ds[IDfather > 100000] %>% nrow / ds[!is.na(EPY)] %>% nrow * 100
+ds[!is.na(EPY)] %>% nrow
 
 # Other sources 
 ds = dp[data_type != 'study_site']
+
+# nests
+ds$nestID %>% unique %>% length # all
 
 # Number of mothers assigned
 ds[IDmother > 100000]$nestID %>% unique %>% length # >100000 to exclude uncaught birds
@@ -234,6 +255,7 @@ ds[IDmother > 100000]$nestID %>% unique %>% length / ds$nestID %>% unique %>% le
 # Number of fathers assigned
 ds[IDfather > 100000] %>% nrow # >100000 to exclude uncaught birds
 ds[IDfather > 100000] %>% nrow / ds[!is.na(EPY)] %>% nrow * 100
+ds[!is.na(EPY)] %>% nrow
 
 #==============================================================================================================
 #' ## RESULTS
@@ -273,6 +295,12 @@ dcs = merge(dcs_m[, .(year_, data_type, N_males = N)], dcs_f[, .(year_, data_typ
 dcs[is.na(N_females), N_females := 0]
 setorder(dcs, -year_, data_type)
 
+# add total
+dcs = rbind(dcs, data.table(year_     = 1,
+                            data_type = 'Total',
+                            N_males   = sum(ds$N_males),
+                            N_females = sum(ds$N_females) ))
+
 # Data overview
 ds = d[, .(N_nests = .N), by = .(year_, data_type)]
 ds2 = d[parentage == TRUE, .(N_parentage = .N), by = .(year_, data_type)]
@@ -284,6 +312,16 @@ ds = merge(ds, ds3, by = c('year_', 'data_type'), all.x = TRUE)
 ds = merge(ds, ds4, by = c('year_', 'data_type'), all.x = TRUE)
 ds[is.na(ds)] = 0
 ds = ds[N_parentage != 0]
+
+# add total
+ds = rbind(ds, data.table(year_       = 1,
+                          data_type   = 'Total',
+                          N_nests     = sum(ds$N_nests),
+                          N_parentage = sum(ds$N_parentage),
+                          N_EPY       = sum(ds$N_EPY),
+                          N_eggs      = sum(ds$N_eggs),
+                          N_eggs_EPY  = sum(ds$N_eggs_EPY) ))
+
 ds[, EPY_nests_per := round(N_EPY / N_parentage * 100, 1)]
 ds[, EPY_eggs_per  := round(N_eggs_EPY / N_eggs * 100, 1)]
 ds[, EPY_nests_N   := paste0(N_EPY, '/', N_parentage)]
@@ -293,10 +331,10 @@ ds[, EPY_eggs_N    := paste0(N_eggs_EPY, '/', N_eggs)]
 ds = merge(ds, dcs, by = c('year_', 'data_type'), all.x = TRUE)
 
 # subset and rename table
-ds[data_type == 'study_site', data_type := 'intensive study']
-ds[data_type == 'own_off_site', data_type := 'outside plot']
-ds[data_type == 'survey_plot', data_type := 'long-term monitoring']
-ds[data_type == 'clutch_removal_exp', data_type := 'renesting experiment']
+ds[data_type == 'study_site', data_type := 'Intensive study']
+ds[data_type == 'own_off_site', data_type := 'Outside plot']
+ds[data_type == 'survey_plot', data_type := 'Long-term monitoring']
+ds[data_type == 'clutch_removal_exp', data_type := 'Renesting experiment']
 
 ds = ds[, .(Year = year_, `Data type` = data_type, `% EPY` = EPY_eggs_per, `N EPY` = EPY_eggs_N, 
             `% nests with EPY` = EPY_nests_per, 

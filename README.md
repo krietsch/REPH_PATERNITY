@@ -118,8 +118,9 @@ the black arrows to see column definitions):
   4.	`IDmother`:
   5.	`IDfather`: 
   6.	`EPY`: 
-  7.	`undeveloped`: 
-  8.	`comment`: 
+  7.	`fate`: 
+  8.	`undeveloped`: 
+  9.	`comment`: 
 
 </details>
 
