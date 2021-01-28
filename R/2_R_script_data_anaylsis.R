@@ -38,7 +38,7 @@ sapply(c('data.table', 'magrittr', 'sf', 'auksRuak', 'ggplot2', 'ggnewscale', 'c
 PROJ = '+proj=laea +lat_0=90 +lon_0=-156.653428 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0 '
 
 # Functions
-source('./R/0_FUNCTIONS.R')
+source('./R/0_functions.R')
 
 # Settings 
 options(warn = -1) # Suppress warnings
@@ -164,7 +164,7 @@ ds[, initiation_method_percent := N / N_nests * 100]
 kable(ds)
 
 #--------------------------------------------------------------------------------------------------------------
-#' ### Parentage analysis
+#' ### Parentage analysis and molecular sexing
 #--------------------------------------------------------------------------------------------------------------
 
 # Load data
@@ -702,10 +702,10 @@ ds[data_type == 'study_site', data_type := 'Intensive study']
 ds[data_type != 'Intensive study', data_type := 'Other data']
 
 # load Dale et al. data
-dale = read.csv2('./DATA/Dale_EPP.csv') %>% data.table
+dale = read.csv2('./DATA/Dale_et_al_1999_REPH_EPP.csv') %>% data.table
 dale[, initiation_y := as.POSIXct(as.Date(initiation_doy, origin = '1993-01-01'))]
 
-ds = rbind(ds, dale[, .(year_ = YEAR_, nestID, initiation_y, anyEPY, data_type = 'Dale et al.')])
+ds = rbind(ds, dale[, .(year_ = year_, nestID, initiation_y, anyEPY, data_type = 'Dale et al.')])
 
 
 ds[, mean_initiation := mean(initiation_y, na.rm = TRUE), by = year_]
@@ -867,7 +867,7 @@ ds$distance_between_nests %>% max
 11/17 * 100 # unknown
 
 #--------------------------------------------------------------------------------------------------------------
-#' ### Frequency and timing of copulations and other male-female interactions
+#' ### Timing of within- and extra-pair male-female interactions
 #--------------------------------------------------------------------------------------------------------------
 
 # load data
@@ -1336,17 +1336,17 @@ plgg = as_ggplot(legend)
 # include icon
 pi1 =
   ggdraw() +
-  draw_image('./DATA/reph_icon1.tif') +
+  draw_image('./DATA/ILLUSTRATIONS/reph_icon1.tif') +
   geom_text(aes(0.5, 0.5, label = 'Within-pair'), vjust = 3, size = 4)
 
 pi2 =
   ggdraw() +
-  draw_image('./DATA/reph_icon2.tif') +
+  draw_image('./DATA/ILLUSTRATIONS/reph_icon2.tif') +
   geom_text(aes(0.5, 0.5, label = 'Extra-pair'), vjust = 3, size = 4)
 
 pi3 =
   ggdraw() +
-  draw_image('./DATA/reph_icon3.tif') +
+  draw_image('./DATA/ILLUSTRATIONS/reph_icon3.tif') +
   geom_text(aes(0.5, 0.5, label = 'Extra-pair'), vjust = 3, size = 4)
 
 # plot with icon

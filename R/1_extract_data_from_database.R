@@ -251,14 +251,14 @@ d[is.na(initiation_method), initiation_method := 'none']
 d[study_site == TRUE & initiation_method == 'none', .(year_, nest)]
 
 # subset data relevant for this study
-d = d[, .(external, data_type, year_, nestID, male_id, female_id, male_assigned, male_field, female_assigned, 
-          female_field, found_datetime, clutch_size, collected_datetime, initiation, initiation_method, est_hatching_datetime, hatching_datetime, chicks_back, 
-          last_checked_datetime, nest_state, nest_state_date, nest_state_date, lat = lat_dec, lon = lon_dec, parentage, anyEPY, N_parentage, N_EPY,
-          female_clutch, N_female_clutch, polyandrous, polyandry_study_site, male_clutch, N_male_clutch, renesting_male, renesting_study_site)]
+d = d[, .(external, data_type, year_, nestID, male_id, female_id, male_assigned, female_assigned, found_datetime, 
+          clutch_size, collected_datetime, initiation, initiation_method, est_hatching_datetime, hatching_datetime, 
+          chicks_back, last_checked_datetime, nest_state, nest_state_date, lat = lat_dec, lon = lon_dec, 
+          parentage, anyEPY, N_parentage, N_EPY, female_clutch, N_female_clutch, polyandrous, polyandry_study_site, 
+          male_clutch, N_male_clutch, renesting_male, renesting_study_site)]
 
 # save data
 write.table(d, './DATA/NESTS.txt', quote = TRUE, sep = '\t', row.names = FALSE)
-
 
 
 #------------------------------------------------------------------------------------------------------------------------
