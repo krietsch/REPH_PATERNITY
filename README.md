@@ -7,7 +7,7 @@
 
 <p>&nbsp;</p>
 
-#### **Description**
+### **Description**
 
 This repository contains the data and R scripts used for data analysis and figure production used in: 
 
@@ -24,7 +24,7 @@ For any further information, please contact: Johannes Krietsch, e-mail: j.kriets
 
 <p>&nbsp;</p>
 
-#### **Repository Contents**
+### **Repository Contents**
 
 
 **`DATA/`**:
@@ -160,7 +160,8 @@ and from [Dale et al. 1999 - Figure 1](https://doi.org/10.1007/s002650050591)
 
   - [`2_R_script_data_anaylsis.R`](https://github.com/krietsch/REPH_PATERNITY/blob/master/R/2_R_script_data_anaylsis.R). 
   The main script to reproduce all analysis and figures of this project. It contains a detailed commented workflow and 
-  follows the order in the manuscript. Each main block of the script can be run independently. ([view in browser]())
+  follows the order in the manuscript. Each main block of the script can be run independently. 
+  ([view in browser](https://raw.githack.com/krietsch/REPH_PATERNITY/master/OUTPUTS/2_R_script_data_anaylsis.html "html"))
   
   - [`0_functions.R`](https://github.com/krietsch/REPH_PATERNITY/blob/master/R/0_functions.R) The workflow script 
   sources this script, which is only needed to create a base map using OpenStreetMap data stored in the R package 
@@ -174,7 +175,8 @@ and from [Dale et al. 1999 - Figure 1](https://doi.org/10.1007/s002650050591)
   
 **`OUTPUTS/`**:
 
-  - `2_R_script_data_anaylsis.html` a compiled interactive html output of the workflow ([view in browser]())
+  - `2_R_script_data_anaylsis.html` a compiled interactive html output of the workflow 
+  ([view in browser](https://raw.githack.com/krietsch/REPH_PATERNITY/master/OUTPUTS/2_R_script_data_anaylsis.html "html"))
   
   - `FIGURES/` contains all figures created for publication
   
