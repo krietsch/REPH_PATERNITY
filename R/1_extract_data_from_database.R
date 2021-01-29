@@ -3,7 +3,7 @@
 #==============================================================================================================
 
 ### Description
-
+# Script to extract data from our data base and to create data tables needed for the analysis in this project. 
 
 ### Summary
 # CAPTURES
@@ -157,7 +157,7 @@ d[parentage == TRUE & external == 1 & !(plot %like% 'brw') & year_ %in% year_R, 
 d[, .N, data_type]
 
 # fill gaps
-d[nest %like% 'REPH', data_type := 'survey_plot']
+d[is.na(data_type) & nest %like% 'REPH', data_type := 'survey_plot']
 d[is.na(data_type), data_type := 'own_off_site']
 
 # check data

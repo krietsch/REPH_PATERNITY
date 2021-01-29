@@ -20,11 +20,11 @@
 #' and figures presented in this study.
 #' The order follows the appearance in the manuscript (as much as possible).
 #' Data were extracted from our database (see script) and are in the DATA folder.
-#' Outputs are written to REPORTS in the FIGURES or TABLES folder.
+#' Outputs are written to OUTPUTS in the FIGURES or TABLES folder.
 #' Each section in the summary below can be run independently.
 
 # Line to run to create html output
-# rmarkdown::render('./R/2_R_script_data_anaylsis.R', output_dir = './REPORTS')
+# rmarkdown::render('./R/2_R_script_data_anaylsis.R', output_dir = './OUTPUTS')
 
 # Packages
 sapply(c('data.table', 'magrittr', 'sf', 'auksRuak', 'ggplot2', 'ggnewscale', 'car', 'emmeans', 'knitr', 
@@ -93,7 +93,7 @@ bm +
   theme(legend.position = c(0.8, 0.95))
 
 
-# ggsave('./REPORTS/FIGURES/Map_nests_with_parentage.tiff', plot = last_plot(),  width = 85, height = 85, units = c('mm'), dpi = 'print')
+# ggsave('./OUTPUTS/FIGURES/Map_nests_with_parentage.tiff', plot = last_plot(),  width = 85, height = 85, units = c('mm'), dpi = 'print')
 
 #--------------------------------------------------------------------------------------------------------------
 #' ### Field procedures
@@ -180,6 +180,9 @@ ds = d[data_type == 'study_site' & parentage == TRUE, .N, initiation_method]
 ds[, N_nests := nrow(d[data_type == 'study_site' & parentage == TRUE])]
 ds[, initiation_method_percent := N / N_nests * 100]
 kable(ds)
+
+# nest sampled from different sources
+d[parentage == TRUE, .N, by = data_type] %>% kable
 
 #--------------------------------------------------------------------------------------------------------------
 #' ### Parentage analysis and molecular sexing
@@ -344,7 +347,7 @@ setorder(ds,  -Year, `Data type`)
 kable(ds)
 
 # save table
-# openxlsx::write.xlsx(ds, './REPORTS/TABLES/EPY_frequency.xlsx')
+# openxlsx::write.xlsx(ds, './OUTPUTS/TABLES/EPY_frequency.xlsx')
 
 
 # EPY difference between years?
@@ -467,28 +470,9 @@ ds[, sample_size := as.character(N)]
 ds[year_ == '2019' & type %in% c('polyandry', 'renesting'), sample_size := paste0(sample_size, '*')]
 
 ds[, type := factor(type, levels = c('EPY', 'EPP', 'polyandry', 'renesting'))]
-kable(ds)
-
-p1 =
-  ggplot(data = ds[study_site == FALSE], aes(year_, x, fill = type, label = sample_size)) +
-  geom_bar(stat = "identity", position = 'dodge', width = 0.9) +
-  geom_text(position = position_dodge(width = 0.9), size = ls, vjust = -0.5, hjust = 0.5) + # text horizontal
-  # geom_text(position = position_dodge(width = 0.9), size = ls, hjust = -0.1, angle = 90) +
-  # scale_fill_manual(values = c('grey85', 'grey50','firebrick4', '#33638DFF'),
-  #                   labels = c('EPY', 'nests with EPY', 'polyandrous females', 'renesting males')) +
-  scale_fill_grey(labels = c('EPY', 'nests with EPY', 'polyandrous females', 'renesting males')) +
-  scale_y_continuous(breaks = c(0, 5, 10, 15), limits = c(0, 16), expand = c(0, 0)) +
-  geom_text(aes(Inf, Inf, label = 'b'), vjust = vjust_label, hjust = hjust_,  size = lsa) +
-  xlab('Year') + ylab('Percentage') +
-  theme_classic(base_size = bs) +
-  theme(legend.position = c(0.285, 0.82), legend.title = element_blank(), 
-        legend.background = element_rect(fill = alpha('white', 0)))
-p1
-
-
 ds[, sample_size_N := paste0(n, '/', N)]
 ds[year_ == '2019' & type %in% c('polyandry', 'renesting'), sample_size_N := paste0(sample_size_N, '*')]
-
+kable(ds)
 
 p1 =
   ggplot(data = ds[study_site == FALSE], aes(year_, x, fill = type, label = sample_size_N)) +
@@ -553,31 +537,6 @@ dss = ds[, .(min = min(initiation_y), max = max(initiation_y)), by = year_]
 dss[, season_length := difftime(max, min, units = 'days') %>% as.numeric]
 dss
 
-dss[, polyandry := c(2.9, 5.4, 8.8)]
-dss[, N_nests := c(35, 39, 100)]
-dss[, N_birds := c(138, 203, 319)]
-
-# EPY difference between years due to season
-ds = d[parentage == TRUE & data_type == 'study_site']
-ds[, YEAR_ := as.character(year_)]
-
-ds = merge(ds, dss[, .(year_, season_length, polyandry, N_nests, N_birds)], by = 'year_', all.x = TRUE)
-
-fm = glm(anyEPY ~ season_length, data = ds, family = binomial)
-summary(fm)
-Anova(fm)
-
-fm = glm(anyEPY ~ polyandry, data = ds, family = binomial)
-summary(fm)
-Anova(fm)
-
-fm = glm(anyEPY ~ N_nests, data = ds, family = binomial)
-summary(fm)
-Anova(fm)
-
-fm = glm(anyEPY ~ N_birds, data = ds, family = binomial)
-summary(fm)
-Anova(fm)
 
 #--------------------------------------------------------------------------------------------------------------
 #' ### Extra-pair paternity and clutch order
@@ -835,7 +794,7 @@ summary(fm)
 # save
 p1 + p2 + p3 + p4 + plot_layout(ncol = 2, nrow = 2)
 
-# ggsave('./REPORTS/FIGURES/Frequency_EPP_and_timing.tiff', plot = last_plot(),  width = 177, height = 177, units = c('mm'), dpi = 'print')
+# ggsave('./OUTPUTS/FIGURES/Frequency_EPP_and_timing.tiff', plot = last_plot(),  width = 177, height = 177, units = c('mm'), dpi = 'print')
 
 
 
@@ -865,7 +824,8 @@ ds = dp[EPY == 1]
 
 # Fathers identified
 ds[father_identified == TRUE] %>% nrow
-ds[father_identified == TRUE] %>% nrow / dp$IDfather %>% length * 100 # total EPY
+ds[EPY == 1] %>% nrow
+ds[father_identified == TRUE] %>% nrow / ds[EPY == 1] %>% nrow * 100 # total EPY
 ds$nestID %>% unique %>% length # clutches with EPY
 
 # Fathers identified within intensive study & other data sources
@@ -875,7 +835,7 @@ ds[father_identified == TRUE & data_type == 'study_site'] %>% nrow / ds[data_typ
 
 ds[father_identified == TRUE & data_type != 'study_site'] %>% nrow
 ds[data_type != 'study_site'] %>% nrow
-ds[father_identified == TRUE & data_type != 'study_site'] %>% nrow / ds[data_type == 'study_site'] %>% nrow * 100
+ds[father_identified == TRUE & data_type != 'study_site'] %>% nrow / ds[data_type != 'study_site'] %>% nrow * 100
 
 # Merge social nest with nest with EPY
 dp[, IDfather_year := paste0(IDfather, '_', substr(year_, 3,4 ))]
@@ -923,7 +883,7 @@ ds = ds[, .(ID, social_female_before, difference_in_initiation = round(diff_EPY_
             distance_between_nests = round(dist_nests, 0))]
 kable(ds)
 
-# openxlsx::write.xlsx(ds, './REPORTS/TABLES/EPY_fathers_table.xlsx')
+# openxlsx::write.xlsx(ds, './OUTPUTS/TABLES/EPY_fathers_table.xlsx')
 
 # difference in initiation
 ds$difference_in_initiation %>% mean
@@ -989,7 +949,6 @@ ls = 3 # label size
 lsa = 5 # label size annotation
 vline = 0.7 # size of vertical line
 width_ = 1
-grey_ = 'grey75'
 bar_line = 'grey20'
 bar_line_thickness = 0.1
 margin_ = unit(c(0, 8, 2, 0), "pt")
@@ -997,16 +956,17 @@ vjust_ = 1.7 # vjust of text
 vjust_label = 1.2
 
 # colors in legend scale
-c_active = '#A6D854'
-c_failed = '#D53E4F'
-c_previous = '#2B83BA'
-c_next = '#FDAE61'
+# c_active = '#A6D854'
+# c_failed = '#D53E4F'
+# c_previous = '#2B83BA'
+# c_next = '#FDAE61'
 
-# colors in legend scale
-# c_active = '#95D840FF'
-# c_failed = '#33638DFF'
-# c_previous = 'orange'
-# c_next = 'firebrick3'
+# colors in legend scale for color blinds
+c_active = '#009E73'
+c_failed = '#D55E00'
+c_previous = '#56B4E9'
+c_next = '#E69F00'
+grey_ = 'grey75'
 
 ### interactions
 
@@ -1387,23 +1347,23 @@ p6 =
         plot.margin = margin_)
 p6
 
-# N interactin with next partner while laying
+# N copulations with next partner while laying
 dss[type == 'next partner' & diff_obs_initiation < 4]$ID1 %>% unique %>% length
 
 
 
 # legend
-ds = data.table(type = c('with active nest', 'with failed nest', 'next partner', 'previous partner'),
-                N = c(rep(1, 4)))
+ds = data.table(type = c('with active nest', 'with failed nest', 'next partner', 'previous partner', 'no nest/unknown'),
+                N = c(rep(1, 5)))
 
-ds[, type := factor(type, levels =c('with active nest', 'with failed nest', 'previous partner', 'next partner'))]
+ds[, type := factor(type, levels =c('with active nest', 'with failed nest', 'previous partner', 'next partner', 'no nest/unknown'))]
 
 pl =
   ggplot(data = ds) +
   geom_bar(aes(N, fill = type)) +
-  scale_fill_manual(name = 'Male', values = c(c_active, c_failed, c_previous, c_next)) +
+  scale_fill_manual(name = 'Male', values = c(c_active, c_failed, c_previous, c_next, grey_)) +
   theme_classic(base_size = bs) +
-  theme(legend.position = 'top', legend.key.width = unit(0.4, 'cm'), legend.key.height = unit(0.4, 'cm'))
+  theme(legend.position = c(0.43, 0.5), legend.direction = 'horizontal', legend.key.width = unit(0.4, 'cm'), legend.key.height = unit(0.4, 'cm'))
 
 legend = get_legend(pl)
 plgg = as_ggplot(legend)
@@ -1434,7 +1394,7 @@ patchwork[[4]] <- patchwork[[4]] + plot_layout(widths = c(0.5, 2))
 patchwork + plot_layout(heights = c(3, 2, 2, 0.2))
 
 
-# ggsave('./REPORTS/FIGURES/Interactions.tiff', plot = last_plot(),  width = 177, height = 177, units = c('mm'), dpi = 'print')
+# ggsave('./OUTPUTS/FIGURES/Interactions.tiff', plot = last_plot(),  width = 177, height = 177, units = c('mm'), dpi = 'print')
 
 
 #==============================================================================================================
