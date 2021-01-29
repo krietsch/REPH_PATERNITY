@@ -796,8 +796,6 @@ p1 + p2 + p3 + p4 + plot_layout(ncol = 2, nrow = 2)
 
 # ggsave('./OUTPUTS/FIGURES/Frequency_EPP_and_timing.tiff', plot = last_plot(),  width = 177, height = 177, units = c('mm'), dpi = 'print')
 
-
-
 #--------------------------------------------------------------------------------------------------------------
 #' ### Characteristics of the extra-pair sires
 #--------------------------------------------------------------------------------------------------------------

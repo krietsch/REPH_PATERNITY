@@ -1,4 +1,4 @@
-# **Data and R scripts for:**
+# **Data and R scripts from:**
 
 ### Extra-pair paternity in a sequentially polyandrous shorebird: limited evidence for the sperm-storage hypothesis
 
@@ -126,8 +126,7 @@ All data used in this analysis (click on the black arrows to see column definiti
 
 
 <details>
-  <summary> <b><code>Dale_et_al_1999_REPH_EPP</code></b> – a table with extra-pair paternity data extracted
-  from [Dale et al. 1999 - figure 1](https://doi.org/10.1007/s002650050591) </summary>
+  <summary> <b><code>Dale_et_al_1999_REPH_EPP</code></b> – a table with extra-pair paternity data extracted from [Dale et al. 1999, figure 1](https://doi.org/10.1007/s002650050591) </summary>
   
   Columns are defined as:
 
@@ -159,7 +158,7 @@ All data used in this analysis (click on the black arrows to see column definiti
   to our database and is only stored to document the process. 
   
   
-  
+**`OUTPUTS/`**:
   
   
   
