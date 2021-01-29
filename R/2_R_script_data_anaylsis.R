@@ -18,9 +18,9 @@
 #' ## DESCRIPTION
 #' This script contains all steps to get from the data to the presented results
 #' and figures presented in this study.
-#' The order follows the appearance in the manuscript.
+#' The order follows the appearance in the manuscript (as much as possible).
 #' Data were extracted from our database (see script) and are in the DATA folder.
-#' Outputs are written to the FIGURES or TABLES folder.
+#' Outputs are written to REPORTS in the FIGURES or TABLES folder.
 #' Each section in the summary below can be run independently.
 
 # Line to run to create html output
@@ -298,8 +298,8 @@ setorder(dcs, -year_, data_type)
 # add total
 dcs = rbind(dcs, data.table(year_     = 1,
                             data_type = 'Total',
-                            N_males   = sum(ds$N_males),
-                            N_females = sum(ds$N_females) ))
+                            N_males   = sum(dcs$N_males),
+                            N_females = sum(dcs$N_females) ))
 
 # Data overview
 ds = d[, .(N_nests = .N), by = .(year_, data_type)]
@@ -336,10 +336,10 @@ ds[data_type == 'own_off_site', data_type := 'Outside plot']
 ds[data_type == 'survey_plot', data_type := 'Long-term monitoring']
 ds[data_type == 'clutch_removal_exp', data_type := 'Renesting experiment']
 
-ds = ds[, .(Year = year_, `Data type` = data_type, `% EPY` = EPY_eggs_per, `N EPY` = EPY_eggs_N, 
-            `% nests with EPY` = EPY_nests_per, 
-            `N nests with EPY` = EPY_nests_N, `N adult males genotyped` = N_males, 
-            `N adult females genotyped` = N_females)]
+ds = ds[, .(Year = year_, `Data type` = data_type, `EPY (%)` = EPY_eggs_per, `EPY/total` = EPY_eggs_N, 
+            `Nests with EPY (%)` = EPY_nests_per, 
+            `Nests with EPY/total` = EPY_nests_N, `Males genotyped` = N_males, 
+            `Females genotyped` = N_females)]
 setorder(ds,  -Year, `Data type`)
 kable(ds)
 
@@ -398,10 +398,6 @@ d[is.na(female_id), female_id_year_NA := paste0(seq_len(.N), '_', substr(year_, 
 ds = d[external == 0 & data_type == 'study_site']
 dss = ds[, .(N_nests = .N), by = year_]
 setorder(dss, year_)
-
-# unassigned males and females
-# ds[is.na(male_id)]
-# ds[is.na(female_id)]
 
 # males
 dsm = unique(ds, by = 'male_id_year_NA')
@@ -710,26 +706,67 @@ matrix(c(3, 0, 11, 21), ncol = 2) %>% fisher.test()
 ds = ds[!(female_id_year_NA %in% c('270170935_19', '19222_19'))]
 ds[, .N, clutch_identity]
 
-# initiation first clutch compared to single clutch
-ds[clutch_identity == 'single', mean(initiation_st)] - ds[clutch_identity == 'first', mean(initiation_st)]
+# initiation first clutch compared to mean
+ds[clutch_identity == 'first', mean(initiation_st)]
 
 # second clutches compared to single
-ds[clutch_identity == 'single', mean(initiation_st)] - ds[clutch_identity == 'second', mean(initiation_st)]
-ds[clutch_identity == 'single', mean(initiation_st)] - ds[clutch_identity == 'second' & polyandrous == TRUE, mean(initiation_st)]
-ds[clutch_identity == 'single', mean(initiation_st)] - ds[clutch_identity == 'second' & polyandrous != TRUE, mean(initiation_st)]
+ds[clutch_identity == 'second', mean(initiation_st)]
+ ds[clutch_identity == 'second' & polyandrous == TRUE, mean(initiation_st)]
+ds[clutch_identity == 'second' & is.na(polyandrous), mean(initiation_st)]
 
 ds[clutch_identity == 'third', .(initiation_st)]
 
+# merge first and second clutches of females to compare initiation dates
+ds1 = merge(d[clutch_identity == 'first', .(female_id_year, initiation_1 = initiation, p_1 = polyandrous)], 
+            d[clutch_identity == 'second', .(female_id_year, initiation_2 = initiation, p_2 = polyandrous)],
+            by = 'female_id_year')
+
+ds2 = merge(d[clutch_identity == 'second', .(female_id_year, initiation_1 = initiation, p_1 = NA)], 
+            d[clutch_identity == 'third', .(female_id_year, initiation_2 = initiation, p_2 = NA)],
+            by = 'female_id_year')
+
+ds = rbind(ds1, ds2)
+
+# polyandrous females
+ds[, diff_initiation := difftime(initiation_2, initiation_1, units = 'days')]
+ds[p_1 == TRUE] %>% nrow
+ds[p_1 == TRUE]$diff_initiation %>% mean
+ds[p_1 == TRUE]$diff_initiation %>% min
+ds[p_1 == TRUE]$diff_initiation %>% max
+
+# renesting females
+ds[, diff_initiation := difftime(initiation_2, initiation_1, units = 'days')]
+ds[is.na(p_1)] %>% nrow
+ds[is.na(p_1)]$diff_initiation %>% mean
+ds[is.na(p_1)]$diff_initiation %>% min
+ds[is.na(p_1)]$diff_initiation %>% max
+
+
+# merge first and second clutches of males to compare initiation dates
+ds = merge(d[male_clutch == 1 & renesting_male == TRUE, .(male_id_year, initiation_1 = initiation, f_1 = female_id_year)], 
+           d[male_clutch == 2 & renesting_male == TRUE, .(male_id_year, initiation_2 = initiation, f_2 = female_id_year)], 
+           by = 'male_id_year')
+
+# same female?
+ds[, same_female := f_1 == f_2]
+ds[is.na(same_female), same_female := FALSE]
+
+ds[, diff_initiation := difftime(initiation_2, initiation_1, units = 'days')]
+ds[same_female == FALSE] %>% nrow
+ds[same_female == FALSE]$diff_initiation %>% mean
+ds[same_female == FALSE]$diff_initiation %>% min
+ds[same_female == FALSE]$diff_initiation %>% max
 
 #--------------------------------------------------------------------------------------------------------------
 #' ### Extra-pair paternity and breeding phenology
 #--------------------------------------------------------------------------------------------------------------
 
+# see time differences between clutches above
+
 # load data
 d = read.table('./DATA/NESTS.txt', sep = '\t',header = TRUE) %>% data.table
 dp = read.table('./DATA/PATERNITY.txt', sep = '\t',header = TRUE) %>% data.table
 
-# 
 d[, initiation := as.POSIXct(initiation)]
 d[, initiation_y := as.POSIXct(format(initiation, format = '%m-%d %H:%M:%S'), format = '%m-%d %H:%M:%S')]
 

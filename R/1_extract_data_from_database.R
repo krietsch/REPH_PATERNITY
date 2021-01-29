@@ -1,6 +1,6 @@
-#========================================================================================================================
+#==============================================================================================================
 # Extract all for the parentage study relevant data & prepare them for analysis
-#========================================================================================================================
+#==============================================================================================================
 
 ### Description
 
@@ -18,9 +18,9 @@ sapply( c('data.table', 'magrittr', 'sdb', 'sf', 'auksRuak', 'ggplot2'),
 # Projection
 PROJ = '+proj=laea +lat_0=90 +lon_0=-156.653428 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0 '
 
-#------------------------------------------------------------------------------------------------------------------------
+#--------------------------------------------------------------------------------------------------------------
 # CAPTURES
-#------------------------------------------------------------------------------------------------------------------------
+#--------------------------------------------------------------------------------------------------------------
 
 # Database
 con = dbcon('jkrietsch', db = 'REPHatBARROW')  
@@ -85,14 +85,18 @@ bm +
   geom_point(data = d, aes(lon, lat, color = data_type))
 
 # subset data relevant for this study
-d = d[, .(external, data_type, year_, ID, UL, UR, LL, LR, sex, lat = lat_dec, lon = lon_dec, caught_time, dead)]
+d = d[, .(external, data_type, year_, ID, UL, UR, LL, LR, sex = sex_observed, lat = lat_dec, lon = lon_dec, caught_time, dead)]
+
+# check data
+summary(d)
+sapply(d, function(x) sum(is.na(x)))
 
 # save data
 write.table(d, './DATA/CAPTURES.txt', quote = TRUE, sep = '\t', row.names = FALSE)
 
-#------------------------------------------------------------------------------------------------------------------------
+#--------------------------------------------------------------------------------------------------------------
 # NESTS
-#------------------------------------------------------------------------------------------------------------------------
+#--------------------------------------------------------------------------------------------------------------
 
 # Database
 con = dbcon('jkrietsch', db = 'REPHatBARROW')  
@@ -152,6 +156,10 @@ d[parentage == TRUE & external == 1 & !(plot %like% 'brw') & year_ %in% year_R, 
 
 d[, .N, data_type]
 
+# fill gaps
+d[nest %like% 'REPH', data_type := 'survey_plot']
+d[is.na(data_type), data_type := 'own_off_site']
+
 # check data
 bm = create_bm(d[study_site == TRUE], buffer = 500)
 bm +
@@ -195,6 +203,10 @@ dr
 # polyandrous females
 dr = dr[same_male == FALSE, .(female_id_year, polyandrous = TRUE, polyandry_study_site = both_study_site)]
 d = merge(d, dr, by = 'female_id_year', all.x = TRUE)
+d[is.na(polyandrous), polyandrous := FALSE]
+d[is.na(polyandry_study_site), polyandry_study_site := FALSE]
+
+setorder(d, year_, initiation)
 
 # males renesting
 d[, male_id_year := paste0(male_id, '_', substr(year_, 3,4 ))]
@@ -226,6 +238,8 @@ dr
 # renesting males
 dr = dr[, .(male_id_year, renesting_male = TRUE, same_female, renesting_study_site = both_study_site)]
 d = merge(d, dr, by = 'male_id_year', all.x = TRUE)
+d[is.na(renesting_male), renesting_male := FALSE]
+d[is.na(renesting_study_site), renesting_study_site := FALSE]
 
 # incubation period in incubator
 d[, found_incomplete := initial_clutch_size < clutch_size]
@@ -257,13 +271,17 @@ d = d[, .(external, data_type, year_, nestID, male_id, female_id, male_assigned,
           parentage, anyEPY, N_parentage, N_EPY, female_clutch, N_female_clutch, polyandrous, polyandry_study_site, 
           male_clutch, N_male_clutch, renesting_male, renesting_study_site)]
 
+# check data
+summary(d)
+sapply(d, function(x) sum(is.na(x)))
+
 # save data
 write.table(d, './DATA/NESTS.txt', quote = TRUE, sep = '\t', row.names = FALSE)
 
 
-#------------------------------------------------------------------------------------------------------------------------
+#--------------------------------------------------------------------------------------------------------------
 # OBSERVATIONS
-#------------------------------------------------------------------------------------------------------------------------
+#--------------------------------------------------------------------------------------------------------------
 
 # Database
 con = dbcon('jkrietsch', db = 'REPHatBARROW') 
@@ -547,13 +565,17 @@ ds = di[, .(year_, datetime_, obs_id, ID1, ID2, ID1sex, ID2sex, ID1copAS, ID2cop
             diff_obs_1st_initiation, diff_obs_2nd_initiation, seen_with_other_than_1st_partner, 
             seen_with_other_than_2nd_partner, copAS_not_1st_partner, copAS_not_2nd_partner)]
 
+# check data
+summary(ds)
+sapply(ds, function(x) sum(is.na(x)))
+
 # save data
 write.table(ds, './DATA/OBSERVATIONS.txt', quote = TRUE, sep = '\t', row.names = FALSE)
 
 
-#------------------------------------------------------------------------------------------------------------------------
+#--------------------------------------------------------------------------------------------------------------
 # PATERNITY
-#------------------------------------------------------------------------------------------------------------------------
+#--------------------------------------------------------------------------------------------------------------
 
 # Database
 con = dbcon('jkrietsch', db = 'REPHatBARROW')  
@@ -580,9 +602,14 @@ d[is.na(fate), fate := 'h'] # unbanded chicks found in field
 
 d[is.na(undeveloped) & !is.na(EPY), undeveloped := 0]
 d[undeveloped == 1]$nestID %>% unique %>% length
+d[is.na(undeveloped), undeveloped := 0]
 
 # select columns of interest
 d = d[, .(year_, nestID, IDchick, IDmother, IDfather, EPY, fate, undeveloped, comment)]
+
+# check data
+summary(d)
+sapply(d, function(x) sum(is.na(x)))
 
 # save data
 write.table(d, './DATA/PATERNITY.txt', quote = TRUE, sep = '\t', row.names = FALSE)
