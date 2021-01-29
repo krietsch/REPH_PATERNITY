@@ -2,10 +2,25 @@
 
 ### Extra-pair paternity in a sequentially polyandrous shorebird: limited evidence for the sperm-storage hypothesis
 
-This repository contains the data sets and R scripts used for data analysis and figure production of this project and can also be found on the **Open Science Framework website** [doi: 10.17605/OSF.IO/V475T](https://osf.io/v475t/)
-
 ![REPH](./DATA/ILLUSTRATIONS/reph_pair.jpg)  
 *Pair of red phalaropes. Illustration by Margherita Cragnolini*
+
+<p>&nbsp;</p>
+
+#### **Description**
+
+This repository contains the data and R scripts used for data analysis and figure production used in: 
+
+*Krietsch, J., Cragnolini, M., Kuhn, S., Lanctot, R. B., Saalfeld, S. T., Valcu, M., & Kempenaers, B. (2021). Extra-pair paternity in a sequentially polyandrous shorebird: limited evidence for the sperm-storage hypothesis. insert journal.*
+
+
+When using the data or code please cite the associated manuscript and [Open Science Framework repository](https://osf.io/v475t/) (which is synchronized with this repository): 
+
+*Krietsch, J., Cragnolini, M., Kuhn, S., Lanctot, R. B., Saalfeld, S. T., Valcu, M., & Kempenaers, B. (2021). Data and R scripts from “Extra-pair paternity in a sequentially polyandrous shorebird: limited evidence for the sperm-storage hypothesis.” doi: [10.17605/OSF.IO/V475T](https://doi.org/10.17605/OSF.IO/V475T)*
+
+
+For any further information, please contact: Johannes Krietsch, e-mail: j.krietsch@orn.mpg.de
+
 
 <p>&nbsp;</p>
 
@@ -14,7 +29,8 @@ This repository contains the data sets and R scripts used for data analysis and 
 
 **`DATA/`**:
 
-All data used in this analysis (click on the black arrows to see column definitions):
+All data used in this analysis (click on the black arrows to see column definitions). Extracted from our database 
+and from [Dale et al. 1999 - Figure 1](https://doi.org/10.1007/s002650050591)
 
 <details>
   <summary> <b><code>CAPTURES</code></b> – a table of all captures data</summary>
@@ -126,7 +142,8 @@ All data used in this analysis (click on the black arrows to see column definiti
 
 
 <details>
-  <summary> <b><code>Dale_et_al_1999_REPH_EPP</code></b> – a table with extra-pair paternity data extracted from [Dale et al. 1999, figure 1](https://doi.org/10.1007/s002650050591) </summary>
+  <summary> <b><code>Dale_et_al_1999_REPH_EPP</code></b> – a table with extra-pair paternity 
+  from Dale et al. 1999 </summary>
   
   Columns are defined as:
 
@@ -143,11 +160,7 @@ All data used in this analysis (click on the black arrows to see column definiti
 
   - [`2_R_script_data_anaylsis.R`](https://github.com/krietsch/REPH_PATERNITY/blob/master/R/2_R_script_data_anaylsis.R). 
   The main script to reproduce all analysis and figures of this project. It contains a detailed commented workflow and 
-  follows the order in the manuscript. Each main block of the script can be run independently. A compiled interactive 
-  html output of this script can be found
-  [here](https://github.com/krietsch/REPH_PATERNITY/blob/master/R/2_R_script_data_anaylsis.html) to download and 
-  [here](https://github.com/krietsch/REPH_PATERNITY/blob/master/R/2_R_script_data_anaylsis.html) to view directly 
-  in your browser.  
+  follows the order in the manuscript. Each main block of the script can be run independently. ([view in browser]())
   
   - [`0_functions.R`](https://github.com/krietsch/REPH_PATERNITY/blob/master/R/0_functions.R) The workflow script 
   sources this script, which is only needed to create a base map using OpenStreetMap data stored in the R package 
@@ -157,11 +170,14 @@ All data used in this analysis (click on the black arrows to see column definiti
   Contains the script which with the data were extracted from our database. This script can only be run with access 
   to our database and is only stored to document the process. 
   
+<p>&nbsp;</p>
   
 **`OUTPUTS/`**:
+
+  - `2_R_script_data_anaylsis.html` a compiled interactive html output of the workflow ([view in browser]())
   
+  - `FIGURES/` contains all figures created for publication
   
-  
-  
+  - `TABLES/` contains all table created for publication
   
 
