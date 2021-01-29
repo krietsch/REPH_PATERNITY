@@ -387,130 +387,106 @@ summary {
 <div id="repository-contents" class="section level4">
 <h4><strong>Repository Contents</strong></h4>
 <p><strong><code>DATA/</code></strong>:</p>
-<p>We extracted all project relevant data from our database (see script <code>R/</code>) of the following five tables (click on the black arrows to see column definitions):</p>
+<p>All data used in this analysis (click on the black arrows to see column definitions):</p>
 <details>
 <p><summary> <b><code>CAPTURES</code></b> – a table of all captures.</summary></p>
 <p>Columns are defined as:</p>
 <ol style="list-style-type: decimal">
-<li><code>external</code>:</li>
-<li><code>data_type</code>:</li>
-<li><code>year_</code>:</li>
-<li><code>ID</code>:</li>
-<li><code>UL</code>:</li>
-<li><code>UR</code>:</li>
-<li><code>LL</code>:</li>
-<li><code>LR</code>:</li>
-<li><code>sex</code>:</li>
-<li><code>lat</code>:</li>
-<li><code>lon</code>:</li>
-<li><code>caught_time</code>:<br />
-</li>
-<li><code>dead</code>:</li>
+<li><code>external</code>: source of the data, MPIO = 0 or USFWS = 1</li>
+<li><code>data_type</code>: data types (see methods)</li>
+<li><code>year_</code>: year</li>
+<li><code>ID</code>: metal band id</li>
+<li><code>UL</code>: upper left colour bands</li>
+<li><code>UR</code>: upper right colour bands</li>
+<li><code>LL</code>: lower left colour bands</li>
+<li><code>LR</code>: lower right colour bands</li>
+<li><code>sex</code>: field and genetic sex</li>
+<li><code>lat</code>: capture location latitude (decimal degrees)</li>
+<li><code>lon</code>: capture location longitude (decimal degrees)</li>
+<li><code>caught_time</code>: date and time caught</li>
+<li><code>dead</code>: bird was found dead = 1 or was caught alive = 0</li>
 </ol>
 </details>
 <details>
 <p><summary> <b><code>NESTS</code></b> – a table of all nests.</summary></p>
 <p>Columns are defined as:</p>
 <ol style="list-style-type: decimal">
-<li><code>external</code>:</li>
-<li><code>data_type</code>:</li>
-<li><code>year_</code>:</li>
-<li><code>nestID</code>:</li>
-<li><code>male_id</code>:</li>
-<li><code>female_id</code>:</li>
-<li><code>male_assigned</code>:</li>
-<li><code>female_assigned</code>:</li>
-<li><code>found_datetime</code>:</li>
-<li><code>clutch_size</code>:</li>
-<li><code>collected_datetime</code>:</li>
-<li><code>initiation</code>:<br />
+<li><code>external</code>: source of the data, MPIO = 0 or USFWS = 1</li>
+<li><code>data_type</code>: data types (see methods)</li>
+<li><code>year_</code>: year</li>
+<li><code>nestID</code>: unique nest id</li>
+<li><code>male_id</code>: male metal band id</li>
+<li><code>female_id</code>: female metal band id</li>
+<li><code>male_assigned</code>: how the male was assigned: 0 = not, 1 = field, 2 = genetically, 3 = only GPStag</li>
+<li><code>female_assigned</code>: how the female was assigned: 0 = not, 1 = field, 2 = genetically, 3 = only GPStag</li>
+<li><code>found_datetime</code>: date and time the nest was found</li>
+<li><code>clutch_size</code>: total clutch size</li>
+<li><code>collected_datetime</code>: date and time the clutch was collected (if so)</li>
+<li><code>initiation</code>: estimated date and time the first egg was laid</li>
+<li><code>initiation_method</code>: method with which the initiation date was estimated</li>
+<li><code>est_hatching_datetime</code>: estimated hatching date and time</li>
+<li><code>hatching_datetime</code>: method with which the hatching date was estimated</li>
+<li><code>chicks_back</code>: date and time chicks were brought back to the nest</li>
+<li><code>last_checked_datetime</code>: date and time the nest was checked for the last time</li>
+<li><code>nest_state</code>: last nest state: I = Incubated (active nest), P = Predated, D = Deserted, H = Hatched (received hatched chicks), U = Unknown, O = Observer (collected withour replacement)<br />
 </li>
-<li><code>initiation_method</code>:<br />
+<li><code>nest_state_date</code>: date and time the nest state was based on</li>
+<li><code>lat</code>: nest location latitude (decimal degrees)</li>
+<li><code>lon</code>: nest location longitude (decimal degrees)</li>
+<li><code>parentage</code>: logic if parentage was possible<br />
 </li>
-<li><code>est_hatching_datetime</code>:<br />
+<li><code>anyEPY</code>: logic if any extra-pair young were found in the clutch</li>
+<li><code>N_parentage</code>: number of eggs with parentage data</li>
+<li><code>N_EPY</code>: number of extra-pair young</li>
+<li><code>female_clutch</code>: sequence of female clutches based on the initiation date (1st, 2nd or 3rd clutch) within season</li>
+<li><code>N_female_clutch</code>: total number of clutches within season</li>
+<li><code>polyandrous</code>: logic if the female was social polyandrous</li>
+<li><code>polyandry_study_site</code>: logic if the female was social polyandrous with both clutches within the intensive study plot</li>
+<li><code>male_clutch</code>: sequence of male clutches based on the initiation date (1st or 2nd clutch) within season<br />
 </li>
-<li><code>hatching_datetime</code>:<br />
+<li><code>N_male_clutch</code>: total number of clutches within season<br />
 </li>
-<li><code>chicks_back</code>:<br />
-</li>
-<li><code>last_checked_datetime</code>:<br />
-</li>
-<li><code>nest_state</code>:<br />
-</li>
-<li><code>nest_state_date</code>:<br />
-</li>
-<li><code>lat</code>:<br />
-</li>
-<li><code>lon</code>:<br />
-</li>
-<li><code>parentage</code>:<br />
-</li>
-<li><code>anyEPY</code>:<br />
-</li>
-<li><code>N_parentage</code>:<br />
-</li>
-<li><code>N_EPY</code>:<br />
-</li>
-<li><code>female_clutch</code>:<br />
-</li>
-<li><code>N_female_clutch</code>:<br />
-</li>
-<li><code>polyandrous</code>:<br />
-</li>
-<li><code>polyandry_study_site</code>:<br />
-</li>
-<li><code>male_clutch</code>:<br />
-</li>
-<li><code>N_male_clutch</code>:<br />
-</li>
-<li><code>renesting_male</code>:<br />
-</li>
-<li><code>renesting_study_site</code>:<br />
-</li>
+<li><code>renesting_male</code>: logic if the male was renesting</li>
+<li><code>renesting_study_site</code>: logic if the male was renesting with both clutches within the intensive study plot</li>
 </ol>
 </details>
 <details>
 <p><summary> <b><code>OBSERVATIONS</code></b> – a table of all observations.</summary></p>
 <p>Columns are defined as:</p>
 <ol style="list-style-type: decimal">
-<li><code>year_</code>:</li>
-<li><code>datetime_</code>:</li>
-<li><code>obs_id</code>:</li>
-<li><code>ID1</code>:</li>
-<li><code>ID2</code>:</li>
-<li><code>ID1sex</code>:</li>
-<li><code>ID2sex</code>:</li>
-<li><code>ID1copAS</code>:</li>
-<li><code>ID2copAS</code>:</li>
-<li><code>same_sex</code>:</li>
-<li><code>ID1_1st_partner</code>:</li>
-<li><code>ID1_2nd_partner</code>:<br />
-</li>
-<li><code>diff_obs_1st_initiation</code>:<br />
-</li>
-<li><code>diff_obs_2nd_initiation</code>:<br />
-</li>
-<li><code>seen_with_other_than_1st_partner</code>:<br />
-</li>
-<li><code>seen_with_other_than_2nd_partner</code>:<br />
-</li>
-<li><code>copAS_not_1st_partner</code>:<br />
-</li>
-<li><code>copAS_not_2nd_partner</code>:</li>
+<li><code>year_</code>: year</li>
+<li><code>datetime_</code>: date and time of the observation</li>
+<li><code>obs_id</code>: unique observation id</li>
+<li><code>ID1</code>: id of one bird</li>
+<li><code>ID2</code>: id of another bird (if interaction)</li>
+<li><code>ID1sex</code>: sex of ID1</li>
+<li><code>ID2sex</code>: sex of ID2</li>
+<li><code>ID1copAS</code>: ID1 was copulating = 1 or not = 0</li>
+<li><code>ID2copAS</code>: ID2 was copulating = 1 or not = 0</li>
+<li><code>same_sex</code>: logic ID1 and ID2 have the same sex</li>
+<li><code>ID1_1st_partner</code>: id of the first breeding partner of ID1</li>
+<li><code>ID1_2nd_partner</code>: id of the second breeding partner of ID1</li>
+<li><code>diff_obs_1st_initiation</code>: differences between the observation and the initiation of the first nest</li>
+<li><code>diff_obs_2nd_initiation</code>: differences between the observation and the initiation of the second nest</li>
+<li><code>seen_with_other_than_1st_partner</code>: logic observation with other than first partner</li>
+<li><code>seen_with_other_than_2nd_partner</code>: logic observation with other than second partner</li>
+<li><code>copAS_not_1st_partner</code>: logic copulation with other than first partner</li>
+<li><code>copAS_not_2nd_partner</code>: logic copulation with other than second partner</li>
 </ol>
 </details>
 <details>
 <p><summary> <b><code>PATERNITY</code></b> – a table of all paternity data.</summary></p>
 <p>Columns are defined as:</p>
 <ol style="list-style-type: decimal">
-<li><code>year_</code>:</li>
-<li><code>nestID</code>:</li>
-<li><code>IDchick</code>:</li>
-<li><code>IDmother</code>:</li>
-<li><code>IDfather</code>:</li>
-<li><code>EPY</code>:</li>
-<li><code>undeveloped</code>:</li>
-<li><code>comment</code>:</li>
+<li><code>year_</code>: year</li>
+<li><code>nestID</code>: unique nest id</li>
+<li><code>IDchick</code>: unique chick id</li>
+<li><code>IDmother</code>: genetic mother id</li>
+<li><code>IDfather</code>: genetic father id</li>
+<li><code>EPY</code>: extra-pair young = 1, within-pair young = 0 or unknown = NA</li>
+<li><code>fate</code>: egg fate, h = hatched, f = frozen (unidentified fate), u = unhatched</li>
+<li><code>undeveloped</code>: egg where only the germinal disc was visible = 1 or developed egg = 0</li>
+<li><code>comment</code>: comment from the parentage analysis</li>
 </ol>
 </details>
 <details>
