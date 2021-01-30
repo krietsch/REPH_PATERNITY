@@ -6,7 +6,7 @@
   <img width="600" src="./DATA/ILLUSTRATIONS/reph_pair.jpg">
 </p>  
 
-<center> *Pair of red phalaropes. Illustration by Margherita Cragnolini*</center>
+<p align="center">*Pair of red phalaropes. Illustration by Margherita Cragnolini*</p>
 
 <p>&nbsp;</p>
 
