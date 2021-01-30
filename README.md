@@ -1,25 +1,20 @@
-# **Data and R scripts from:**
+# **Data and code from:**
 
 ### Extra-pair paternity in a sequentially polyandrous shorebird: limited evidence for the sperm-storage hypothesis
 
-![REPH](./DATA/ILLUSTRATIONS/reph_pair.jpg)  
-*Pair of red phalaropes. Illustration by Margherita Cragnolini*
+<p align="center">
+  <img width="600" src="./DATA/ILLUSTRATIONS/reph_pair.jpg">
+</p>  
+
+<div style="text-align: center"> *Pair of red phalaropes. Illustration by Margherita Cragnolini* </div>
 
 <p>&nbsp;</p>
 
 ### **Description**
 
-This repository contains the data and R scripts used for data analysis and figure production used in: 
-
-*Krietsch, J., Cragnolini, M., Kuhn, S., Lanctot, R. B., Saalfeld, S. T., Valcu, M., & Kempenaers, B. (2021). Extra-pair paternity in a sequentially polyandrous shorebird: limited evidence for the sperm-storage hypothesis. insert journal.*
-
-
-When using the data or code please cite the associated manuscript and [Open Science Framework repository](https://osf.io/v475t/) (which is synchronized with this repository): 
-
-*Krietsch, J., Cragnolini, M., Kuhn, S., Lanctot, R. B., Saalfeld, S. T., Valcu, M., & Kempenaers, B. (2021). Data and R scripts from “Extra-pair paternity in a sequentially polyandrous shorebird: limited evidence for the sperm-storage hypothesis.” doi: [10.17605/OSF.IO/V475T](https://doi.org/10.17605/OSF.IO/V475T)*
-
-
-For any further information, please contact: Johannes Krietsch, e-mail: j.krietsch@orn.mpg.de
+This repository contains all data and code used for data analysis and figure production in "*Extra-pair paternity in a sequentially polyandrous shorebird: limited evidence for the sperm-storage hypothesis*" by Johannes Krietsch, Margherita Cragnolini, Sylvia Kuhn, Richard B. Lanctot, Sarah T. Saalfeld, Mihai Valcu and Bart Kempenaers.
+  
+When using the data or code please cite the associated manuscript and [Open Science Framework repository](https://osf.io/v475t/) (which is synchronized with this repository). Please do not hesitate to contact me (e-mail: j.krietsch@orn.mpg.de) if you have any questions, trouble running the code, found bugs or ideas to develop the project further. 
 
 
 <p>&nbsp;</p>
@@ -156,6 +151,7 @@ and from [Dale et al. 1999 - Figure 1](https://doi.org/10.1007/s002650050591)
 
 <p>&nbsp;</p>
 
+
 **`R/`**:
 
   - [`2_R_script_data_anaylsis.R`](https://github.com/krietsch/REPH_PATERNITY/blob/master/R/2_R_script_data_anaylsis.R). 
@@ -172,6 +168,7 @@ and from [Dale et al. 1999 - Figure 1](https://doi.org/10.1007/s002650050591)
   to our database and is only stored to document the process. 
   
 <p>&nbsp;</p>
+
   
 **`OUTPUTS/`**:
 
@@ -182,4 +179,29 @@ and from [Dale et al. 1999 - Figure 1](https://doi.org/10.1007/s002650050591)
   
   - `TABLES/` contains all table created for publication
   
+
+<p>&nbsp;</p>
+
+
+### **Terms of Use**
+
+The data and code are supplied for scientific analysis, research, teaching or conservation purposes and shall be used only in accordance with the [GNU GPLv3](https://github.com/krietsch/REPH_PATERNITY/blob/master/LICENSE).
+For any publication making substantial use of the data or code, the authors welcome the opportunity for collaboration and to comment prior to publication.
+
+<p>&nbsp;</p>
+
+
+### **Acknowledgments**
+
+
+This work was funded by the [Max Planck Society](https://www.mpg.de/en) (to B.K.) and the [U.S. Fish and Wildlife Service](https://www.fws.gov/) (to R.L.). J.K. was supported by the International Max Planck Research School for Organismal Biology. 
+
+We thank Alice Pintaric, Andrea Wittenzellner, Anne Cillard, Carol Gilsenan, Eunbi Kwon, Giulia Bambini, Kim Teltscher, Kristina Beck, Luisana Carballo, Martin Bulla, Peter Santema, Pietro D'Amelio, Sabine Spehn and Fenja Squirrell of the MPIO and Audrey Taylor, Ben Lagassé, Greg Norwood, Jen Selvidge, Jenny Cunningham, Jillian Cosgrove, Kirsten Grond, Lindall Kidd, Patrick Herzog, Willow English and Wyatt Egelhoff of the USFWS for help in the field. We also thank the state and federal committees that reviewed and approved permits for this study, and the Ukpeaġvik Iñupiat Corporation for logistic support and access to their lands. 
+
+<p>&nbsp;</p>
+
+<p align="middle">
+  <img src="./DATA/ILLUSTRATIONS/MPIO_logo.png" width="500" />
+  <img src="./DATA/ILLUSTRATIONS/IMPRS_logo.png" width="280" /> 
+</p>
 
