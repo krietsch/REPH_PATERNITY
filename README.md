@@ -6,15 +6,13 @@
   <img width="600" src="./DATA/ILLUSTRATIONS/reph_pair.jpg">
 </p>  
 
-<p align="center">*Pair of red phalaropes. Illustration by Margherita Cragnolini*</p>
-
-<p>&nbsp;</p>
+<p align="center">Pair of red phalaropes. Illustration by Margherita Cragnolini</p>
 
 ### **Description**
 
 This repository contains all data and code used for data analysis and figure production in "*Extra-pair paternity in a sequentially polyandrous shorebird: limited evidence for the sperm-storage hypothesis*" by Johannes Krietsch, Margherita Cragnolini, Sylvia Kuhn, Richard B. Lanctot, Sarah T. Saalfeld, Mihai Valcu and Bart Kempenaers.
   
-When using the data or code please cite the associated manuscript and [Open Science Framework repository](https://osf.io/v475t/) (which is synchronized with this repository). Please do not hesitate to contact me (e-mail: j.krietsch@orn.mpg.de) if you have any questions, trouble running the code, found bugs or ideas to develop the project further. 
+When using the data or code please cite the associated manuscript (in review) and [Open Science Framework repository](https://osf.io/v475t/) (which is synchronized with this repository). Please do not hesitate to contact me (j.krietsch@orn.mpg.de) if you have any questions, trouble running the code, found bugs or ideas to develop the project further. 
 
 
 <p>&nbsp;</p>
@@ -172,12 +170,12 @@ and from [Dale et al. 1999 - Figure 1](https://doi.org/10.1007/s002650050591)
   
 **`OUTPUTS/`**:
 
-  - `2_R_script_data_anaylsis.html` a compiled interactive html output of the workflow 
+  - `2_R_script_data_anaylsis.html` – a compiled interactive html output of the workflow 
   ([view in browser](https://raw.githack.com/krietsch/REPH_PATERNITY/master/OUTPUTS/2_R_script_data_anaylsis.html "html"))
   
-  - `FIGURES/` contains all figures created for publication
+  - `FIGURES/` – contains all figures created for publication
   
-  - `TABLES/` contains all table created for publication
+  - `TABLES/` – contains all table created for publication
   
 
 <p>&nbsp;</p>
@@ -186,7 +184,7 @@ and from [Dale et al. 1999 - Figure 1](https://doi.org/10.1007/s002650050591)
 ### **Terms of Use**
 
 The data and code are supplied for scientific analysis, research, teaching or conservation purposes and shall be used only in accordance with the [GNU GPLv3](https://github.com/krietsch/REPH_PATERNITY/blob/master/LICENSE).
-For any publication making substantial use of the data or code, the authors welcome the opportunity for collaboration and to comment prior to publication.
+For any publication making substantial use of the data or code, the authors welcome the opportunity for collaboration and to comment prior to publication. Please reach out to me (j.krietsch@orn.mpg.de) or Bart Kempenaers (b.kempenaers@orn.mpg.de).
 
 <p>&nbsp;</p>
 
