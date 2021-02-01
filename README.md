@@ -6,7 +6,7 @@
   <img width="600" src="./DATA/ILLUSTRATIONS/reph_pair.jpg">
 </p>  
 
-<p align="center" >A pair of red phalaropes (_Phalaropus fulicarius_). Illustration by Margherita Cragnolini.</p>
+<p align="center" >A pair of red phalaropes (<i>Phalaropus fulicarius</i>). Illustration by Margherita Cragnolini.</p>
 
 ### **Description**
 
