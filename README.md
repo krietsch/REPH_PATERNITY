@@ -6,7 +6,7 @@
   <img width="600" src="./DATA/ILLUSTRATIONS/reph_pair.jpg">
 </p>  
 
-<p align="center"  style="font-style: italic;">A pair of red phalaropes (Phalaropus fulicarius). Illustration by Margherita Cragnolini.</p>
+<p align="center" >A pair of red phalaropes (_Phalaropus fulicarius_). Illustration by Margherita Cragnolini.</p>
 
 ### **Description**
 
@@ -14,7 +14,7 @@ This repository contains all data and code used for data analysis and figure pro
 Johannes Krietsch [![ORCID_ID](./DATA/ILLUSTRATIONS/ORCID_ID_logo.png)](https://orcid.org/0000-0002-8080-1734), 
 Margherita Cragnolini, 
 Sylvia Kuhn, 
-Richard B. Lanctot [![ORCID_ID](./DATA/ILLUSTRATIONS/ORCID_ID_logo.png)](https://orcid.org/0000-0001-9873-0199),  
+Richard B. Lanctot [![ORCID_ID](./DATA/ILLUSTRATIONS/ORCID_ID_logo.png)](https://orcid.org/0000-0001-9873-0199),
 Sarah T. Saalfeld, 
 Mihai Valcu [![ORCID_ID](./DATA/ILLUSTRATIONS/ORCID_ID_logo.png)](https://orcid.org/0000-0002-6907-7802) and 
 Bart Kempenaers [![ORCID_ID](./DATA/ILLUSTRATIONS/ORCID_ID_logo.png)](https://orcid.org/0000-0002-7505-5458).  
