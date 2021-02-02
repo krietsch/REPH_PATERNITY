@@ -30,7 +30,7 @@ When using the data or code please cite the associated manuscript (in review) an
 **`DATA/`**:
 
 All data used in this analysis (click on the black arrows to see column definitions). Extracted from our database 
-and from [Dale et al. 1999 - Figure 1](https://doi.org/10.1007/s002650050591)
+and from [Dale et al. 1999 - Figure 1](https://doi.org/10.1007/s002650050591).
 
 <details>
   <summary> <b><code>CAPTURES</code></b> – a table of all captures data</summary>
@@ -201,7 +201,7 @@ For any publication making substantial use of the data or code, the authors welc
 
 This work was funded by the [Max Planck Society](https://www.mpg.de/en) (to B.K.) and the [U.S. Fish and Wildlife Service](https://www.fws.gov/) (to R.L.). J.K. was supported by the International Max Planck Research School for Organismal Biology. 
 
-We thank Alice Pintaric, Andrea Wittenzellner, Anne Cillard, Carol Gilsenan, Eunbi Kwon, Giulia Bambini, Kim Teltscher, Kristina Beck, Luisana Carballo, Martin Bulla, Peter Santema, Pietro D'Amelio, Sabine Spehn and Fenja Squirrell of the MPIO and Audrey Taylor, Ben Lagassé, Greg Norwood, Jen Selvidge, Jenny Cunningham, Jillian Cosgrove, Kirsten Grond, Lindall Kidd, Patrick Herzog, Willow English and Wyatt Egelhoff of the USFWS for help in the field. We also thank the state and federal committees that reviewed and approved permits for this study, and the Ukpeaġvik Iñupiat Corporation for logistic support and access to their lands. 
+We thank Alice Pintaric, Andrea Wittenzellner, Anne Cillard, Carol Gilsenan, Eunbi Kwon, Giulia Bambini, Kim Teltscher, Kristina Beck, Luisana Carballo, Martin Bulla, Peter Santema, Pietro D'Amelio, Sabine Spehn and Fenja Squirrell of the [Max Planck Institute for Ornithology](https://www.orn.mpg.de/en) and Audrey Taylor, Ben Lagassé, Greg Norwood, Jen Selvidge, Jenny Cunningham, Jillian Cosgrove, Kirsten Grond, Lindall Kidd, Patrick Herzog, Willow English and Wyatt Egelhoff of the [U.S. Fish and Wildlife Service](https://www.fws.gov/) for help in the field. We also thank the state and federal committees that reviewed and approved permits for this study, and the Ukpeaġvik Iñupiat Corporation for logistic support and access to their lands. 
 
 <p>&nbsp;</p>
 
