@@ -93,7 +93,7 @@ bm +
   theme(legend.position = c(0.8, 0.95))
 
 
-# ggsave('./OUTPUTS/FIGURES/Map_nests_with_parentage.tiff', plot = last_plot(),  width = 85, height = 85, units = c('mm'), dpi = 'print')
+# ggsave('./OUTPUTS/FIGURES/Map_nests_with_parentage.tiff', plot = last_plot(),  width = 177, height = 177, units = c('mm'), dpi = 'print')
 
 #--------------------------------------------------------------------------------------------------------------
 #' ### Field procedures
@@ -670,7 +670,7 @@ ds[clutch_identity == 'first', mean(initiation_st)]
 
 # second clutches compared to single
 ds[clutch_identity == 'second', mean(initiation_st)]
- ds[clutch_identity == 'second' & polyandrous == TRUE, mean(initiation_st)]
+ds[clutch_identity == 'second' & polyandrous == TRUE, mean(initiation_st)]
 ds[clutch_identity == 'second' & is.na(polyandrous), mean(initiation_st)]
 
 ds[clutch_identity == 'third', .(initiation_st)]
@@ -680,8 +680,8 @@ ds1 = merge(d[clutch_identity == 'first', .(female_id_year, initiation_1 = initi
             d[clutch_identity == 'second', .(female_id_year, initiation_2 = initiation, p_2 = polyandrous)],
             by = 'female_id_year')
 
-ds2 = merge(d[clutch_identity == 'second', .(female_id_year, initiation_1 = initiation, p_1 = NA)], 
-            d[clutch_identity == 'third', .(female_id_year, initiation_2 = initiation, p_2 = NA)],
+ds2 = merge(d[clutch_identity == 'second', .(female_id_year, initiation_1 = initiation, p_1 = FALSE)], 
+            d[clutch_identity == 'third', .(female_id_year, initiation_2 = initiation, p_2 = FALSE)],
             by = 'female_id_year')
 
 ds = rbind(ds1, ds2)
@@ -695,10 +695,10 @@ ds[p_1 == TRUE]$diff_initiation %>% max
 
 # renesting females
 ds[, diff_initiation := difftime(initiation_2, initiation_1, units = 'days')]
-ds[is.na(p_1)] %>% nrow
-ds[is.na(p_1)]$diff_initiation %>% mean
-ds[is.na(p_1)]$diff_initiation %>% min
-ds[is.na(p_1)]$diff_initiation %>% max
+ds[p_1 == FALSE] %>% nrow
+ds[p_1 == FALSE]$diff_initiation %>% mean
+ds[p_1 == FALSE]$diff_initiation %>% min
+ds[p_1 == FALSE]$diff_initiation %>% max
 
 
 # merge first and second clutches of males to compare initiation dates
@@ -913,9 +913,6 @@ dn[, nest_state_date := as.POSIXct(nest_state_date)]
 di[, datetime_ := as.POSIXct(datetime_)]
 di[, date_ := as.POSIXct(format(datetime_, format = '%y-%m-%d'), format = '%y-%m-%d')]
 
-# unique by day
-ds = unique(di, by = c('ID1', 'ID2', 'date_'))
-
 # unique nest information by ID
 dn[!is.na(male_id), male_id_year := paste0(male_id, '_', substr(year_, 3,4 ))]
 dn[!is.na(female_id), female_id_year := paste0(female_id, '_', substr(year_, 3,4 ))]
@@ -939,6 +936,27 @@ dnID[, second_nest_state_date := min(second_nest_state_date, na.rm = TRUE), by =
 dnID[, N_clutches := .N, by = ID_year]
 dnID = unique(dnID, by = 'ID_year')
 
+# table with pairs with nest
+dnp1 = dn[!is.na(male_id) & !is.na(female_id), .(ID1 = male_id_year, ID2 = female_id_year, nestID, initiation)]
+dnp2 = dnp1[, .(ID1 = ID2, ID2 = ID1, nestID, initiation)]
+dnp = rbind(dnp1, dnp2)
+dnp[, nest_together := 1]
+dnp[!is.na(initiation), first_initiation_together := min(initiation, na.rm = TRUE), by = .(ID1, ID2)]
+dnp = unique(dnp, by = c('ID1', 'ID2'))
+
+# how many nest partners?
+dnp[, N_partners := .N, by = ID1]
+dnp[, .N, by = N_partners]
+setorder(dnp, initiation)
+dnp[, partner := seq_len(.N), by = ID1]
+
+# first & second partner partner
+ds = dnp[partner == 1]
+dnp = merge(dnp, ds[, .(ID1, ID1_1st_partner = ID2)], by = 'ID1', all.x = TRUE)
+ds = dnp[partner == 2]
+dnp = merge(dnp, ds[, .(ID1, ID1_2nd_partner = ID2)], by = 'ID1', all.x = TRUE)
+dnp[, c('N_partners', 'partner') := NULL]
+
 
 # plot settings
 t_margin = 0
@@ -954,19 +972,23 @@ vjust_ = 1.7 # vjust of text
 vjust_label = 1.2
 
 # colors in legend scale
-# c_active = '#A6D854'
-# c_failed = '#D53E4F'
-# c_previous = '#2B83BA'
-# c_next = '#FDAE61'
-
-# colors in legend scale for color blinds
-c_active = '#009E73'
-c_failed = '#D55E00'
-c_previous = '#56B4E9'
-c_next = '#E69F00'
+c_active = '#A6D854'
+c_failed = '#D53E4F'
+c_previous = '#2B83BA'
+c_next = '#FDAE61'
 grey_ = 'grey75'
 
+# colors in legend scale for color blinds
+# c_active = '#009E73'
+# c_failed = '#D55E00'
+# c_previous = '#56B4E9'
+# c_next = '#E69F00'
+# grey_ = 'grey75'
+
 ### interactions
+
+# unique by day
+ds = unique(di, by = c('ID1', 'ID2', 'date_'))
 
 # within pair
 ds1 = ds[ID2 == ID1_1st_partner & ID1sex == 'M', .(ID1, ID2, diff_obs_initiation = diff_obs_1st_initiation,
