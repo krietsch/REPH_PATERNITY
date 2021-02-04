@@ -6,12 +6,6 @@
 #'    html_document:
 #'      toc: true
 #'      highlight: tango
-#' run: 
-#'     R("""
-#'          library(knitr)
-#'          library(rmarkdown)
-#'          opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
-#'      """)
 #' ---
 
 
@@ -23,9 +17,6 @@
 #' Outputs are written to OUTPUTS in the FIGURES or TABLES folder.
 #' Each section in the summary below can be run independently.
 
-# Line to run to create html output
-# rmarkdown::render('./R/2_R_script_data_anaylsis.R', output_dir = './OUTPUTS')
-
 # Packages
 sapply(c('data.table', 'magrittr', 'sf', 'auksRuak', 'ggplot2', 'ggnewscale', 'car', 'emmeans', 'knitr', 
          'patchwork', 'cowplot', 'ggpubr'),
@@ -33,6 +24,10 @@ sapply(c('data.table', 'magrittr', 'sf', 'auksRuak', 'ggplot2', 'ggnewscale', 'c
 
 #' auksRuak can be found at [github](https://github.com/krietsch/auksRuak)
 #' (includes study site polygon and functions to create maps)
+
+# Lines to run to create html output
+opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+# rmarkdown::render('./R/2_R_script_data_anaylsis.R', output_dir = './OUTPUTS')
 
 # Projection
 PROJ = '+proj=laea +lat_0=90 +lon_0=-156.653428 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0 '
@@ -86,12 +81,16 @@ bm +
   geom_point(data = ds, aes(lon, lat, shape = data_type, fill = data_type, size = data_type)) +
   scale_shape_manual(name = '', values = c(21, 21, 24, 24), 
                      labels = c('Intensive study', 'Outside plot', 'Long-term monitoring', 'Renesting experiment')) +
-  scale_size_manual(name = '', values = c(rep(0.8, 4)), 
+  scale_size_manual(name = '', values = c(rep(1, 4)), # 0.8 for half column
                     labels = c('Intensive study', 'Outside plot', 'Long-term monitoring', 'Renesting experiment')) +
   scale_fill_manual(name = '', values = c('white', 'black', 'white', 'black'), 
                     labels = c('Intensive study', 'Outside plot', 'Long-term monitoring', 'Renesting experiment')) +
-  theme(legend.position = c(0.8, 0.95))
+  theme(legend.position = c(0.85, 0.95),
+        legend.key.size = unit(0.5, 'lines'), legend.text = element_text(size = 11),
+        legend.spacing.x = unit(0.06, 'cm'))
 
+# settings for half column
+# legend.position = c(0.8, 0.95), legend.text = element_text(size = 8.5), legend.spacing.x = unit(0.06, 'cm')
 
 # ggsave('./OUTPUTS/FIGURES/Map_nests_with_parentage.tiff', plot = last_plot(),  width = 177, height = 177, units = c('mm'), dpi = 'print')
 
@@ -978,12 +977,6 @@ c_previous = '#2B83BA'
 c_next = '#FDAE61'
 grey_ = 'grey75'
 
-# colors in legend scale for color blinds
-# c_active = '#009E73'
-# c_failed = '#D55E00'
-# c_previous = '#56B4E9'
-# c_next = '#E69F00'
-# grey_ = 'grey75'
 
 ### interactions
 
