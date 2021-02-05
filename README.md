@@ -29,7 +29,7 @@ When using the data or code please cite the associated manuscript (in review) an
 
 **`DATA/`**:
 
-All data used in this analysis (click on the black arrows to see column definitions). Extracted from our database 
+All data used in this analysis (**click on the black arrows** to see column definitions). Extracted from our database 
 and from [Dale et al. 1999 - Figure 1](https://doi.org/10.1007/s002650050591).
 
 <details>
