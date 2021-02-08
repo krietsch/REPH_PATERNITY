@@ -1,3 +1,11 @@
+#==============================================================================================================
+# Data and code from "Krietsch et al. (2021) Extra-pair paternity in a sequentially polyandrous shorebird: 
+# limited evidence for the sperm-storage hypothesis. 
+# Contributor: Johannes Krietsch
+# ❗This function is sourced by the workflow script and is only needed to create a base map using OpenStreetMap 
+# data stored in the R package auksRuak. 
+#==============================================================================================================
+
 #' Create base map (Function adjusted from package auksRuak: https://github.com/krietsch/auksRuak)
 #'
 #' Use open street map data to create a basemap with the extent of the data

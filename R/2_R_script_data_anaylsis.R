@@ -8,14 +8,17 @@
 #'      highlight: tango
 #' ---
 
-
-#' ## DESCRIPTION
-#' This script contains all steps to get from the data to the presented results
-#' and figures presented in this study.
-#' The order follows the appearance in the manuscript (as much as possible).
-#' Data were extracted from our database (see script) and are in the DATA folder.
-#' Outputs are written to OUTPUTS in the FIGURES or TABLES folder.
-#' Each section in the summary below can be run independently.
+#==============================================================================================================
+#' Data and code from "Krietsch et al. (2021) Extra-pair paternity in a sequentially polyandrous shorebird: 
+#' limited evidence for the sperm-storage hypothesis.
+#' Contributor: Johannes Krietsch  
+#' 📍 This script runs relative to the project's root directory and contains all steps to get from the data to
+#' the presented results and figures presented in this study.  
+#' The order follows the appearance in the manuscript (as much as possible).  
+#' Data were extracted from our database (see script) and are in the DATA folder.  
+#' Outputs are written to OUTPUTS in the FIGURES or TABLES folder.  
+#' Each section in the summary below can be run independently.  
+#==============================================================================================================
 
 # Packages
 sapply(c('data.table', 'magrittr', 'sf', 'auksRuak', 'ggplot2', 'ggnewscale', 'car', 'emmeans', 'knitr', 

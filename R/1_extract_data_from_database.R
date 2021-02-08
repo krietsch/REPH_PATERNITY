@@ -1,9 +1,10 @@
 #==============================================================================================================
-# Extract all for the parentage study relevant data & prepare them for analysis
+# Data and code from "Krietsch et al. (2021) Extra-pair paternity in a sequentially polyandrous shorebird: 
+# limited evidence for the sperm-storage hypothesis. 
+# Contributor: Johannes Krietsch
+# ❗This script is provided as reference only. It contains links to the internal database of the Max Planck 
+# Institute for Ornithology, from which it pulls the data and exports all the collected data to ./DATA
 #==============================================================================================================
-
-### Description
-# Script to extract data from our data base and to create data tables needed for the analysis in this project. 
 
 ### Summary
 # CAPTURES
