@@ -14,8 +14,8 @@ This repository contains all data and code used for data analysis and figure pro
 Johannes Krietsch [![ORCID_ID](./DATA/ILLUSTRATIONS/ORCID_ID_logo.png)](https://orcid.org/0000-0002-8080-1734), 
 Margherita Cragnolini, 
 Sylvia Kuhn, 
-Richard B. Lanctot [![ORCID_ID](./DATA/ILLUSTRATIONS/ORCID_ID_logo.png)](https://orcid.org/0000-0001-9873-0199),
-Sarah T. Saalfeld, 
+Richard B. Lanctot [![ORCID_ID](./DATA/ILLUSTRATIONS/ORCID_ID_logo.png)](https://orcid.org/0000-0001-9873-0199), 
+Sarah T. Saalfeld [![ORCID_ID](./DATA/ILLUSTRATIONS/ORCID_ID_logo.png)](https://orcid.org/0000-0002-6837-9729), 
 Mihai Valcu [![ORCID_ID](./DATA/ILLUSTRATIONS/ORCID_ID_logo.png)](https://orcid.org/0000-0002-6907-7802) and 
 Bart Kempenaers [![ORCID_ID](./DATA/ILLUSTRATIONS/ORCID_ID_logo.png)](https://orcid.org/0000-0002-7505-5458).  
   
