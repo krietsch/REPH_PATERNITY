@@ -550,6 +550,7 @@ dp = read.table('./DATA/PATERNITY.txt', sep = '\t',header = TRUE) %>% data.table
 
 # format
 d[, initiation := as.POSIXct(initiation)]
+d[, nest_state_date := as.POSIXct(nest_state_date)]
 d[, initiation_y := as.POSIXct(format(initiation, format = '%m-%d %H:%M:%S'), format = '%m-%d %H:%M:%S')]
 d[, female_id_year := paste0(female_id, '_', substr(year_, 3,4 ))]
 
@@ -678,11 +679,11 @@ ds[clutch_identity == 'second' & is.na(polyandrous), mean(initiation_st)]
 ds[clutch_identity == 'third', .(initiation_st)]
 
 # merge first and second clutches of females to compare initiation dates
-ds1 = merge(d[clutch_identity == 'first', .(female_id_year, initiation_1 = initiation, p_1 = polyandrous)], 
+ds1 = merge(d[clutch_identity == 'first', .(female_id_year, initiation_1 = initiation, p_1 = polyandrous, nest_state_date)], 
             d[clutch_identity == 'second', .(female_id_year, initiation_2 = initiation, p_2 = polyandrous)],
             by = 'female_id_year')
 
-ds2 = merge(d[clutch_identity == 'second', .(female_id_year, initiation_1 = initiation, p_1 = FALSE)], 
+ds2 = merge(d[clutch_identity == 'second', .(female_id_year, initiation_1 = initiation, p_1 = FALSE, nest_state_date)], 
             d[clutch_identity == 'third', .(female_id_year, initiation_2 = initiation, p_2 = FALSE)],
             by = 'female_id_year')
 
@@ -702,9 +703,15 @@ ds[p_1 == FALSE]$diff_initiation %>% mean
 ds[p_1 == FALSE]$diff_initiation %>% min
 ds[p_1 == FALSE]$diff_initiation %>% max
 
+# initiation after clutch failed
+ds[, diff_failed_initiation := difftime(initiation_2, nest_state_date, units = 'days')]
+ds[p_1 == FALSE] %>% nrow
+ds[p_1 == FALSE]$diff_failed_initiation %>% mean
+ds[p_1 == FALSE]$diff_failed_initiation %>% min
+ds[p_1 == FALSE]$diff_failed_initiation %>% max
 
 # merge first and second clutches of males to compare initiation dates
-ds = merge(d[male_clutch == 1 & renesting_male == TRUE, .(male_id_year, initiation_1 = initiation, f_1 = female_id_year)], 
+ds = merge(d[male_clutch == 1 & renesting_male == TRUE, .(male_id_year, initiation_1 = initiation, f_1 = female_id_year, nest_state_date)], 
            d[male_clutch == 2 & renesting_male == TRUE, .(male_id_year, initiation_2 = initiation, f_2 = female_id_year)], 
            by = 'male_id_year')
 
@@ -717,6 +724,13 @@ ds[same_female == FALSE] %>% nrow
 ds[same_female == FALSE]$diff_initiation %>% mean
 ds[same_female == FALSE]$diff_initiation %>% min
 ds[same_female == FALSE]$diff_initiation %>% max
+
+ds[, diff_failed_initiation := difftime(initiation_2, nest_state_date, units = 'days')]
+ds[same_female == FALSE & !is.na(nest_state_date)] %>% nrow
+ds[same_female == FALSE & !is.na(nest_state_date)]$diff_failed_initiation %>% mean
+ds[same_female == FALSE & !is.na(nest_state_date)]$diff_failed_initiation %>% min
+ds[same_female == FALSE & !is.na(nest_state_date)]$diff_failed_initiation %>% max
+
 
 #--------------------------------------------------------------------------------------------------------------
 #' ### Extra-pair paternity and breeding phenology
