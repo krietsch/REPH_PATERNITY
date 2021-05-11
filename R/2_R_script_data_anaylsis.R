@@ -78,7 +78,15 @@ st_transform_DT(ds)
 
 ds[, data_type := factor(data_type, levels = c('study_site', 'own_off_site', 'survey_plot', 'clutch_removal_exp'))]
 
+# add labels
+dss = data.table(name = c('Chukchi Sea', 'Elson Lagoon', 'Utqiaġvik'),
+                 lat  = c(71.331, 71.307, 71.295057),
+                 lon  = c(-156.73, -156.49, -156.736))
 
+# change projection
+st_transform_DT(dss)
+
+# plot map
 bm = create_bm(ds, buffer = 6000,  squared = TRUE)
 bm +
   geom_point(data = ds, aes(lon, lat, shape = data_type, fill = data_type, size = data_type)) +
@@ -88,6 +96,7 @@ bm +
                     labels = c('Intensive study', 'Outside plot', 'Long-term monitoring', 'Renesting experiment')) +
   scale_fill_manual(name = '', values = c('white', 'black', 'white', 'black'), 
                     labels = c('Intensive study', 'Outside plot', 'Long-term monitoring', 'Renesting experiment')) +
+  geom_text(data = dss, aes(lon, lat, label = name), fontface = 'italic') +
   theme(legend.position = c(0.85, 0.95),
         legend.key.size = unit(0.5, 'lines'), legend.text = element_text(size = 11),
         legend.spacing.x = unit(0.06, 'cm'))
