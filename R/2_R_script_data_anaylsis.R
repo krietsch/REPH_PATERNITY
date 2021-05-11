@@ -616,7 +616,7 @@ ds[female_id_year_NA %in% c('270170935_19', '19222_19'), next_clutch := 'polyand
 
 # factor order
 ds[, clutch_identity := factor(clutch_identity, levels = c('single', 'first', 'second', 'third'))]
-ds[, anyEPY := factor(anyEPY, levels = c('0', '1'))]
+ds[, anyEPY := factor(anyEPY, levels = c('1', '0'))]
 
 
 theme_classic_edit = function (base_size = 11, base_family = "", base_line_size = base_size/22,
@@ -640,29 +640,28 @@ p3 =
   geom_hline(yintercept = 0, color = 'grey70') +
   geom_boxplot(data = ds, aes(clutch_identity, initiation_st), fill = 'grey85', outlier.alpha = 0) +
   geom_line(data = ds, aes(clutch_identity, initiation_st, group = female_id_year_NA, linetype = next_clutch), size = 0.3) +
+  geom_jitter(data = ds[clutch_identity == 'single'], aes(clutch_identity, initiation_st, fill = anyEPY),
+              shape = 21, size = ps, height = 0, width = 0.3) +
   geom_point(data = ds[clutch_identity != 'single' & anyEPY == '0'], aes(clutch_identity, initiation_st, fill = anyEPY),
              shape = 21, size = 1) +
   geom_point(data = ds[clutch_identity != 'single' & anyEPY == '1'], aes(clutch_identity, initiation_st, fill = anyEPY),
              shape = 21, size = 1) +
-  geom_jitter(data = ds[clutch_identity == 'single'], aes(clutch_identity, initiation_st, fill = anyEPY),
-              shape = 21, size = ps, height = 0, width = 0.3) +
-  scale_fill_manual(values = c('white', 'black'), name = NULL, labels = c('no EPY', 'EPY'), guide = FALSE) +
+    scale_fill_manual(values = c('black', 'white'), name = NULL, labels = c('EPY', 'no EPY')) +
   scale_linetype_manual(values = c('solid', 'dotted'), name = NULL) +
   scale_x_discrete(labels = c('Single', 'First', 'Second', 'Third')) +
   scale_y_continuous(breaks = c(-14, -7, 0, 7, 14), limits = c(-18, 18), expand = c(0, 0)) +
   geom_text(aes(Inf, Inf, label = 'c'), vjust = vjust_label, hjust = hjust_,  size = lsa) +
   xlab('Clutch type') + ylab('Clutch initiation date (standardized)') +
   geom_text(data = dss, aes(clutch_identity, Inf, label = sample_size), vjust = vjust_, size = ls) +
-  theme_classic_edit(base_size = bs, lp = c(0.85, 0.08)) +
+  theme_classic_edit(base_size = bs, lp = c(0.85, 0.11)) +
   theme(legend.background = element_rect(fill = alpha('white', 0)),
-        legend.key.size = unit(0.5, 'lines'))
+        legend.key.size = unit(0.5, 'lines'), legend.spacing.y = unit(-0.15, "cm"))
 p3
-
 
 # fisher test to see if EPY in polyandrous clutches different to known first clutches & monogamous renesting
 matrix(c(3, 0, 11, 21), ncol = 2) %>% fisher.test() 
 
-# some descriptive statisic about the timing
+# some descriptive statistic about the timing
 
 # exclude double again
 ds = ds[!(female_id_year_NA %in% c('270170935_19', '19222_19'))]
@@ -751,13 +750,6 @@ ds = ds[, .(year_, nestID, initiation_y, anyEPY, data_type)]
 ds[data_type == 'study_site', data_type := 'Intensive study']
 ds[data_type != 'Intensive study', data_type := 'Other data']
 
-# load Dale et al. data
-dale = read.csv2('./DATA/Dale_et_al_1999_REPH_EPP.csv') %>% data.table
-dale[, initiation_y := as.POSIXct(as.Date(initiation_doy, origin = '1993-01-01'))]
-
-ds = rbind(ds, dale[, .(year_ = year_, nestID, initiation_y, anyEPY, data_type = 'Dale et al.')])
-
-
 ds[, mean_initiation := mean(initiation_y, na.rm = TRUE), by = year_]
 ds[, initiation_st := difftime(initiation_y, mean_initiation, units = 'days') %>% as.numeric]
 ds[, anyEPY := as.character(anyEPY)]
@@ -766,27 +758,29 @@ ds[, study_site := as.character(study_site)]
 dss = ds[, .(median = median(initiation_st), q25 = quantile(initiation_st, probs = c(0.25)),
              q75 = quantile(initiation_st, probs = c(0.75)), .N), by = .(data_type, anyEPY)]
 
-dss2 = data.table(data_type = c(rep('Intensive study', 2), rep('Other data', 2), rep('Dale et al.', 2)),
-                  sample_size = c('16', '149', '21', '146', '6', '12'),
-                  anyEPY = c('1', '0', '1', '0', '1', '0'))
+dss2 = data.table(data_type = c(rep('Intensive study', 2), rep('Other data', 2)),
+                  sample_size = c('16', '149', '21', '146'),
+                  anyEPY = c('1', '0', '1', '0'))
 
 # factor order
-ds[, data_type := factor(data_type, levels = c('Intensive study', 'Other data', 'Dale et al.'))]
+ds[, data_type := factor(data_type, levels = c('Intensive study', 'Other data'))]
 ds[, anyEPY := factor(anyEPY, levels = c('1', '0'))]
 
 dss2[, anyEPY := factor(anyEPY, levels = c('1', '0'))]
-dss2[, data_type := factor(data_type, levels = c('Intensive study', 'Other data', 'Dale et al.'))]
+dss2[, data_type := factor(data_type, levels = c('Intensive study', 'Other data'))]
 
 
 p4 =
-  ggplot(data = ds, aes(data_type, initiation_st, fill = anyEPY)) +
+  ggplot() +
   geom_hline(yintercept = 0, color = 'grey70') +
-  geom_boxplot(position = position_dodge(width = 0.9), outlier.alpha = 0, show.legend = FALSE) +
-  scale_fill_manual(values = c('#818181', 'white'), labels = c('0', '1')) +
-  new_scale_fill() +
-  geom_point(data = ds, aes(data_type, initiation_st, fill = anyEPY), shape = 21, size = ps,
-             position = position_jitterdodge(jitter.width = 0.6, jitter.height = 0, dodge.width = 0.9)) +
-  scale_fill_manual(values = c('black', 'white'), name = NULL, labels = c('EPY', 'no EPY')) +
+  geom_violin(data = ds, aes(data_type, initiation_st, fill = anyEPY), 
+              position = position_dodge(width = 0.9), outlier.alpha = 0, show.legend = TRUE) +
+  scale_fill_manual(values = c('#818181', 'white'), name = NULL, labels = c('EPY', 'no EPY')) +
+  
+  geom_point(data = dss, aes(data_type, median, group = anyEPY), position = position_dodge(width = 0.9), 
+             size = 2, show.legend = FALSE) +
+  geom_linerange(data = dss, aes(x = data_type, ymin = q75, ymax = q25, group = anyEPY), 
+                 position = position_dodge(width = 0.9), size = 0.5) +
   scale_y_continuous(breaks = c(-14, -7, 0, 7, 14), limits = c(-18, 18), expand = c(0, 0)) +
   geom_text(data = dss2, aes(data_type, Inf, group = anyEPY, label = sample_size), 
             position = position_dodge(width = 0.9), vjust = vjust_, size = ls) +
