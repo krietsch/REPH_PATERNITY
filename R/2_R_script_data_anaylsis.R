@@ -912,6 +912,35 @@ ds$distance_between_nests %>% median
 ds$distance_between_nests %>% min
 ds$distance_between_nests %>% max
 
+# calculate pair wise distance of all nests within the intensive study site and identify the closest nest
+d = read.table('./DATA/NESTS.txt', sep = '\t',header = TRUE) %>% data.table
+d = d[data_type == 'study_site']
+st_transform_DT(d)
+
+# all pairwise combinations
+ds = CJ(nestID1 = d[, nestID], nestID2 = d[, nestID], unique = TRUE)
+
+# merge with year and location
+ds = merge(ds, d[, .(nestID1 = nestID, year_1 = year_, lat1 = lat, lon1 = lon)], by = 'nestID1')
+ds = merge(ds, d[, .(nestID2 = nestID, year_2 = year_, lat2 = lat, lon2 = lon)], by = 'nestID2')
+
+# exclude self comparision and comparision between years
+ds = ds[nestID1 != nestID2]
+ds = ds[year_1 == year_2]
+
+# calculate distance between nests
+ds[, dist_nests := sqrt(sum((c(lat1, lon1) - c(lat2, lon2))^2)) , by = 1:nrow(ds)]
+
+# closest nest
+ds[, closest_nest := min(dist_nests), by = nestID1]
+dss = ds[dist_nests == closest_net]
+
+# descriptive statistic 
+dss[, closest_nest] %>% median
+dss[, closest_nest] %>% sd
+dss[, closest_nest] %>% min
+dss[, closest_nest] %>% max
+
 # Sources of EPP within study site
 8/17 * 100 # identified
 1/17 * 100 # previous social male
