@@ -938,7 +938,7 @@ ds[, dist_nests := sqrt(sum((c(lat1, lon1) - c(lat2, lon2))^2)) , by = 1:nrow(ds
 
 # closest nest
 ds[, closest_nest := min(dist_nests), by = nestID1]
-dss = ds[dist_nests == closest_net]
+dss = ds[dist_nests == closest_nest]
 
 # descriptive statistic 
 dss[, closest_nest] %>% median
