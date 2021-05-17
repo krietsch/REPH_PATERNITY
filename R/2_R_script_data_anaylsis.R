@@ -81,7 +81,7 @@ ds[, data_type := factor(data_type, levels = c('study_site', 'own_off_site', 'su
 # add labels
 dss = data.table(name = c('Chukchi Sea', 'Elson Lagoon', 'Utqiaġvik'),
                  lat  = c(71.331, 71.307, 71.295057),
-                 lon  = c(-156.73, -156.49, -156.736))
+                 lon  = c(-156.73, -156.49, -156.73))
 
 # change projection
 st_transform_DT(dss)
@@ -97,14 +97,14 @@ bm +
   scale_fill_manual(name = '', values = c('white', 'black', 'white', 'black'), 
                     labels = c('Intensive study', 'Outside plot', 'Long-term monitoring', 'Renesting experiment')) +
   geom_text(data = dss, aes(lon, lat, label = name), fontface = 'italic') +
-  theme(legend.position = c(0.85, 0.95),
+  theme(legend.position = c(0.8, 0.95),
         legend.key.size = unit(0.5, 'lines'), legend.text = element_text(size = 11),
         legend.spacing.x = unit(0.06, 'cm'))
 
 # settings for half column
 # legend.position = c(0.8, 0.95), legend.text = element_text(size = 8.5), legend.spacing.x = unit(0.06, 'cm')
 
-# ggsave('./OUTPUTS/FIGURES/Map_nests_with_parentage.tiff', plot = last_plot(),  width = 177, height = 177, units = c('mm'), dpi = 'print')
+# ggsave('./OUTPUTS/FIGURES/Map_nests_with_parentage.tiff', plot = last_plot(),  width = 140, height = 140, units = c('mm'), dpi = 'print')
 
 #--------------------------------------------------------------------------------------------------------------
 #' ### Field procedures
@@ -818,7 +818,7 @@ summary(fm)
 # save
 p1 + p2 + p3 + p4 + plot_layout(ncol = 2, nrow = 2)
 
-# ggsave('./OUTPUTS/FIGURES/Frequency_EPP_and_timing.tiff', plot = last_plot(),  width = 177, height = 177, units = c('mm'), dpi = 'print')
+# ggsave('./OUTPUTS/FIGURES/Frequency_EPP_and_timing.tiff', plot = last_plot(),  width = 190, height = 190, units = c('mm'), dpi = 'print')
 
 #--------------------------------------------------------------------------------------------------------------
 #' ### Characteristics of the extra-pair sires
@@ -1030,7 +1030,7 @@ c_failed = '#D53E4F'
 c_previous = '#2B83BA'
 c_next = '#FDAE61'
 grey_ = 'grey75'
-
+grey_2 = '#818181'
 
 ### interactions
 
@@ -1206,7 +1206,7 @@ p3 =
   geom_vline(aes(xintercept = 3), linetype = 'dotted', size = vline) +
   scale_x_continuous(limits = c(-13, 23), expand = c(0.02, 0.02)) +
   scale_y_continuous(limits = c(0, 22), labels = c('0', '','10', '','20'), expand = c(0, 0)) +
-  scale_fill_manual(values = c(grey_, c_active, c_previous, c_next)) +
+  scale_fill_manual(values = c(grey_2, c_active, c_previous, c_next)) +
   xlab('Day relative to clutch initiation (= 0)') + ylab('') +
   geom_text(aes(-9.5, Inf, label = sample_size2), vjust = vjust_, size = ls) +
   geom_text(aes(22, Inf, label = 'e'), vjust = vjust_label, size = lsa) +
@@ -1405,7 +1405,7 @@ p6 =
   scale_x_continuous(limits = c(-13, 23), expand = c(0.02, 0.02)) +
   scale_y_continuous(limits = c(0, 11), breaks = c(0, 2.5, 5, 7.5, 10),
                      labels = c('0', '', '5', '', '10'), expand = c(0, 0)) +
-  scale_fill_manual(values = c(grey_, c_active, c_previous, c_next)) +
+  scale_fill_manual(values = c(grey_2, c_active, c_previous, c_next)) +
   xlab('Day relative to clutch initiation (= 0)') + ylab('') +
   geom_text(aes(-10, Inf, label = sample_size5), vjust = vjust_, size = ls) +
   geom_text(aes(22, Inf, label = 'f'), vjust = vjust_label, size = lsa) +
@@ -1420,15 +1420,15 @@ dss[type == 'next partner' & diff_obs_initiation < 4]$ID1 %>% unique %>% length
 
 
 # legend
-ds = data.table(type = c('with active nest', 'with failed nest', 'next partner', 'previous partner', 'no nest/unknown'),
+ds = data.table(type = c('with active nest', 'with failed nest', 'next partner', 'previous partner', 'no nest', 'unknown'),
                 N = c(rep(1, 5)))
 
-ds[, type := factor(type, levels =c('with active nest', 'with failed nest', 'previous partner', 'next partner', 'no nest/unknown'))]
+ds[, type := factor(type, levels =c('with active nest', 'with failed nest', 'previous partner', 'next partner', 'no nest', 'unknown'))]
 
 pl =
   ggplot(data = ds) +
   geom_bar(aes(N, fill = type)) +
-  scale_fill_manual(name = 'Male', values = c(c_active, c_failed, c_previous, c_next, grey_)) +
+  scale_fill_manual(name = 'Male', values = c(c_active, c_failed, c_previous, c_next, grey_, grey_2)) +
   theme_classic(base_size = bs) +
   theme(legend.position = c(0.43, 0.5), legend.direction = 'horizontal', legend.key.width = unit(0.4, 'cm'), legend.key.height = unit(0.4, 'cm'))
 
@@ -1458,10 +1458,10 @@ patchwork[[1]] <- patchwork[[1]] + plot_layout(widths = c(1, 2, 2))
 patchwork[[2]] <- patchwork[[2]] + plot_layout(widths = c(1, 2, 2))
 patchwork[[3]] <- patchwork[[3]] + plot_layout(widths = c(1, 2, 2))
 patchwork[[4]] <- patchwork[[4]] + plot_layout(widths = c(0.5, 2))
-patchwork + plot_layout(heights = c(3, 2, 2, 0.2))
+patchwork + plot_layout(heights = c(3, 2, 2, 0.3))
 
 
-# ggsave('./OUTPUTS/FIGURES/Interactions.tiff', plot = last_plot(),  width = 177, height = 177, units = c('mm'), dpi = 'print')
+# ggsave('./OUTPUTS/FIGURES/Interactions.tiff', plot = last_plot(),  width = 190, height = 190, units = c('mm'), dpi = 'print')
 
 
 #==============================================================================================================
