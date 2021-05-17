@@ -687,11 +687,11 @@ ds[clutch_identity == 'second' & is.na(polyandrous), mean(initiation_st)]
 ds[clutch_identity == 'third', .(initiation_st)]
 
 # merge first and second clutches of females to compare initiation dates
-ds1 = merge(d[clutch_identity == 'first', .(female_id_year, initiation_1 = initiation, p_1 = polyandrous, nest_state_date)], 
+ds1 = merge(d[clutch_identity == 'first', .(female_id_year, initiation_1 = initiation, p_1 = polyandrous, cs_1 = clutch_size, nest_state_date)], 
             d[clutch_identity == 'second', .(female_id_year, initiation_2 = initiation, p_2 = polyandrous)],
             by = 'female_id_year')
 
-ds2 = merge(d[clutch_identity == 'second', .(female_id_year, initiation_1 = initiation, p_1 = FALSE, nest_state_date)], 
+ds2 = merge(d[clutch_identity == 'second', .(female_id_year, initiation_1 = initiation, p_1 = FALSE, cs_1 = clutch_size, nest_state_date)], 
             d[clutch_identity == 'third', .(female_id_year, initiation_2 = initiation, p_2 = FALSE)],
             by = 'female_id_year')
 
@@ -703,6 +703,13 @@ ds[p_1 == TRUE] %>% nrow
 ds[p_1 == TRUE]$diff_initiation %>% mean
 ds[p_1 == TRUE]$diff_initiation %>% min
 ds[p_1 == TRUE]$diff_initiation %>% max
+
+# days after clutch completion
+ds[, diff_complete_initiation := difftime(initiation_2, initiation_1 + cs_1 * 86400, units = 'days')]
+ds[p_1 == TRUE] %>% nrow
+ds[p_1 == TRUE]$diff_complete_initiation %>% mean
+ds[p_1 == TRUE]$diff_complete_initiation %>% min
+ds[p_1 == TRUE]$diff_complete_initiation %>% max
 
 # renesting females
 ds[, diff_initiation := difftime(initiation_2, initiation_1, units = 'days')]
