@@ -256,6 +256,7 @@ nrow(ds[external == 1])
 mean(ds[external == 1 & inc_period < 25]$inc_period, na.rm = TRUE) # excluding outliers
 
 # initiation date methods
+d[, initiation_method := NA]
 d[found_incomplete == TRUE, initiation_method := 'found_incomplete']
 d[is.na(initiation_method) & !is.na(hatching_datetime), initiation_method := 'hatching_datetime']
 d[is.na(initiation_method) & !is.na(est_hatching_datetime), initiation_method := 'est_hatching_datetime']
