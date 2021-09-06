@@ -48,7 +48,7 @@ ls = 3 # label size
 lsa = 5 # label size annotation
 vjust_ = 1.5 # vjust of text
 vjust_label = 1
-hjust_ = 1.5 # hjust of text
+hjust_ = 0.95 # hjust of text
 
 #==============================================================================================================
 #' ## METHODS
@@ -493,7 +493,7 @@ p1 =
   #                   labels = c('EPY', 'nests with EPY', 'polyandrous females', 'renesting males')) +
   scale_fill_grey(labels = c('EPY', 'nests with EPY', 'polyandrous females', 'renesting males')) +
   scale_y_continuous(breaks = c(0, 5, 10, 15), limits = c(0, 16), expand = c(0, 0)) +
-  geom_text(aes(Inf, Inf, label = 'a'), vjust = vjust_label, hjust = hjust_,  size = lsa) +
+  geom_text(aes(Inf, Inf, label = '(a)'), vjust = vjust_label, hjust = hjust_,  size = lsa) +
   xlab('Year') + ylab('Percentage') +
   theme_classic(base_size = bs) +
   theme(legend.position = c(0.285, 0.82), legend.title = element_blank(), 
@@ -535,7 +535,7 @@ p2 =
   scale_y_datetime(breaks = c(as.POSIXct(c(paste0(y, '-06-07'), paste0(y, '-06-14'),
                                            paste0(y, '-06-21'), paste0(y, '-06-28')))),
                    labels = c('7', '14', '21', '28')) +
-  geom_text(aes(Inf, as.POSIXct(c(paste0(y, '-07-02'))), label = 'b'), vjust = vjust_label - 1.3, 
+  geom_text(aes(Inf, as.POSIXct(c(paste0(y, '-07-02'))), label = '(b)'), vjust = vjust_label - 1.3, 
             hjust = hjust_,  size = lsa) +
   xlab('Year') + ylab('Clutch initiation date (June)') +
   theme_classic(base_size = bs)
@@ -659,7 +659,7 @@ p3 =
   scale_linetype_manual(values = c('solid', 'dotted'), name = NULL) +
   scale_x_discrete(labels = c('Single', 'First', 'Second', 'Third')) +
   scale_y_continuous(breaks = c(-14, -7, 0, 7, 14), limits = c(-18, 18), expand = c(0, 0)) +
-  geom_text(aes(Inf, Inf, label = 'c'), vjust = vjust_label, hjust = hjust_,  size = lsa) +
+  geom_text(aes(Inf, Inf, label = '(c)'), vjust = vjust_label, hjust = hjust_,  size = lsa) +
   xlab('Clutch type') + ylab('Clutch initiation date (standardized)') +
   geom_text(data = dss, aes(clutch_identity, Inf, label = sample_size), vjust = vjust_, size = ls) +
   theme_classic_edit(base_size = bs, lp = c(0.85, 0.08)) +
@@ -805,7 +805,7 @@ p4 =
   scale_y_continuous(breaks = c(-14, -7, 0, 7, 14), limits = c(-18, 18), expand = c(0, 0)) +
   geom_text(data = dss2, aes(data_type, Inf, group = anyEPY, label = sample_size), 
             position = position_dodge(width = 0.9), vjust = vjust_, size = ls) +
-  geom_text(aes(Inf, Inf, label = 'd'), vjust = vjust_label, hjust = hjust_,  size = lsa) +
+  geom_text(aes(Inf, Inf, label = '(d)'), vjust = vjust_label, hjust = hjust_,  size = lsa) +
   xlab('Data source') + ylab('Clutch initiation date (standardized)') +
   theme_classic_edit(base_size = bs, lp = c(0.89, 0.08)) +
   theme(legend.background = element_rect(fill = alpha('white', 0)),
@@ -1089,11 +1089,11 @@ p1 =
   geom_bar(aes(diff_obs_initiation, fill = type2), width = width_, color = bar_line, size = bar_line_thickness) +
   geom_vline(aes(xintercept = 3), linetype = 'dotted', size = vline) +
   scale_x_continuous(limits = c(-13, 23), labels = NULL, expand = c(0.02, 0.02)) +
-  scale_y_continuous(limits = c(0, 54), labels = c('', '','20', '','40', ''), expand = c(0, 0)) +
+  scale_y_continuous(limits = c(0, 56), labels = c('', '','20', '','40', '', ''), expand = c(0, 0)) +
   scale_fill_manual(values = c(grey_, c_active, c_failed)) +
   xlab('') + ylab('') +
   geom_text(aes(-9.5, Inf, label = sample_size1), vjust = vjust_, size = ls) +
-  geom_text(aes(22, Inf, label = 'a'), vjust = vjust_label, size = lsa) +
+  geom_text(aes(22, Inf, label = '(a)'), vjust = vjust_label, size = lsa) +
   theme_classic(base_size = bs) +
   theme(legend.position = 'none', plot.margin = margin_, axis.title.x = element_blank(),
         axis.text.x=element_blank()) # legend.position = c(0.9, 0.9), legend.title = element_blank()
@@ -1156,7 +1156,7 @@ p2 =
   scale_fill_manual(values = c(grey_, c_active, c_failed)) +
   xlab('') + ylab('Number of male-female interactions') +
   geom_text(aes(-9.5, Inf, label = sample_size3), vjust = vjust_, size = ls) +
-  geom_text(aes(22, Inf, label = 'c'), vjust = vjust_label, size = lsa) +
+  geom_text(aes(22, Inf, label = '(c)'), vjust = vjust_label, size = lsa) +
   theme_classic(base_size = bs) +
   theme(legend.position = 'none', plot.margin = margin_, axis.title.x = element_blank(),
         axis.text.x=element_blank())
@@ -1216,7 +1216,7 @@ p3 =
   scale_fill_manual(values = c(grey_2, c_active, c_previous, c_next)) +
   xlab('Day relative to clutch initiation (= 0)') + ylab('') +
   geom_text(aes(-9.5, Inf, label = sample_size2), vjust = vjust_, size = ls) +
-  geom_text(aes(22, Inf, label = 'e'), vjust = vjust_label, size = lsa) +
+  geom_text(aes(22, Inf, label = '(e)'), vjust = vjust_label, size = lsa) +
   theme_classic(base_size = bs) +
   theme(legend.position = 'none', plot.background = element_rect(fill = 'transparent'),
         plot.margin = margin_) # legend.position = c(0.8, 0.9), legend.title = element_blank()
@@ -1286,13 +1286,13 @@ p4 =
   ggplot(data = dss) +
   geom_bar(aes(diff_obs_initiation, fill = type2), width = width_, color = bar_line, size = bar_line_thickness) +
   geom_vline(aes(xintercept = 3), linetype = 'dotted', size = vline) +
-  scale_x_continuous(limits = c(-13, 23), labels = NULL, expand = c(0.02, 0.02)) +
-  scale_y_continuous(limits = c(0, 27), breaks = c(0, 5, 10, 15, 20, 25),
+  scale_x_continuous(limits = c(-13, 24), labels = NULL, expand = c(0.02, 0.02)) +
+  scale_y_continuous(limits = c(0, 28), breaks = c(0, 5, 10, 15, 20, 25),
                      labels = c('', '', '10', '', '20', ''), expand = c(0, 0)) +
   scale_fill_manual(values = c(grey_, c_active, c_failed)) +
   xlab('') + ylab('') +
   geom_text(aes(-10, Inf, label = sample_size4), vjust = vjust_, size = ls) +
-  geom_text(aes(22, Inf, label = 'b'), vjust = vjust_label, size = lsa) +
+  geom_text(aes(22, Inf, label = '(b)'), vjust = vjust_label, size = lsa) +
   theme_classic(base_size = bs) +
   theme(legend.position = 'none', plot.margin = margin_, axis.title.x = element_blank(), axis.text.x=element_blank())
 p4
@@ -1354,7 +1354,7 @@ p5 =
   scale_fill_manual(values = c(grey_, c_active, c_failed)) +
   xlab('') + ylab('Number of copulation attempts') +
   geom_text(aes(-10, Inf, label = sample_size6), vjust = vjust_, size = ls) +
-  geom_text(aes(22, Inf, label = 'd'), vjust = vjust_label, size = lsa) +
+  geom_text(aes(22, Inf, label = '(d)'), vjust = vjust_label, size = lsa) +
   theme_classic(base_size = bs) +
   theme(legend.position = 'none', plot.margin = margin_, axis.title.x = element_blank(), axis.text.x=element_blank())
 p5
@@ -1415,7 +1415,7 @@ p6 =
   scale_fill_manual(values = c(grey_2, c_active, c_previous, c_next)) +
   xlab('Day relative to clutch initiation (= 0)') + ylab('') +
   geom_text(aes(-10, Inf, label = sample_size5), vjust = vjust_, size = ls) +
-  geom_text(aes(22, Inf, label = 'f'), vjust = vjust_label, size = lsa) +
+  geom_text(aes(22, Inf, label = '(f)'), vjust = vjust_label, size = lsa) +
   theme_classic(base_size = bs) +
   theme(legend.position = 'none', plot.background = element_rect(fill = 'transparent'),
         plot.margin = margin_)
