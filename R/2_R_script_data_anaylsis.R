@@ -22,7 +22,7 @@
 
 # Packages
 sapply(c('data.table', 'magrittr', 'sf', 'auksRuak', 'ggplot2', 'ggnewscale', 'car', 'emmeans', 'knitr', 
-         'patchwork', 'cowplot', 'ggpubr'),
+         'patchwork', 'cowplot', 'ggpubr', 'ggrepel'),
        function(x) suppressPackageStartupMessages(require(x , character.only = TRUE, quietly = TRUE)))
 
 #' auksRuak can be found at [github](https://github.com/krietsch/auksRuak)
@@ -1050,7 +1050,7 @@ ds1 = ds[ID2 == ID1_1st_partner & ID1sex == 'M', .(ID1, ID2, diff_obs_initiation
 ds2 = ds[ID2 == ID1_2nd_partner & ID1sex == 'M', .(ID1, ID2, diff_obs_initiation = diff_obs_2nd_initiation,
                                                    type = '2nd', datetime_)]
 dss = rbind(ds1, ds2)
-sample_size1 = paste0('N = ', nrow(dss))
+sample_size1 = paste0("italic('N =')~ ", nrow(dss))
 
 # color for birds with more than one clutch
 dss = merge(dss, dnID[, .(ID_year, N_clutches)], by.x = 'ID1', by.y = 'ID_year', all.x = TRUE)
@@ -1092,7 +1092,7 @@ p1 =
   scale_y_continuous(limits = c(0, 56), labels = c('', '','20', '','40', '', ''), expand = c(0, 0)) +
   scale_fill_manual(values = c(grey_, c_active, c_failed)) +
   xlab('') + ylab('') +
-  geom_text(aes(-9.5, Inf, label = sample_size1), vjust = vjust_, size = ls) +
+  geom_text(aes(-9.5, Inf, label = sample_size1), vjust = vjust_, size = ls, parse = TRUE) +
   geom_text(aes(22, Inf, label = '(a)'), vjust = vjust_label, size = lsa) +
   theme_classic(base_size = bs) +
   theme(legend.position = 'none', plot.margin = margin_, axis.title.x = element_blank(),
@@ -1112,7 +1112,7 @@ ds1 = ds[seen_with_other_than_1st_partner == TRUE & same_sex == 0 & ID1sex == 'M
 ds2 = ds[seen_with_other_than_2nd_partner == TRUE & same_sex == 0 & ID1sex == 'M',
          .(ID1, ID2, diff_obs_initiation = diff_obs_2nd_initiation, type = '2nd', datetime_)]
 dss = rbind(ds1, ds2)
-sample_size3 = paste0('N = ', nrow(dss))
+sample_size2 = paste0("italic('N =')~ ", nrow(dss))
 
 # 1st interacting with second partner
 dnpu = unique(dnp, by = 'ID1')
@@ -1155,7 +1155,7 @@ p2 =
   scale_y_continuous(limits = c(0, 22), labels = c('', '','10', '','20'), expand = c(0, 0)) +
   scale_fill_manual(values = c(grey_, c_active, c_failed)) +
   xlab('') + ylab('Number of male-female interactions') +
-  geom_text(aes(-9.5, Inf, label = sample_size3), vjust = vjust_, size = ls) +
+  geom_text(aes(-9.5, Inf, label = sample_size2), vjust = vjust_, size = ls, parse = TRUE) +
   geom_text(aes(22, Inf, label = '(c)'), vjust = vjust_label, size = lsa) +
   theme_classic(base_size = bs) +
   theme(legend.position = 'none', plot.margin = margin_, axis.title.x = element_blank(),
@@ -1173,7 +1173,7 @@ ds1 = ds[seen_with_other_than_1st_partner == TRUE & same_sex == 0 & ID1sex == 'F
 ds2 = ds[seen_with_other_than_2nd_partner == TRUE & same_sex == 0 & ID1sex == 'F',
          .(ID1, ID2, diff_obs_initiation = diff_obs_2nd_initiation, type = '2nd', datetime_)]
 dss = rbind(ds1, ds2)
-sample_size2 = paste0('N = ', nrow(dss))
+sample_size3= paste0("italic('N =')~ ", nrow(dss))
 
 # 1st interacting with second partner
 dnpu = unique(dnp, by = 'ID1')
@@ -1215,7 +1215,7 @@ p3 =
   scale_y_continuous(limits = c(0, 22), labels = c('0', '','10', '','20'), expand = c(0, 0)) +
   scale_fill_manual(values = c(grey_2, c_active, c_previous, c_next)) +
   xlab('Day relative to clutch initiation (= 0)') + ylab('') +
-  geom_text(aes(-9.5, Inf, label = sample_size2), vjust = vjust_, size = ls) +
+  geom_text(aes(-9.5, Inf, label = sample_size3), vjust = vjust_, size = ls, parse = TRUE) +
   geom_text(aes(22, Inf, label = '(e)'), vjust = vjust_label, size = lsa) +
   theme_classic(base_size = bs) +
   theme(legend.position = 'none', plot.background = element_rect(fill = 'transparent'),
@@ -1244,7 +1244,7 @@ ds1 = ds[ID2 == ID1_1st_partner & ID1copAS == 1 & ID1sex == 'M',
 ds2 = ds[ID2 == ID1_2nd_partner & ID1copAS == 1 & ID1sex == 'M',
          .(ID1, ID2, diff_obs_initiation = diff_obs_2nd_initiation, type = '2nd'), datetime_]
 dss = rbind(ds1, ds2)
-sample_size4 = paste0('N = ', nrow(dss))
+sample_size4 = paste0("italic('N =')~ ", nrow(dss))
 
 
 dss = merge(dss, dnID[, .(ID_year, N_clutches)], by.x = 'ID1', by.y = 'ID_year', all.x = TRUE)
@@ -1291,7 +1291,7 @@ p4 =
                      labels = c('', '', '10', '', '20', ''), expand = c(0, 0)) +
   scale_fill_manual(values = c(grey_, c_active, c_failed)) +
   xlab('') + ylab('') +
-  geom_text(aes(-10, Inf, label = sample_size4), vjust = vjust_, size = ls) +
+  geom_text(aes(-10, Inf, label = sample_size4), vjust = vjust_, size = ls, parse = TRUE) +
   geom_text(aes(22, Inf, label = '(b)'), vjust = vjust_label, size = lsa) +
   theme_classic(base_size = bs) +
   theme(legend.position = 'none', plot.margin = margin_, axis.title.x = element_blank(), axis.text.x=element_blank())
@@ -1310,7 +1310,7 @@ ds1 = ds[copAS_not_1st_partner == TRUE & ID1sex == 'M',
 ds2 = ds[copAS_not_2nd_partner == TRUE & ID1sex == 'M',
          .(ID1, ID2, diff_obs_initiation = diff_obs_2nd_initiation, type = '2nd', datetime_)]
 dss = rbind(ds1, ds2)
-sample_size6 = paste0('N = ', nrow(dss))
+sample_size5 = paste0("italic('N =')~ ", nrow(dss))
 
 # 1st interacting with second partner
 dnpu = unique(dnp, by = 'ID1')
@@ -1353,7 +1353,7 @@ p5 =
                      expand = c(0, 0)) +
   scale_fill_manual(values = c(grey_, c_active, c_failed)) +
   xlab('') + ylab('Number of copulation attempts') +
-  geom_text(aes(-10, Inf, label = sample_size6), vjust = vjust_, size = ls) +
+  geom_text(aes(-10, Inf, label = sample_size5), vjust = vjust_, size = ls, parse = TRUE) +
   geom_text(aes(22, Inf, label = '(d)'), vjust = vjust_label, size = lsa) +
   theme_classic(base_size = bs) +
   theme(legend.position = 'none', plot.margin = margin_, axis.title.x = element_blank(), axis.text.x=element_blank())
@@ -1366,7 +1366,7 @@ ds1 = ds[copAS_not_1st_partner == TRUE & ID1sex == 'F',
 ds2 = ds[copAS_not_2nd_partner == TRUE & ID1sex == 'F',
          .(ID1, ID2, diff_obs_initiation = diff_obs_2nd_initiation, type = '2nd', datetime_)]
 dss = rbind(ds1, ds2)
-sample_size5 = paste0('N = ', nrow(dss))
+sample_size6 = paste0("italic('N =')~ ", nrow(dss))
 
 # 1st interacting with second partner
 dnpu = unique(dnp, by = 'ID1')
@@ -1414,7 +1414,7 @@ p6 =
                      labels = c('0', '', '5', '', '10'), expand = c(0, 0)) +
   scale_fill_manual(values = c(grey_2, c_active, c_previous, c_next)) +
   xlab('Day relative to clutch initiation (= 0)') + ylab('') +
-  geom_text(aes(-10, Inf, label = sample_size5), vjust = vjust_, size = ls) +
+  geom_text(aes(-10, Inf, label = sample_size6), vjust = vjust_, size = ls, parse = TRUE) +
   geom_text(aes(22, Inf, label = '(f)'), vjust = vjust_label, size = lsa) +
   theme_classic(base_size = bs) +
   theme(legend.position = 'none', plot.background = element_rect(fill = 'transparent'),
