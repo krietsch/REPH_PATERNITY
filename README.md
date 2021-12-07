@@ -10,7 +10,7 @@
 
 ### **Description**
 
-This repository contains all data and code used for data analysis and figure production in "*Extra-pair paternity in a sequentially polyandrous shorebird: limited evidence for the sperm-storage hypothesis*" by 
+This repository contains all data and code used for data analysis and figure production in ["*Extra-pair paternity in a sequentially polyandrous shorebird: limited evidence for the sperm-storage hypothesis*"](https://doi.org/10.1016/j.anbehav.2021.10.021) by 
 Johannes Krietsch [![ORCID_ID](./DATA/ILLUSTRATIONS/ORCID_ID_logo.png)](https://orcid.org/0000-0002-8080-1734), 
 Margherita Cragnolini, 
 Sylvia Kuhn, 
@@ -192,6 +192,15 @@ and from [Dale et al. 1999 - Figure 1](https://doi.org/10.1007/s002650050591).
 
 The data and code are supplied for scientific analysis, research, teaching or conservation purposes and shall be used only in accordance with the [GNU GPLv3](https://github.com/krietsch/REPH_PATERNITY/blob/master/LICENSE) license.
 For any publication making substantial use of the data or code, the authors welcome the opportunity for collaboration and to comment prior to publication. Please reach out to me (j.krietsch@orn.mpg.de) or Bart Kempenaers (b.kempenaers@orn.mpg.de).
+
+If you use the code or data, please cite the OSF repository linked to this github project: 
+
+Krietsch, J., Cragnolini, M., Kuhn, S., Lanctot, R. B., Saalfeld, S. T., Valcu, M., & Kempenaers, B. (2021). Data and code from ‘Extrapair paternity in a sequentially polyandrous shorebird: Limited evidence for the sperm storage hypothesis’. Open Science Framework. https://doi.org/10.17605/OSF.IO/V475T
+
+and the corresponding article:
+
+Krietsch, J., Cragnolini, M., Kuhn, S., Lanctot, R. B., Saalfeld, S. T., Valcu, M., & Kempenaers, B. (2022). Extrapair paternity in a sequentially polyandrous shorebird: limited evidence for the sperm storage hypothesis. Animal Behaviour, 183, 77-92.  https://doi.org/10.1016/j.anbehav.2021.10.021
+
 
 <p>&nbsp;</p>
 
